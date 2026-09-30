@@ -15,16 +15,13 @@ export default function Login() {
 
   const from = location.state?.from?.pathname || '/dashboard';
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = () => {
     setIsLoading(true);
     try {
-      const user = await signInWithGoogle();
-      success(`Welcome, ${user.fullname}!`);
-      navigate(from, { replace: true });
+      signInWithGoogle(); // redirects to Google — result handled by AuthContext on return
     } catch (err) {
       console.error('Google sign-in failed:', err);
       error(err.message || 'Sign-in failed. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };

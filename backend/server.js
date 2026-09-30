@@ -40,15 +40,23 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Register API Routes
-try {
-  app.use('/api/auth', require('./routes/authRoutes'));
-  app.use('/api/books', require('./routes/bookRoutes'));
-  app.use('/api/categories', require('./routes/categoryRoutes'));
-  app.use('/api/orders', require('./routes/orderRoutes'));
-} catch (e) {
-  console.warn('Some route modules require database connection:', e.message);
-}
+// Register API Routes — each route loads independently so one failure
+// does NOT prevent the others from registering
+const routes = [
+  { path: '/api/auth',       module: './routes/authRoutes' },
+  { path: '/api/books',      module: './routes/bookRoutes' },
+  { path: '/api/categories', module: './routes/categoryRoutes' },
+  { path: '/api/orders',     module: './routes/orderRoutes' },
+];
+
+routes.forEach(({ path, module }) => {
+  try {
+    app.use(path, require(module));
+    console.log(`✓ Route registered: ${path}`);
+  } catch (e) {
+    console.error(`✗ Failed to register route ${path}:`, e.message);
+  }
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
