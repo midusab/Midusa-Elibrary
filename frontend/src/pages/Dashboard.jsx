@@ -5,7 +5,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { getBooks, createBook } from '../services/api';
+import { getBooks, createBook, getUserOrders } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import { CATEGORIES } from '../constants/categories';
 
@@ -14,18 +14,20 @@ export default function Dashboard() {
   const { success, error } = useToast();
   const [activeTab, setActiveTab] = useState('library');
   const [books, setBooks] = useState([]);
+  const [userOrders, setUserOrders] = useState([]);
   const [isLoadingBooks, setIsLoadingBooks] = useState(true);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // New book state for backend direct manipulation
+  // New book state for real-time backend manipulation
   const [newBook, setNewBook] = useState({
     title: '',
     author: '',
     category: 'Self Development',
     price: '',
     description: '',
-    coverImage: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
-    pdfUrl: '#'
+    coverImage: '',
+    pdfUrl: ''
   });
 
   useEffect(() => {
@@ -53,6 +55,37 @@ export default function Dashboard() {
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchOrders() {
+      if (!user?.token) {
+        setUserOrders([]);
+        return;
+      }
+      setIsLoadingOrders(true);
+      try {
+        const orders = await getUserOrders(user.token);
+        if (isMounted) {
+          setUserOrders(Array.isArray(orders) ? orders : []);
+        }
+      } catch (err) {
+        console.error('Error fetching user orders:', err);
+      } finally {
+        if (isMounted) setIsLoadingOrders(false);
+      }
+    }
+
+    fetchOrders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  // Null-safe alias used throughout the template
+  const safeBooks = Array.isArray(books) ? books : [];
+
   const handleLogout = () => {
     logout();
     success('Logged out successfully');
@@ -67,33 +100,26 @@ export default function Dashboard() {
 
     setIsSubmitting(true);
     try {
-      // Try backend direct creation
-      await createBook(newBook);
-      success('Book created in database!');
+      await createBook({
+        ...newBook,
+        price: parseFloat(newBook.price)
+      }, user?.token);
+      success('Book created successfully in database!');
       const res = await getBooks();
       setBooks(Array.isArray(res?.books) ? res.books : []);
-    } catch (_err) {
-      // Fallback local update so user can test immediately
-      const created = {
-        id: Date.now(),
-        ...newBook,
-        price: parseFloat(newBook.price),
-        rating: 5.0,
-        createdAt: new Date().toISOString()
-      };
-      setBooks(prev => [created, ...prev]);
-      success('Book added to live website state!');
-    } finally {
-      setIsSubmitting(false);
       setNewBook({
         title: '',
         author: '',
         category: 'Self Development',
         price: '',
         description: '',
-        coverImage: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
-        pdfUrl: '#'
+        coverImage: '',
+        pdfUrl: ''
       });
+    } catch (_err) {
+      error(_err.message || 'Failed to create book in database');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -106,19 +132,21 @@ export default function Dashboard() {
           </div>
           <h2 className="text-xl font-bold text-slate-900 mb-1">Sign In Required</h2>
           <p className="text-xs text-slate-500 mb-5">
-            Sign in with Google to view your purchased library and personal dashboard.
+            Sign in to view your purchased library and personal dashboard.
           </p>
           <Link to="/login">
-            <Button size="sm" className="w-full">Sign In with Google</Button>
+            <Button size="sm" className="w-full">Sign In</Button>
           </Link>
         </Card>
       </div>
     );
   }
 
-  const safeBooks = Array.isArray(books) ? books : [];
-  const purchasedBooks = safeBooks.slice(0, Math.min(3, safeBooks.length));
-  const favoriteBooks = safeBooks.slice(Math.min(3, safeBooks.length), Math.min(6, safeBooks.length));
+  // Derive purchased books directly from real user orders
+  const purchasedBooks = userOrders.flatMap(order =>
+    (order.items || []).map(item => item.book).filter(Boolean)
+  );
+  const favoriteBooks = [];
 
   return (
     <div className="min-h-screen bg-white py-8 sm:py-12">
@@ -199,7 +227,7 @@ export default function Dashboard() {
         {activeTab === 'library' && (
           <div>
             <h2 className="text-sm sm:text-base font-bold text-slate-900 mb-4">Ready to Read</h2>
-            {isLoadingBooks ? (
+            {isLoadingOrders ? (
               <div className="py-12 text-center">
                 <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                 <p className="text-xs text-slate-400">Loading your library...</p>

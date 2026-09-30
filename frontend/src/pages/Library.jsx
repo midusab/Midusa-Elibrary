@@ -149,9 +149,9 @@ export default function Library() {
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Library Catalog
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+         {/* <p className="text-sm text-slate-500 mt-1">
             Displaying {filteredBooks.length} titles in Kenyan Shillings (KSh) across the 4 core categories
-          </p>
+          </p>*/}
         </div>
 
         {/* Liquid Glass Search & Controls Bar */}

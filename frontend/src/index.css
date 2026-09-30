@@ -14,8 +14,8 @@
   --color-primary-800: #0C4D8A;
   --color-primary-900: #0A3D6E;
 
-  /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* Typography: Apple SF Pro System Font Stack */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", -apple-system-subheadline, "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 /* Liquid Glass Design System */

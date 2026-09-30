@@ -51,22 +51,7 @@ export default function BookDetails() {
 
         if (item) {
           // Set reviews
-          setReviewsList(Array.isArray(item.reviews) && item.reviews.length > 0 ? item.reviews : [
-            {
-              id: 1,
-              user: 'Faith Mwangi',
-              rating: 5,
-              date: '2024-03-15',
-              comment: 'Remarkable perspective and clear actionable insights. Highly recommend this edition.'
-            },
-            {
-              id: 2,
-              user: 'Bernard Kiprono',
-              rating: 5,
-              date: '2024-02-20',
-              comment: 'One of the best books in this category. Instant download worked seamlessly.'
-            }
-          ]);
+          setReviewsList(Array.isArray(item.reviews) ? item.reviews : []);
 
           // Fetch related books in same category
           if (item.category) {
@@ -162,15 +147,8 @@ export default function BookDetails() {
     success('Thank you for reviewing this title!');
   };
 
-  // Safe table of contents fallback
-  const tableOfContents = Array.isArray(book.tableOfContents) && book.tableOfContents.length > 0 
-    ? book.tableOfContents 
-    : [
-        'Part I: Foundations & Core Principles',
-        'Part II: Mental Frameworks & Applied Strategies',
-        'Part III: Overcoming Barriers & Practical Execution',
-        'Part IV: Long-term Sustainability & Conclusion'
-      ];
+  // Safe table of contents from real data
+  const tableOfContents = Array.isArray(book.tableOfContents) ? book.tableOfContents : [];
 
   const authorBio = book.authorInfo || `${book.author} is an accomplished specialist and writer known for delivering research-driven insights and timeless guidance in the field of ${book.category}.`;
 
@@ -351,31 +329,33 @@ export default function BookDetails() {
             </Card>
           </section>
 
-          {/* 2. Table of Contents Section */}
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
-                <FiList className="w-4 h-4" />
+          {/* 2. Table of Contents Section (renders only if data exists) */}
+          {tableOfContents.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
+                  <FiList className="w-4 h-4" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                  Table of Contents
+                </h2>
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                Table of Contents
-              </h2>
-            </div>
-            <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
-              <div className="divide-y divide-slate-100">
-                {tableOfContents.map((chapter, index) => (
-                  <div key={index} className="py-3 flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-semibold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
-                      {index + 1}
-                    </span>
-                    <span className="text-xs sm:text-sm font-medium text-slate-800">
-                      {chapter}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </section>
+              <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+                <div className="divide-y divide-slate-100">
+                  {tableOfContents.map((chapter, index) => (
+                    <div key={index} className="py-3 flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-semibold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {index + 1}
+                      </span>
+                      <span className="text-xs sm:text-sm font-medium text-slate-800">
+                        {chapter}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </section>
+          )}
 
           {/* 3. Author Information Section */}
           <section>
@@ -530,7 +510,12 @@ export default function BookDetails() {
             )}
 
             {/* Reviews List */}
-            <div className="space-y-3">
+            {reviewsList.length === 0 ? (
+              <Card className="p-6 text-center bg-white border border-dashed border-slate-200 rounded-2xl">
+                <p className="text-xs text-slate-500">No reviews yet for this title. Be the first to share your thoughts!</p>
+              </Card>
+            ) : (
+              <div className="space-y-3">
               {reviewsList.map((rev) => (
                 <Card key={rev.id} className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
                   <div className="flex items-center justify-between mb-2">
@@ -557,7 +542,8 @@ export default function BookDetails() {
                 </Card>
               ))}
             </div>
-          </section>
+          )}
+        </section>
 
         </div>
       </div>

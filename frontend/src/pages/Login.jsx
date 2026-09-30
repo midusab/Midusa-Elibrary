@@ -98,7 +98,7 @@ export default function Login() {
               <span>{isLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
             </button>
 
-            {/* Quick Admin sign-in for testing backend manipulation */}
+            {/* Quick Admin sign-in for testing backend manipulation 
             <div className="mt-6 pt-6 border-t border-slate-100 flex flex-col gap-2">
               <span className="text-xs text-slate-400">Need admin permissions to test backend management?</span>
               <button
@@ -108,12 +108,12 @@ export default function Login() {
               >
                 Sign in with Google (Admin Mode)
               </button>
-            </div>
+            </div>*/}
 
             {/* Security Badge */}
             <div className="mt-8 flex items-center justify-center gap-1.5 text-xs text-slate-400">
               <FiShield className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Fast, secure, verified Google OAuth</span>
+              <span>Fast, secure, verified Google Authentication</span>
             </div>
           </Card>
         </motion.div>

@@ -1,10 +1,18 @@
-import { BOOKS } from '../data/books';
-import { CATEGORIES } from '../constants/categories';
-
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 /**
- * Fetch books from backend API with fallback to local seed data
+ * Helper to build auth headers
+ */
+function authHeader(token) {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+// ==========================================
+// BOOKS API (Real-time Backend Data)
+// ==========================================
+
+/**
+ * Fetch books from backend API with filtering, search, and pagination
  */
 export async function getBooks(params = {}) {
   try {
@@ -17,132 +25,246 @@ export async function getBooks(params = {}) {
     if (params.limit) query.append('limit', params.limit);
     if (params.page) query.append('page', params.page);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-    const res = await fetch(`${API_BASE_URL}/books?${query.toString()}`, {
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-
+    const res = await fetch(`${API_BASE_URL}/books?${query.toString()}`);
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data.books) && data.books.length > 0) {
-        return { books: data.books, total: data.pagination?.total || data.books.length };
-      }
+      return {
+        books: Array.isArray(data.books) ? data.books : [],
+        total: data.pagination?.total ?? (Array.isArray(data.books) ? data.books.length : 0),
+        pagination: data.pagination || null
+      };
     }
+    return { books: [], total: 0 };
   } catch (err) {
-    // Backend offline or unreachable, fall back to clean local state
+    console.error('Error fetching books from backend:', err);
+    return { books: [], total: 0 };
   }
-
-  // Fallback to local books
-  let result = [...BOOKS];
-  if (params.category && params.category !== 'all') {
-    result = result.filter(b => b.category.toLowerCase() === params.category.toLowerCase());
-  }
-  if (params.search) {
-    const q = params.search.toLowerCase();
-    result = result.filter(b =>
-      b.title.toLowerCase().includes(q) ||
-      b.author.toLowerCase().includes(q) ||
-      b.category.toLowerCase().includes(q)
-    );
-  }
-  if (params.featured) {
-    result = result.filter(b => b.featured);
-  }
-  if (params.bestseller) {
-    result = result.filter(b => b.bestseller);
-  }
-
-  return { books: result, total: result.length };
 }
 
 /**
- * Fetch a single book by ID
+ * Fetch a single book by ID from backend
  */
 export async function getBookById(id) {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-    const res = await fetch(`${API_BASE_URL}/books/${id}`, {
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
+    const res = await fetch(`${API_BASE_URL}/books/${id}`);
     if (res.ok) {
       return await res.json();
     }
+    return null;
   } catch (err) {
-    // Fallback
+    console.error(`Error fetching book ${id}:`, err);
+    return null;
   }
-  return BOOKS.find(b => String(b.id) === String(id)) || null;
 }
 
 /**
- * Fetch categories
- */
-export async function getCategories() {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-    const res = await fetch(`${API_BASE_URL}/categories`, {
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        return data;
-      }
-    }
-  } catch (err) {
-    // Fallback
-  }
-  return CATEGORIES;
-}
-
-/**
- * Direct Backend Manipulation: Create Book
+ * Backend: Create Book (Admin)
  */
 export async function createBook(bookData, token) {
   const res = await fetch(`${API_BASE_URL}/books`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
+      ...authHeader(token)
     },
     body: JSON.stringify(bookData)
   });
-  if (!res.ok) throw new Error('Failed to create book');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to create book');
+  }
   return res.json();
 }
 
 /**
- * Direct Backend Manipulation: Update Book
+ * Backend: Update Book (Admin)
  */
 export async function updateBook(id, bookData, token) {
   const res = await fetch(`${API_BASE_URL}/books/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
+      ...authHeader(token)
     },
     body: JSON.stringify(bookData)
   });
-  if (!res.ok) throw new Error('Failed to update book');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update book');
+  }
   return res.json();
 }
 
 /**
- * Direct Backend Manipulation: Delete Book
+ * Backend: Delete Book (Admin)
  */
 export async function deleteBook(id, token) {
   const res = await fetch(`${API_BASE_URL}/books/${id}`, {
     method: 'DELETE',
     headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
+      ...authHeader(token)
     }
   });
-  if (!res.ok) throw new Error('Failed to delete book');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to delete book');
+  }
+  return res.json();
+}
+
+// ==========================================
+// CATEGORIES API (Real-time Backend Data)
+// ==========================================
+
+/**
+ * Fetch categories from backend database
+ */
+export async function getCategories() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/categories`);
+    if (res.ok) {
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+    return [];
+  } catch (err) {
+    console.error('Error fetching categories from backend:', err);
+    return [];
+  }
+}
+
+/**
+ * Backend: Create Category (Admin)
+ */
+export async function createCategory(categoryData, token) {
+  const res = await fetch(`${API_BASE_URL}/categories`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeader(token)
+    },
+    body: JSON.stringify(categoryData)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to create category');
+  }
+  return res.json();
+}
+
+// ==========================================
+// ORDERS & CHECKOUT API (Real-time Backend Data)
+// ==========================================
+
+/**
+ * Create Order in backend database
+ */
+export async function createOrder(orderData, token) {
+  const res = await fetch(`${API_BASE_URL}/orders`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeader(token)
+    },
+    body: JSON.stringify(orderData)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to create order');
+  }
+  return res.json();
+}
+
+/**
+ * Fetch current user orders from backend
+ */
+export async function getUserOrders(token) {
+  if (!token) return [];
+  try {
+    const res = await fetch(`${API_BASE_URL}/orders/my-orders`, {
+      headers: {
+        ...authHeader(token)
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+    return [];
+  } catch (err) {
+    console.error('Error fetching user orders:', err);
+    return [];
+  }
+}
+
+/**
+ * Fetch single order by ID
+ */
+export async function getOrderById(id, token) {
+  const res = await fetch(`${API_BASE_URL}/orders/${id}`, {
+    headers: {
+      ...authHeader(token)
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to fetch order');
+  }
+  return res.json();
+}
+
+// ==========================================
+// AUTHENTICATION API (Real-time Backend Data)
+// ==========================================
+
+/**
+ * Register user in backend
+ */
+export async function registerUser(userData) {
+  const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(userData)
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to register');
+  }
+  return data;
+}
+
+/**
+ * Login user in backend
+ */
+export async function loginUser(credentials) {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(credentials)
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to login');
+  }
+  return data;
+}
+
+/**
+ * Get current authenticated user profile
+ */
+export async function getCurrentUser(token) {
+  const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    headers: {
+      ...authHeader(token)
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to get user profile');
+  }
   return res.json();
 }

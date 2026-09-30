@@ -50,39 +50,51 @@ export default function Categories() {
         </motion.div>
 
         {/* 4 Categories Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {categories.map((cat, idx) => (
-            <motion.div
-              key={cat.id || idx}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: idx * 0.08 }}
-            >
-              <Link to={`/library?category=${encodeURIComponent(cat.name)}`}>
-                <Card className="h-full p-6 border border-slate-200/80 hover:border-primary/50 hover:shadow-md rounded-2xl bg-white transition-all cursor-pointer group flex flex-col justify-between">
-                  <div>
-                    <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-                      <CategoryIcon slug={cat.slug} className="w-7 h-7" />
+        {loading ? (
+          <div className="py-20 text-center">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-xs text-slate-400">Loading categories...</p>
+          </div>
+        ) : categories.length === 0 ? (
+          <div className="py-12 text-center border border-dashed border-slate-200 rounded-2xl bg-white">
+            <p className="text-sm font-semibold text-slate-700">No categories found</p>
+            <p className="text-xs text-slate-400 mt-1">Categories from the database will appear here</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {categories.map((cat, idx) => (
+              <motion.div
+                key={cat.id || idx}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.08 }}
+              >
+                <Link to={`/library?category=${encodeURIComponent(cat.name)}`}>
+                  <Card className="h-full p-6 border border-slate-200/80 hover:border-primary/50 hover:shadow-md rounded-2xl bg-white transition-all cursor-pointer group flex flex-col justify-between">
+                    <div>
+                      <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                        <CategoryIcon slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')} className="w-7 h-7" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-primary transition-colors mb-2">
+                        {cat.name}
+                      </h3>
+                      <p className="text-xs text-slate-600 leading-relaxed mb-6">
+                        {cat.description}
+                      </p>
                     </div>
-                    <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-primary transition-colors mb-2">
-                      {cat.name}
-                    </h3>
-                    <p className="text-xs text-slate-600 leading-relaxed mb-6">
-                      {cat.description}
-                    </p>
-                  </div>
 
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="text-slate-400 font-medium">Curated collection</span>
-                    <span className="text-primary font-semibold flex items-center group-hover:translate-x-1 transition-transform">
-                      Explore <FiArrowRight className="ml-1" />
-                    </span>
-                  </div>
-                </Card>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
+                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-slate-400 font-medium">Curated collection</span>
+                      <span className="text-primary font-semibold flex items-center group-hover:translate-x-1 transition-transform">
+                        Explore <FiArrowRight className="ml-1" />
+                      </span>
+                    </div>
+                  </Card>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* Banner with Liquid Glass */}
         <div className="mt-14 p-6 sm:p-8 rounded-2xl liquid-glass border border-white/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">

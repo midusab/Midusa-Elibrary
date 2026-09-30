@@ -3,29 +3,25 @@ export const CATEGORIES = [
     id: 1,
     name: 'Self Development',
     slug: 'self-development',
-    description: 'Habits, productivity, personal growth, emotional resilience, and peak performance',
-    bookCount: 42
+    description: 'Habits, productivity, personal growth, emotional resilience, and peak performance'
   },
   {
     id: 2,
     name: 'Psychology',
     slug: 'psychology',
-    description: 'Human behavior, cognitive science, mental health, and understanding the mind',
-    bookCount: 36
+    description: 'Human behavior, cognitive science, mental health, and understanding the mind'
   },
   {
     id: 3,
     name: 'Finance & Business',
     slug: 'finance-business',
-    description: 'Wealth creation, financial literacy, investing, business strategy, and entrepreneurship',
-    bookCount: 48
+    description: 'Wealth creation, financial literacy, investing, business strategy, and entrepreneurship'
   },
   {
     id: 4,
     name: 'Christianity',
     slug: 'christianity',
-    description: 'Spiritual growth, biblical wisdom, faith in practice, devotion, and Christian living',
-    bookCount: 31
+    description: 'Spiritual growth, biblical wisdom, faith in practice, devotion, and Christian living'
   }
 ];
 

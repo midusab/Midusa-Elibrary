@@ -8,7 +8,7 @@ import CategoryIcon from '../components/ui/CategoryIcon';
 import { getBooks } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import { CATEGORIES } from '../constants/categories';
-import Heroimg from '../assets/heroimg4.avif'
+import Heroimg from '../assets/hero2.jpg'
 export default function Hero() {
   const [featuredBooks, setFeaturedBooks] = useState([]);
   const [bestsellers, setBestsellers] = useState([]);
@@ -44,14 +44,20 @@ export default function Hero() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-96 bg-gradient-to-b from-blue-50/50 via-slate-50/30 to-transparent pointer-events-none -z-10 rounded-full blur-3xl opacity-70" />
 
       {/* Hero Header Section */}
-      <section className="relative pt-8 pb-14 sm:pt-14 sm:pb-20 
-      h-screen bg-cover bg-center
-      border-b  bg-no-repeat border-slate-100
-      " style={{
+      <section
+        className="relative min-h-[92vh] sm:min-h-screen flex items-center justify-center pt-20 pb-14 sm:py-24 bg-cover bg-center bg-no-repeat overflow-hidden"
+        style={{
           backgroundImage: `url(${Heroimg})`,
-        }}>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          {/* Liquid Glass Category Pills Header (No Emojis) */}
+        }}
+      >
+        {/* Dark Vignette / Gradient Overlay for High-Contrast Text Legibility */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/50 via-slate-950/65 to-slate-950/85 pointer-events-none" />
+
+        {/* Ambient Subtle Blue Glow Behind Text */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-80  pointer-events-none rounded-full blur-3xl" />
+
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          {/* Frosted Category Pills Header
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -62,35 +68,35 @@ export default function Hero() {
               <Link
                 key={cat.id}
                 to={`/library?category=${encodeURIComponent(cat.name)}`}
-                className="px-3.5 py-1.5 rounded-full text-xs font-semibold liquid-glass-pill hover:bg-primary-50/80 hover:text-primary text-slate-700 transition-all duration-200 hover:scale-[1.02] flex items-center gap-1.5"
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white/90 hover:text-white border border-white/20 backdrop-blur-md shadow-sm transition-all duration-200 hover:scale-[1.02] flex items-center gap-1.5"
               >
-                <CategoryIcon slug={cat.slug} className="w-3.5 h-3.5 text-primary" />
+                <CategoryIcon slug={cat.slug} className="w-3.5 h-3.5 text-sky-400" />
                 <span>{cat.name}</span>
               </Link>
             ))}
-          </motion.div>
+          </motion.div> */}
 
-          {/* Main Title - 72px Scale */}
+          {/* Main Title */}
           <motion.h1
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1] mb-5 sm:mb-6 max-w-4xl mx-auto"
+            className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] mb-5 sm:mb-6 max-w-4xl mx-auto drop-shadow-md"
           >
-            Curated eBooks to <span className="text-primary">Elevate Your Mind</span>
+            Curated eBooks to <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300 bg-clip-text text-transparent">Elevate Your Mind</span>
           </motion.h1>
 
-          {/* Subtitle - 20px Scale */}
+          {/* Subtitle */}
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="text-lg sm:text-xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed"
+            className="text-lg sm:text-xl text-slate-200 mb-8 max-w-2xl mx-auto leading-relaxed drop-shadow-sm"
           >
-            Focused exclusively on Self Development, Psychology, Finance & Business, and Christianity. Instant digital delivery with Kenyan Shilling (KSh) checkout.
+            Focused exclusively on Self Development, Psychology, Finance & Business, and Christianity. Instant digital delivery with Mpesa checkout.
           </motion.p>
 
-          {/* Action Buttons - 16px Scale */}
+          {/* Action Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -98,56 +104,56 @@ export default function Hero() {
             className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto"
           >
             <Link to="/library" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto px-7 py-3 text-base font-semibold shadow-sm hover:shadow">
+              <Button size="lg" className="w-full sm:w-auto px-7 py-3 text-base font-semibold shadow-lg shadow-primary/30 hover:shadow-primary/50">
                 Explore Full Library
               </Button>
             </Link>
             <Link to="/categories" className="w-full sm:w-auto">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto px-7 py-3 text-base font-semibold">
-                Browse 4 Categories
+              <Button variant="outline" size="lg" className="w-full sm:w-auto px-7 py-3 text-base font-semibold bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white backdrop-blur-md">
+                Browse Categories
               </Button>
             </Link>
           </motion.div>
 
-          {/* Value Highlights in Liquid Glass Cards */}
-          <div className="mt-12 pt-8 border-t border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-4 text-left ">
-            <div className="flex items-center gap-2.5 p-3 rounded-2xl liquid-glass">
-              <div className="w-8 h-8 rounded-xl bg-primary-50 text-primary flex items-center justify-center flex-shrink-0">
+          {/* Value Highlights in Dark Frosted Glass Cards */}
+          <div className="mt-12 pt-8 border-t border-white/15 grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+            <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-white/15 shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-sky-400 flex items-center justify-center flex-shrink-0">
                 <FiDownloadCloud className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-800">Instant PDF Download</p>
-                <p className="text-[11px] text-slate-500">Read on any device</p>
+                <p className="text-xs font-bold text-white">Instant PDF Download</p>
+                <p className="text-[11px] text-slate-300">Read on any device</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 p-3 rounded-2xl liquid-glass">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+            <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-white/15 shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
                 <FiBookOpen className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-800">4 Core Niches</p>
-                <p className="text-[11px] text-slate-500">Strictly curated</p>
+                <p className="text-xs font-bold text-white">Core Niches</p>
+                <p className="text-[11px] text-slate-300">Strictly curated</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 p-3 rounded-2xl liquid-glass">
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+            <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-white/15 shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
                 <FiStar className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-800">Kenyan Shillings</p>
-                <p className="text-[11px] text-slate-500">M-PESA ready</p>
+                <p className="text-xs font-bold text-white">Trusted Platform</p>
+                <p className="text-[11px] text-slate-300">M-PESA ready</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 p-3 rounded-2xl liquid-glass">
-              <div className="w-8 h-8 rounded-xl bg-blue-50 text-primary flex items-center justify-center flex-shrink-0">
+            <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-white/15 shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center flex-shrink-0">
                 <FiShield className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-800">Google 1-Click Auth</p>
-                <p className="text-[11px] text-slate-500">Fast & verified</p>
+                <p className="text-xs font-bold text-white">Google - Fast Auth</p>
+                <p className="text-[11px] text-slate-300">Fast & verified</p>
               </div>
             </div>
           </div>
@@ -186,6 +192,14 @@ export default function Hero() {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : featuredBooks.length === 0 ? (
+            <div className="py-12 text-center border border-dashed border-slate-200 rounded-2xl bg-white">
+              <p className="text-sm font-semibold text-slate-700">No featured books currently listed</p>
+              <p className="text-xs text-slate-400 mt-1">Check back soon or explore our full catalog</p>
+              <Link to="/library" className="mt-3 inline-block text-xs font-semibold text-primary">
+                Browse Library →
+              </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -279,6 +293,14 @@ export default function Hero() {
                   <div className="h-8 bg-slate-100 rounded-xl w-full" />
                 </div>
               ))}
+            </div>
+          ) : bestsellers.length === 0 ? (
+            <div className="py-12 text-center border border-dashed border-slate-200 rounded-2xl bg-white">
+              <p className="text-sm font-semibold text-slate-700">No bestseller books currently listed</p>
+              <p className="text-xs text-slate-400 mt-1">Check back soon or explore our complete catalog</p>
+              <Link to="/library" className="mt-3 inline-block text-xs font-semibold text-primary">
+                Browse Library →
+              </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">

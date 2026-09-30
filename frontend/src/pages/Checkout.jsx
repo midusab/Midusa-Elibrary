@@ -1,34 +1,56 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiCreditCard, FiLock, FiCheckCircle, FiShield } from 'react-icons/fi';
+import { FiArrowLeft, FiLock, FiCheckCircle, FiShoppingCart } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { formatPrice } from '../utils/currency';
+import { createOrder } from '../services/api';
 
 export default function Checkout() {
   const { cart, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
-  const { success } = useToast();
+  const { success, error } = useToast();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('mpesa');
-  const [phoneNumber, setPhoneNumber] = useState('0712345678');
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsProcessing(true);
+    if (paymentMethod === 'mpesa' && !phoneNumber.trim()) {
+      error('Please enter your M-PESA phone number');
+      return;
+    }
 
-    setTimeout(() => {
+    if (!user) {
+      error('Please sign in to complete your purchase');
+      navigate('/login', { state: { from: { pathname: '/checkout' } } });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      await createOrder({
+        items: cart.map(item => ({
+          bookId: item.id,
+          quantity: item.quantity || 1
+        })),
+        phoneNumber: phoneNumber.trim(),
+        paymentMethod
+      }, user.token);
+
       setIsProcessing(false);
       setOrderComplete(true);
       clearCart();
       success('Payment successful! Digital books added to your dashboard.');
-    }, 1500);
+    } catch (err) {
+      setIsProcessing(false);
+      error(err.message || 'Payment processing failed. Please try again.');
+    }
   };
 
   if (cart.length === 0 && !orderComplete) {
