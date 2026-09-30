@@ -1,72 +1,51 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiCreditCard, FiLock, FiCheckCircle } from 'react-icons/fi';
+import { FiArrowLeft, FiCreditCard, FiLock, FiCheckCircle, FiShield } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 }
-};
+import { formatPrice } from '../utils/currency';
 
 export default function Checkout() {
   const { cart, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
-  const { success, error } = useToast();
+  const { success } = useToast();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
-  const [formData, setFormData] = useState({
-    email: user?.email || '',
-    fullName: user?.fullname || '',
-    address: '',
-    city: '',
-    country: '',
-    postalCode: '',
-    cardNumber: '',
-    cardName: '',
-    expiryDate: '',
-    cvv: ''
-  });
-
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  const [paymentMethod, setPaymentMethod] = useState('mpesa');
+  const [phoneNumber, setPhoneNumber] = useState('0712345678');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsProcessing(true);
 
-    // Simulate payment processing
     setTimeout(() => {
       setIsProcessing(false);
       setOrderComplete(true);
       clearCart();
-      success('Order placed successfully!');
-    }, 2000);
+      success('Payment successful! Digital books added to your dashboard.');
+    }, 1500);
   };
 
   if (cart.length === 0 && !orderComplete) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 py-12 sm:py-20 flex items-center justify-center p-4">
+      <div className="min-h-[75vh] bg-white py-12 flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
-          <div className="text-5xl sm:text-6xl mb-4">🛒</div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-3">
+          <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mx-auto mb-4">
+            <FiShoppingCart className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">
             Your cart is empty
           </h2>
-          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-6">
-            Add some books to your cart before proceeding to checkout.
+          <p className="text-xs sm:text-sm text-slate-500 mb-6">
+            Add books to your cart before proceeding to checkout.
           </p>
           <Link to="/library">
-            <Button size="lg" className="px-8">Browse Library</Button>
+            <Button size="md" className="px-6 text-xs sm:text-sm">Browse Library</Button>
           </Link>
         </div>
       </div>
@@ -75,331 +54,195 @@ export default function Checkout() {
 
   if (orderComplete) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 py-12 sm:py-20 flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100 dark:bg-green-900/50 mb-6">
-              <FiCheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-green-600 dark:text-green-400" />
-            </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-3 tracking-tight">
-              Order Complete!
-            </h1>
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 mb-8">
-              Thank you for your purchase. Your books are now available in your dashboard.
-            </p>
-            <div className="space-y-3">
-              <Link to="/dashboard">
-                <Button size="lg" className="w-full">
-                  Go to Dashboard
-                </Button>
-              </Link>
-              <Link to="/library">
-                <Button variant="outline" size="lg" className="w-full">
-                  Continue Shopping
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
+      <div className="min-h-[75vh] bg-white py-12 flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 mb-5">
+            <FiCheckCircle className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">
+            Order Complete!
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-600 mb-6">
+            Thank you for your purchase. Your digital books are now unlocked and ready to read in your dashboard.
+          </p>
+          <div className="space-y-2.5">
+            <Link to="/dashboard">
+              <Button size="md" className="w-full text-xs sm:text-sm font-semibold">
+                Go to My Dashboard
+              </Button>
+            </Link>
+            <Link to="/library">
+              <Button variant="outline" size="md" className="w-full text-xs sm:text-sm">
+                Continue Browsing
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 py-8 sm:py-12 lg:py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 sm:mb-8"
-        >
-          <Link to="/cart">
-            <Button variant="ghost" className="mb-4">
-              <FiArrowLeft className="mr-2" />
-              Back to Cart
-            </Button>
+    <div className="min-h-screen bg-white py-8 sm:py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-6 sm:mb-8">
+          <Link to="/cart" className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-primary transition-colors mb-3">
+            <FiArrowLeft className="mr-1.5 h-4 w-4" />
+            Back to Cart
           </Link>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-2">
-            Checkout
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Secure Checkout
           </h1>
-          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
-            Complete your purchase securely
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            Instant digital delivery to your account upon payment confirmation
           </p>
-        </motion.div>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* Checkout Form */}
-          <div className="lg:col-span-2">
-            <motion.form
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              onSubmit={handleSubmit}
-            >
-              {/* Contact Information */}
-              <Card className="p-6 mb-6">
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">
-                  Contact Information
-                </h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                      placeholder="you@example.com"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                      placeholder="John Doe"
-                    />
-                  </div>
-                </div>
-              </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Payment Form */}
+          <div className="lg:col-span-7">
+            <div className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100">
+                Payment Option
+              </h2>
 
-              {/* Billing Address */}
-              <Card className="p-6 mb-6">
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">
-                  Billing Address
-                </h2>
-                <div className="space-y-4">
+              {/* Payment selector */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('mpesa')}
+                  className={`p-3.5 rounded-xl border text-left transition-all ${
+                    paymentMethod === 'mpesa'
+                      ? 'border-emerald-500 bg-emerald-50/40 text-emerald-900 ring-1 ring-emerald-500'
+                      : 'border-slate-200 hover:border-slate-300 text-slate-700'
+                  }`}
+                >
+                  <span className="font-bold text-xs block">M-PESA Express</span>
+                  <span className="text-[11px] text-slate-500">STK Push to Kenyan number</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('card')}
+                  className={`p-3.5 rounded-xl border text-left transition-all ${
+                    paymentMethod === 'card'
+                      ? 'border-primary bg-primary-50/40 text-primary ring-1 ring-primary'
+                      : 'border-slate-200 hover:border-slate-300 text-slate-700'
+                  }`}
+                >
+                  <span className="font-bold text-xs block">Credit / Debit Card</span>
+                  <span className="text-[11px] text-slate-500">Visa, Mastercard</span>
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {paymentMethod === 'mpesa' ? (
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Street Address
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      M-PESA Phone Number
                     </label>
                     <input
-                      type="text"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="07XX XXX XXX or 2547XX XXX XXX"
                       required
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                      placeholder="123 Main St"
+                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                     />
+                    <p className="text-[11px] text-slate-500 mt-1.5">
+                      You will receive an M-PESA prompt on your phone for {formatPrice(cartTotal)}.
+                    </p>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                ) : (
+                  <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        City
-                      </label>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Card Number</label>
                       <input
                         type="text"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
+                        placeholder="4111 2222 3333 4444"
                         required
-                        className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                        placeholder="New York"
+                        className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Country
-                      </label>
-                      <input
-                        type="text"
-                        name="country"
-                        value={formData.country}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                        placeholder="United States"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Postal Code
-                    </label>
-                    <input
-                      type="text"
-                      name="postalCode"
-                      value={formData.postalCode}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                      placeholder="10001"
-                    />
-                  </div>
-                </div>
-              </Card>
-
-              {/* Payment Information */}
-              <Card className="p-6">
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6 flex items-center">
-                  <FiCreditCard className="mr-2" />
-                  Payment Information
-                </h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      name="cardNumber"
-                      value={formData.cardNumber}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="4242 4242 4242 4242"
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Cardholder Name
-                    </label>
-                    <input
-                      type="text"
-                      name="cardName"
-                      value={formData.cardName}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="John Doe"
-                      className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        Expiry Date
-                      </label>
-                      <input
-                        type="text"
-                        name="expiryDate"
-                        value={formData.expiryDate}
-                        onChange={handleInputChange}
-                        required
-                        placeholder="MM/YY"
-                        className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                        CVV
-                      </label>
-                      <input
-                        type="text"
-                        name="cvv"
-                        value={formData.cvv}
-                        onChange={handleInputChange}
-                        required
-                        placeholder="123"
-                        className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex items-center justify-center text-slate-500 text-sm">
-                  <FiLock className="mr-2" />
-                  <span>Your payment information is secure and encrypted</span>
-                </div>
-              </Card>
-            </motion.form>
-          </div>
-
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card className="p-6 sticky top-24">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">
-                  Order Summary
-                </h2>
-
-                <div className="space-y-4 mb-6">
-                  {cart.map((item) => (
-                    <div key={item.id} className="flex gap-3">
-                      <img
-                        src={item.coverImage}
-                        alt={item.title}
-                        className="w-16 h-24 object-cover rounded"
-                      />
-                      <div className="flex-1">
-                        <h4 className="font-medium text-slate-900 dark:text-white text-sm line-clamp-2">
-                          {item.title}
-                        </h4>
-                        <p className="text-xs text-slate-500">Qty: {item.quantity}</p>
-                        <p className="text-sm font-bold text-primary">
-                          ${(item.price * item.quantity).toFixed(2)}
-                        </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">Expiry</label>
+                        <input
+                          type="text"
+                          placeholder="MM/YY"
+                          required
+                          className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">CVV</label>
+                        <input
+                          type="password"
+                          placeholder="123"
+                          maxLength={4}
+                          required
+                          className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
 
-                <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3 mb-6">
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>Subtotal</span>
-                    <span>${cartTotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>Shipping</span>
-                    <span className="text-green-600">FREE</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>Tax</span>
-                    <span>${(cartTotal * 0).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-xl font-bold text-slate-900 dark:text-white pt-2">
-                    <span>Total</span>
-                    <span className="text-primary">${cartTotal.toFixed(2)}</span>
-                  </div>
+                <div className="pt-4">
+                  <Button
+                    type="submit"
+                    size="md"
+                    disabled={isProcessing}
+                    className="w-full py-3 text-sm font-semibold shadow-sm"
+                  >
+                    {isProcessing ? 'Processing Transaction...' : `Pay ${formatPrice(cartTotal)} Now`}
+                  </Button>
                 </div>
+              </form>
 
-                <Button
-                  size="lg"
-                  className="w-full"
-                  onClick={handleSubmit}
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Processing...
-                    </span>
-                  ) : (
-                    'Complete Purchase'
-                  )}
-                </Button>
+              <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+                <FiLock className="w-3.5 h-3.5 text-emerald-500" />
+                <span>256-bit encrypted checkout • Certified Secure</span>
+              </div>
+            </div>
+          </div>
 
-                <div className="mt-4 text-center text-sm text-slate-500">
-                  <p>By completing this purchase you agree to our</p>
-                  <div className="flex justify-center gap-2 mt-1">
-                    <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
-                    <span>and</span>
-                    <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
+          {/* Items Summary */}
+          <div className="lg:col-span-5">
+            <div className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100">
+                Summary ({cart.length} items)
+              </h2>
+
+              <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto pr-1 mb-4">
+                {cart.map((item) => (
+                  <div key={item.id} className="py-2.5 flex items-center justify-between text-xs">
+                    <div className="max-w-[180px] truncate">
+                      <p className="font-semibold text-slate-800 truncate">{item.title}</p>
+                      <span className="text-[11px] text-slate-400">Qty: {item.quantity}</span>
+                    </div>
+                    <span className="font-bold text-slate-900">{formatPrice(item.price * item.quantity)}</span>
                   </div>
+                ))}
+              </div>
+
+              <div className="border-t border-slate-100 pt-3 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-600">
+                  <span>Subtotal</span>
+                  <span className="font-semibold text-slate-800">{formatPrice(cartTotal)}</span>
                 </div>
-              </Card>
-            </motion.div>
+                <div className="flex justify-between text-slate-600">
+                  <span>Digital Delivery</span>
+                  <span className="font-semibold text-emerald-600">Free</span>
+                </div>
+                <div className="border-t border-slate-100 pt-3 flex justify-between items-baseline">
+                  <span className="text-sm font-bold text-slate-900">Total Due</span>
+                  <span className="text-xl font-extrabold text-slate-900">
+                    {formatPrice(cartTotal)}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

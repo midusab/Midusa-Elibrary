@@ -1,103 +1,106 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { CATEGORIES } from '../constants/categories';
+import { FiArrowRight, FiBookOpen } from 'react-icons/fi';
 import Card from '../components/ui/Card';
-
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 }
-};
-
-const staggerContainer = {
-  animate: {
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
+import CategoryIcon from '../components/ui/CategoryIcon';
+import { getCategories } from '../services/api';
 
 export default function Categories() {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function load() {
+      try {
+        const data = await getCategories();
+        if (isMounted) setCategories(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Error loading categories:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 py-8 sm:py-12 lg:py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white py-10 sm:py-16">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-10 sm:mb-16"
+          transition={{ duration: 0.35 }}
+          className="text-center mb-10 sm:mb-14"
         >
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-3 sm:mb-4 tracking-tight">
-            Browse Categories
+          <span className="text-xs font-bold text-primary uppercase tracking-wider bg-primary-50 px-3 py-1 rounded-full">
+            Explore Niches
+          </span>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mt-3 mb-2 tracking-tight">
+            Book Categories
           </h1>
-          <p className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto px-2">
-            Explore our curated collection of eBooks across various domains
+          <p className="text-xs sm:text-sm md:text-base text-slate-600 max-w-xl mx-auto">
+            Focused exclusively on four foundational pillars of human growth, understanding, wealth, and faith.
           </p>
         </motion.div>
 
-        {/* Categories Grid */}
-        <motion.div
-          variants={staggerContainer}
-          initial="initial"
-          animate="animate"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
-        >
-          {CATEGORIES.map((category) => (
+        {/* 4 Categories Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {categories.map((cat, idx) => (
             <motion.div
-              key={category.id}
-              variants={fadeInUp}
-              whileHover={{ y: -6 }}
+              key={cat.id || idx}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: idx * 0.08 }}
             >
-              <Link to={`/library?category=${category.name}`}>
-                <Card className="h-full p-5 sm:p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer group border border-slate-100 dark:border-slate-800">
-                  <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
-                    {category.icon}
+              <Link to={`/library?category=${encodeURIComponent(cat.name)}`}>
+                <Card className="h-full p-6 border border-slate-200/80 hover:border-primary/50 hover:shadow-md rounded-2xl bg-white transition-all cursor-pointer group flex flex-col justify-between">
+                  <div>
+                    <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                      <CategoryIcon slug={cat.slug} className="w-7 h-7" />
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-primary transition-colors mb-2">
+                      {cat.name}
+                    </h3>
+                    <p className="text-xs text-slate-600 leading-relaxed mb-6">
+                      {cat.description}
+                    </p>
                   </div>
-                  <h3 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                    {category.name}
-                  </h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 line-clamp-2">
-                    {category.description}
-                  </p>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">
-                      {category.bookCount} books
-                    </span>
-                    <span className="text-primary font-medium group-hover:translate-x-1.5 transition-transform flex items-center">
-                      Explore →
+
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-400 font-medium">Curated collection</span>
+                    <span className="text-primary font-semibold flex items-center group-hover:translate-x-1 transition-transform">
+                      Explore <FiArrowRight className="ml-1" />
                     </span>
                   </div>
                 </Card>
               </Link>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
 
-        {/* Featured Categories */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-12 sm:mt-20"
-        >
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-6 sm:mb-8 text-center tracking-tight">
-            Featured Categories
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-            {CATEGORIES.slice(0, 3).map((category) => (
-              <Link key={category.id} to={`/library?category=${category.name}`}>
-                <Card className="relative overflow-hidden h-44 sm:h-48 group cursor-pointer border border-transparent shadow-lg">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary to-secondary-1 opacity-90 transition-opacity group-hover:opacity-100" />
-                  <div className="relative z-10 p-5 sm:p-6 h-full flex flex-col justify-end">
-                    <div className="text-3xl sm:text-4xl mb-2">{category.icon}</div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-0.5">{category.name}</h3>
-                    <p className="text-white/80 text-xs sm:text-sm font-medium">{category.bookCount} books</p>
-                  </div>
-                </Card>
-              </Link>
-            ))}
+        {/* Banner with Liquid Glass */}
+        <div className="mt-14 p-6 sm:p-8 rounded-2xl liquid-glass border border-white/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+          <div>
+            <h3 className="text-base sm:text-lg font-bold text-slate-900">
+              Can't decide which category to begin with?
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
+              Browse our complete library with title and author search.
+            </p>
           </div>
-        </motion.div>
+          <Link
+            to="/library"
+            className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-primary text-white text-xs sm:text-sm font-semibold hover:bg-primary-600 transition-colors flex-shrink-0 shadow-sm"
+          >
+            <FiBookOpen className="mr-2" /> Open Full Library
+          </Link>
+        </div>
       </div>
     </div>
   );

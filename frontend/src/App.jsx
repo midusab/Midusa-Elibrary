@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider } from './context/CartContext';
@@ -18,37 +17,36 @@ import Dashboard from './pages/Dashboard';
 import About from './pages/About';
 import Contact from './pages/Contact';
 
-export default function App(){
-  return(
+export default function App() {
+  return (
     <Router>
       <ThemeProvider>
         <CartProvider>
           <AuthProvider>
             <ToastProvider>
-              <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors overflow-x-hidden w-full">
-                <Navigation/>
-                <main className="flex-1">
+              <div className="min-h-screen flex flex-col bg-white text-slate-900 overflow-x-hidden w-full">
+                <Navigation />
+                <main className="flex-1 pt-20 bg-white">
                   <Routes>
-                    <Route path="/" element={<Hero/>} />
-                    <Route path="/categories" element={<Categories/>} />
-                    <Route path="/library" element={<Library/>} />
-                    <Route path="/book/:id" element={<BookDetails/>} />
-                    <Route path="/cart" element={<Cart/>} />
-                    <Route path="/checkout" element={<Checkout/>} />
-                    <Route path="/login" element={<Login/>} />
-                    <Route path="/register" element={<Register/>} />
-                    <Route path="/dashboard" element={<Dashboard/>} />
-                    <Route path="/about" element={<About/>} />
-                    <Route path="/contact" element={<Contact/>} />
-                    {/* More routes will be added */}
+                    <Route path="/" element={<Hero />} />
+                    <Route path="/categories" element={<Categories />} />
+                    <Route path="/library" element={<Library />} />
+                    <Route path="/book/:id" element={<BookDetails />} />
+                    <Route path="/cart" element={<Cart />} />
+                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
                   </Routes>
                 </main>
-                <Footer/>
+                <Footer />
               </div>
             </ToastProvider>
           </AuthProvider>
         </CartProvider>
       </ThemeProvider>
     </Router>
-  )
+  );
 }

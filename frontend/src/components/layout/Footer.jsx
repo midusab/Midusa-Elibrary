@@ -1,112 +1,104 @@
-import { FiFacebook, FiTwitter, FiInstagram, FiLinkedin, FiMail, FiPhone, FiMapPin } from 'react-icons/fi';
-import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { FiMail, FiPhone, FiMapPin, FiShield, FiHeart } from 'react-icons/fi';
+import { CATEGORIES } from '../../constants/categories';
+import CategoryIcon from '../ui/CategoryIcon';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-slate-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+    <footer className="bg-slate-900 text-white border-t border-slate-800">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* About Section */}
-          <div>
-            <div className="flex items-center mb-4">
-              <img src="/src/assets/logo.jpg" alt="MidusaElibrary" className="h-10 w-10 rounded-full" />
-              <span className="ml-2 text-xl font-bold text-primary">MidusaElibrary</span>
-            </div>
-            <p className="text-slate-400 mb-4">
-              Get Your Best eBooks Today. Elevate Your Knowledge with our curated collection of premium digital resources.
+          <div className="md:col-span-1">
+            <Link to="/" className="flex items-center gap-2.5 mb-3.5">
+              <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-base shadow-sm">
+                M
+              </div>
+              <span className="text-2xl font-bold text-white tracking-tight">MidusaElibrary</span>
+            </Link>
+            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+              Curated digital library focused strictly on Self Development, Psychology, Finance & Business, and Christianity.
             </p>
-            <div className="flex space-x-4">
-              <motion.a
-                whileHover={{ scale: 1.2 }}
-                href="#"
-                className="text-slate-400 hover:text-primary transition-colors"
-              >
-                <FiFacebook className="w-6 h-6" />
-              </motion.a>
-              <motion.a
-                whileHover={{ scale: 1.2 }}
-                href="#"
-                className="text-slate-400 hover:text-primary transition-colors"
-              >
-                <FiTwitter className="w-6 h-6" />
-              </motion.a>
-              <motion.a
-                whileHover={{ scale: 1.2 }}
-                href="#"
-                className="text-slate-400 hover:text-primary transition-colors"
-              >
-                <FiInstagram className="w-6 h-6" />
-              </motion.a>
-              <motion.a
-                whileHover={{ scale: 1.2 }}
-                href="#"
-                className="text-slate-400 hover:text-primary transition-colors"
-              >
-                <FiLinkedin className="w-6 h-6" />
-              </motion.a>
+            <div className="flex items-center gap-2 text-sm text-slate-400">
+              <FiShield className="text-primary w-4 h-4" />
+              <span>Certified Digital Delivery</span>
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Quick Links: 18px Heading, 14px Links */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-slate-400 hover:text-primary transition-colors">Home</a></li>
-              <li><a href="#" className="text-slate-400 hover:text-primary transition-colors">Library</a></li>
-              <li><a href="#" className="text-slate-400 hover:text-primary transition-colors">Categories</a></li>
-              <li><a href="#" className="text-slate-400 hover:text-primary transition-colors">About Us</a></li>
-              <li><a href="#" className="text-slate-400 hover:text-primary transition-colors">Contact</a></li>
-            </ul>
-          </div>
-
-          {/* Catalog & Content */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Catalog & Content</h3>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-slate-400 hover:text-primary transition-colors">Programming</a></li>
-              <li><a href="#" className="text-slate-400 hover:text-primary transition-colors">Business</a></li>
-              <li><a href="#" className="text-slate-400 hover:text-primary transition-colors">Finance</a></li>
-              <li><a href="#" className="text-slate-400 hover:text-primary transition-colors">Psychology</a></li>
-              <li><a href="#" className="text-slate-400 hover:text-primary transition-colors">Self Development</a></li>
-            </ul>
-          </div>
-
-          {/* Contact Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
-            <ul className="space-y-3">
-              <li className="flex items-start space-x-3">
-                <FiPhone className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                <span className="text-slate-400">0112478220</span>
+            <h3 className="text-lg font-bold text-white mb-4 tracking-tight">
+              Navigation
+            </h3>
+            <ul className="space-y-2.5 text-sm">
+              <li>
+                <Link to="/" className="text-slate-400 hover:text-white transition-colors">Home</Link>
               </li>
-              <li className="flex items-start space-x-3">
-                <FiMail className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                <a href="mailto:midusab@gmail.com" className="text-slate-400 hover:text-primary transition-colors">
+              <li>
+                <Link to="/library" className="text-slate-400 hover:text-white transition-colors">Browse Library</Link>
+              </li>
+              <li>
+                <Link to="/categories" className="text-slate-400 hover:text-white transition-colors">All Categories</Link>
+              </li>
+              <li>
+                <Link to="/about" className="text-slate-400 hover:text-white transition-colors">About Us</Link>
+              </li>
+              <li>
+                <Link to="/contact" className="text-slate-400 hover:text-white transition-colors">Contact Support</Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* 4 Core Categories: 18px Heading, 14px Links */}
+          <div>
+            <h3 className="text-lg font-bold text-white mb-4 tracking-tight">
+              Core Niches
+            </h3>
+            <ul className="space-y-2.5 text-sm">
+              {CATEGORIES.map((cat) => (
+                <li key={cat.id}>
+                  <Link
+                    to={`/library?category=${encodeURIComponent(cat.name)}`}
+                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-2"
+                  >
+                    <CategoryIcon slug={cat.slug} className="w-4 h-4 text-primary" />
+                    <span>{cat.name}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact Information: 18px Heading, 14px Links */}
+          <div>
+            <h3 className="text-lg font-bold text-white mb-4 tracking-tight">
+              Support
+            </h3>
+            <ul className="space-y-3 text-sm text-slate-400">
+              <li className="flex items-center gap-2.5">
+                <FiPhone className="text-primary flex-shrink-0 w-4 h-4" />
+                <span>0112478220</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <FiMail className="text-primary flex-shrink-0 w-4 h-4" />
+                <a href="mailto:midusab@gmail.com" className="hover:text-white transition-colors">
                   midusab@gmail.com
                 </a>
               </li>
-              <li className="flex items-start space-x-3">
-                <FiMapPin className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                <span className="text-slate-400">Nairobi, Kenya</span>
+              <li className="flex items-center gap-2.5">
+                <FiMapPin className="text-primary flex-shrink-0 w-4 h-4" />
+                <span>Nairobi, Kenya</span>
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Bottom Section */}
-        <div className="border-t border-slate-800 mt-8 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4">
-            <p className="text-slate-400 text-sm">
-              © {currentYear} MidusaElibrary. All rights reserved.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
-              <a href="#" className="text-slate-400 hover:text-primary text-sm transition-colors">Terms & Conditions</a>
-              <a href="#" className="text-slate-400 hover:text-primary text-sm transition-colors">Privacy Policy</a>
-              <a href="#" className="text-slate-400 hover:text-primary text-sm transition-colors">FAQ</a>
-            </div>
-          </div>
+        {/* Bottom Section: 12px Copyright */}
+        <div className="border-t border-slate-800 mt-10 pt-6 flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 gap-3">
+          <p>© {currentYear} MidusaElibrary. All rights reserved.</p>
+          <p className="text-slate-500">Prices in Kenyan Shillings (KSh)</p>
         </div>
       </div>
     </footer>

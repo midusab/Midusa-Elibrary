@@ -6,14 +6,16 @@ const Card = ({
   hover = true,
   glassmorphism = false 
 }) => {
-  const baseStyles = 'rounded-2xl shadow-lg';
-  const hoverStyles = hover ? 'hover:shadow-xl transition-all duration-300' : '';
-  const glassStyles = glassmorphism ? 'glassmorphism' : 'bg-white dark:bg-slate-800';
+  const baseStyles = 'rounded-2xl';
+  const hoverStyles = hover ? 'hover:shadow-md transition-all duration-250' : '';
+  const surfaceStyles = glassmorphism 
+    ? 'liquid-glass' 
+    : 'bg-white border border-slate-200/80 shadow-sm';
   
   return (
     <motion.div
-      whileHover={hover ? { y: -4 } : {}}
-      className={`${baseStyles} ${hoverStyles} ${glassStyles} ${className}`}
+      whileHover={hover ? { y: -3 } : {}}
+      className={`${baseStyles} ${hoverStyles} ${surfaceStyles} ${className}`}
     >
       {children}
     </motion.div>

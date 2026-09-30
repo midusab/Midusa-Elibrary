@@ -1,308 +1,388 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FiBookOpen, FiDownloadCloud, FiStar, FiUsers, FiTrendingUp, FiAward } from 'react-icons/fi';
+import { FiBookOpen, FiDownloadCloud, FiStar, FiArrowRight, FiShield } from 'react-icons/fi';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import { BOOKS } from '../data/books';
-
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 }
-};
-
-const staggerContainer = {
-  animate: {
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
-
+import CategoryIcon from '../components/ui/CategoryIcon';
+import { getBooks } from '../services/api';
+import { formatPrice } from '../utils/currency';
+import { CATEGORIES } from '../constants/categories';
+import Heroimg from '../assets/heroimg4.avif'
 export default function Hero() {
-  const featuredBooks = BOOKS.filter(book => book.featured).slice(0, 3);
-  const bestSellers = BOOKS.filter(book => book.bestseller).slice(0, 4);
+  const [featuredBooks, setFeaturedBooks] = useState([]);
+  const [bestsellers, setBestsellers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadData() {
+      try {
+        const [featuredRes, bestsellersRes] = await Promise.all([
+          getBooks({ featured: true, limit: 3 }),
+          getBooks({ bestseller: true, limit: 4 })
+        ]);
+        if (isMounted) {
+          setFeaturedBooks(Array.isArray(featuredRes?.books) ? featuredRes.books.slice(0, 3) : []);
+          setBestsellers(Array.isArray(bestsellersRes?.books) ? bestsellersRes.books.slice(0, 4) : []);
+        }
+      } catch (err) {
+        console.error('Error loading hero books:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-50/60 via-white to-secondary-1/10 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5" />
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 lg:py-28">
+    <div className="bg-white min-h-screen text-slate-900 relative">
+      {/* Subtle Ambient Liquid Light Glow Behind Header */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-96 bg-gradient-to-b from-blue-50/50 via-slate-50/30 to-transparent pointer-events-none -z-10 rounded-full blur-3xl opacity-70" />
+
+      {/* Hero Header Section */}
+      <section className="relative pt-8 pb-14 sm:pt-14 sm:pb-20 
+      h-screen bg-cover bg-center
+      border-b  bg-no-repeat border-slate-100
+      " style={{
+          backgroundImage: `url(${Heroimg})`,
+        }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          {/* Liquid Glass Category Pills Header (No Emojis) */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center"
+            transition={{ duration: 0.3 }}
+            className="inline-flex flex-wrap items-center justify-center gap-2 mb-6"
           >
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 dark:text-white mb-4 sm:mb-6 tracking-tight leading-tight"
-            >
-              <span className="text-gradient">Unlock Unlimited</span>
-              <br />
-              Knowledge
-            </motion.h1>
-            
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-300 mb-6 sm:mb-8 max-w-2xl sm:max-w-3xl mx-auto px-2"
-            >
-              Access powerful eBooks in business, technology, psychology, finance, and personal development.
-            </motion.p>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center w-full max-w-xs sm:max-w-none mx-auto"
-            >
-              <Link to="/library" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto px-8">
-                  Browse Library
-                </Button>
+            {CATEGORIES.map((cat) => (
+              <Link
+                key={cat.id}
+                to={`/library?category=${encodeURIComponent(cat.name)}`}
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold liquid-glass-pill hover:bg-primary-50/80 hover:text-primary text-slate-700 transition-all duration-200 hover:scale-[1.02] flex items-center gap-1.5"
+              >
+                <CategoryIcon slug={cat.slug} className="w-3.5 h-3.5 text-primary" />
+                <span>{cat.name}</span>
               </Link>
-              <Link to="/categories" className="w-full sm:w-auto">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto px-8">
-                  Start Learning
-                </Button>
-              </Link>
-            </motion.div>
+            ))}
           </motion.div>
 
-          {/* Floating Book Cards */}
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            animate="animate"
-            className="mt-12 sm:mt-16 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6"
+          {/* Main Title - 72px Scale */}
+          <motion.h1
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1] mb-5 sm:mb-6 max-w-4xl mx-auto"
           >
-            {featuredBooks.map((book, index) => (
-              <motion.div
-                key={book.id}
-                variants={fadeInUp}
-                whileHover={{ y: -6 }}
-                className="relative"
-              >
-                <Card glassmorphism className="overflow-hidden">
-                  <img
-                    src={book.coverImage}
-                    alt={book.title}
-                    className="w-full h-48 sm:h-52 object-cover"
-                  />
-                  <div className="p-4 sm:p-5">
-                    <h3 className="font-semibold text-slate-900 dark:text-white mb-2 line-clamp-1">{book.title}</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{book.author}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-primary font-bold text-lg">${book.price}</span>
-                      <div className="flex items-center text-yellow-500">
-                        <FiStar className="w-4 h-4 fill-current" />
-                        <span className="ml-1 text-sm font-medium text-slate-700 dark:text-slate-300">{book.rating}</span>
+            Curated eBooks to <span className="text-primary">Elevate Your Mind</span>
+          </motion.h1>
+
+          {/* Subtitle - 20px Scale */}
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="text-lg sm:text-xl text-slate-600 mb-8 max-w-2xl mx-auto leading-relaxed"
+          >
+            Focused exclusively on Self Development, Psychology, Finance & Business, and Christianity. Instant digital delivery with Kenyan Shilling (KSh) checkout.
+          </motion.p>
+
+          {/* Action Buttons - 16px Scale */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto"
+          >
+            <Link to="/library" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto px-7 py-3 text-base font-semibold shadow-sm hover:shadow">
+                Explore Full Library
+              </Button>
+            </Link>
+            <Link to="/categories" className="w-full sm:w-auto">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto px-7 py-3 text-base font-semibold">
+                Browse 4 Categories
+              </Button>
+            </Link>
+          </motion.div>
+
+          {/* Value Highlights in Liquid Glass Cards */}
+          <div className="mt-12 pt-8 border-t border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-4 text-left ">
+            <div className="flex items-center gap-2.5 p-3 rounded-2xl liquid-glass">
+              <div className="w-8 h-8 rounded-xl bg-primary-50 text-primary flex items-center justify-center flex-shrink-0">
+                <FiDownloadCloud className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-800">Instant PDF Download</p>
+                <p className="text-[11px] text-slate-500">Read on any device</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 p-3 rounded-2xl liquid-glass">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                <FiBookOpen className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-800">4 Core Niches</p>
+                <p className="text-[11px] text-slate-500">Strictly curated</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 p-3 rounded-2xl liquid-glass">
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+                <FiStar className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-800">Kenyan Shillings</p>
+                <p className="text-[11px] text-slate-500">M-PESA ready</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 p-3 rounded-2xl liquid-glass">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-primary flex items-center justify-center flex-shrink-0">
+                <FiShield className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-800">Google 1-Click Auth</p>
+                <p className="text-[11px] text-slate-500">Fast & verified</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Picks Section */}
+      <section className="py-12 sm:py-16 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-3">
+            <div>
+              <span className="text-sm font-bold text-primary uppercase tracking-wider">Handpicked</span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
+                Featured Books
+              </h2>
+            </div>
+            <Link
+              to="/library?sortBy=featured"
+              className="inline-flex items-center text-sm font-semibold text-primary hover:text-primary-700 transition-colors"
+            >
+              See all in library <FiArrowRight className="ml-1" />
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="rounded-2xl border border-slate-100 p-5 bg-white animate-pulse">
+                  <div className="aspect-[16/10] bg-slate-100 rounded-xl mb-4" />
+                  <div className="h-5 bg-slate-100 rounded-lg w-3/4 mb-2" />
+                  <div className="h-4 bg-slate-100 rounded-lg w-1/2 mb-3" />
+                  <div className="h-8 bg-slate-50 rounded-lg mb-4" />
+                  <div className="flex justify-between items-center pt-3 border-t border-slate-50">
+                    <div className="h-5 bg-slate-100 rounded w-20" />
+                    <div className="h-8 bg-slate-100 rounded-xl w-24" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredBooks.map((book) => (
+                <motion.div
+                  key={book.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="h-full flex flex-col overflow-hidden bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl shadow-sm hover:shadow transition-all">
+                    <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                      <img
+                        src={book.coverImage}
+                        alt={book.title}
+                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                        loading="lazy"
+                      />
+                      <span className="absolute top-2.5 left-2.5 bg-white/95 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm">
+                        {book.category}
+                      </span>
+                    </div>
+
+                    <div className="p-5 flex-1 flex flex-col justify-between">
+                      <div>
+                        {/* 18px Title */}
+                        <h3 className="text-lg font-bold text-slate-900 line-clamp-1 mb-1">
+                          {book.title}
+                        </h3>
+                        {/* 14px Author */}
+                        <p className="text-sm text-slate-500 mb-2 truncate">{book.author}</p>
+                        {/* 14px Description */}
+                        <p className="text-sm text-slate-600 line-clamp-2 mb-4 leading-relaxed">
+                          {book.description}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                        <div>
+                          {/* 16px Price */}
+                          <span className="text-base font-bold text-slate-900">{formatPrice(book.price)}</span>
+                          <div className="flex items-center text-amber-500 text-sm mt-0.5 font-semibold">
+                            <FiStar className="w-3.5 h-3.5 fill-current mr-1" />
+                            <span>{book.rating || 4.8}</span>
+                          </div>
+                        </div>
+
+                        <Link to={`/book/${book.id}`}>
+                          {/* 14px Button */}
+                          <Button size="sm" variant="outline" className="text-sm font-semibold px-4 py-2">
+                            View Details
+                          </Button>
+                        </Link>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Statistics Section */}
-      <section className="py-10 sm:py-16 bg-white dark:bg-slate-900 border-y border-slate-100 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
-          >
-            {[
-              { icon: FiBookOpen, label: 'Books', value: '12,000+' },
-              { icon: FiUsers, label: 'Active Readers', value: '45K' },
-              { icon: FiDownloadCloud, label: 'Downloads', value: '100K+' },
-              { icon: FiStar, label: 'Rating', value: '4.8' }
-            ].map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                variants={fadeInUp}
-                className="text-center p-3 sm:p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/40"
-              >
-                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 mb-3 sm:mb-4">
-                  <stat.icon className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-                </div>
-                <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-1">{stat.value}</div>
-                <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">{stat.label}</div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-12 sm:py-20 bg-white dark:bg-slate-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-10 sm:mb-16"
-          >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-3 sm:mb-4 tracking-tight">
-              Why Choose MidusaElibrary?
-            </h2>
-            <p className="text-base sm:text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto px-2">
-              Experience the future of digital reading with our premium platform
-            </p>
-          </motion.div>
-
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
-          >
-            {[
-              {
-                icon: FiDownloadCloud,
-                title: 'Instant Access',
-                description: 'Get immediate access to your purchased books. Download and read anytime, anywhere.'
-              },
-              {
-                icon: FiTrendingUp,
-                title: 'Curated Content',
-                description: 'Hand-picked collection of premium eBooks from industry experts and thought leaders.'
-              },
-              {
-                icon: FiAward,
-                title: 'Premium Quality',
-                description: 'High-quality formatting and professional editing for the best reading experience.'
-              }
-            ].map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                variants={fadeInUp}
-                whileHover={{ y: -5 }}
-              >
-                <Card className="p-6 sm:p-8 text-center h-full border border-slate-100 dark:border-slate-800">
-                  <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-primary mb-4 sm:mb-6">
-                    <feature.icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white mb-2 sm:mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
       {/* Best Sellers Section */}
-      <section className="py-12 sm:py-20 bg-slate-50/60 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 sm:mb-12"
-          >
+      <section className="py-12 sm:py-16 bg-white border-t border-slate-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-3">
             <div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-1 sm:mb-2 tracking-tight">
-                Best Sellers
+              <span className="text-sm font-bold text-emerald-600 uppercase tracking-wider">Top Rated</span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
+                Popular & Best Sellers
               </h2>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
-                Discover what our readers are loving
-              </p>
             </div>
-            <Link to="/library">
-              <Button variant="outline" size="sm" className="sm:size-md">View All</Button>
+            <Link
+              to="/library?sortBy=popular"
+              className="inline-flex items-center text-sm font-semibold text-primary hover:text-primary-700 transition-colors"
+            >
+              View catalog <FiArrowRight className="ml-1" />
             </Link>
-          </motion.div>
+          </div>
 
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
-          >
-            {bestSellers.map((book) => (
-              <motion.div
-                key={book.id}
-                variants={fadeInUp}
-                whileHover={{ y: -6 }}
-              >
-                <Card className="overflow-hidden h-full flex flex-col justify-between border border-slate-100 dark:border-slate-800">
-                  <div>
-                    <div className="relative">
-                      <img
-                        src={book.coverImage}
-                        alt={book.title}
-                        className="w-full h-56 sm:h-64 object-cover"
-                      />
-                      <div className="absolute top-3 right-3 bg-primary text-white px-2.5 py-0.5 rounded-full text-xs font-semibold shadow">
-                        Bestseller
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {[1, 2, 3, 4].map((n) => (
+                <div key={n} className="rounded-2xl border border-slate-100 p-4 bg-white animate-pulse">
+                  <div className="aspect-[3/4] bg-slate-100 rounded-xl mb-3" />
+                  <div className="h-4 bg-slate-100 rounded w-1/3 mb-2" />
+                  <div className="h-5 bg-slate-100 rounded w-3/4 mb-2" />
+                  <div className="h-4 bg-slate-100 rounded w-1/2 mb-4" />
+                  <div className="h-8 bg-slate-100 rounded-xl w-full" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {bestsellers.map((book) => (
+                <motion.div
+                  key={book.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="h-full flex flex-col justify-between overflow-hidden bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl shadow-sm hover:shadow transition-all">
+                    <div>
+                      <div className="relative aspect-[3/4] overflow-hidden bg-slate-100">
+                        <img
+                          src={book.coverImage}
+                          alt={book.title}
+                          className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                          loading="lazy"
+                        />
+                        <span className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-semibold px-2 py-0.5 rounded shadow">
+                          Bestseller
+                        </span>
                       </div>
-                    </div>
-                    <div className="p-4 sm:p-5">
-                      <h3 className="font-semibold text-slate-900 dark:text-white mb-1.5 line-clamp-1 text-base sm:text-lg">
-                        {book.title}
-                      </h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{book.author}</p>
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center text-yellow-500">
-                          <FiStar className="w-4 h-4 fill-current" />
-                          <span className="ml-1 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">{book.rating}</span>
+
+                      <div className="p-4">
+                        <span className="text-xs font-semibold text-primary block mb-1 truncate">
+                          {book.category}
+                        </span>
+                        {/* 18px Title */}
+                        <h3 className="text-lg font-bold text-slate-900 line-clamp-1 mb-1">
+                          {book.title}
+                        </h3>
+                        {/* 14px Author */}
+                        <p className="text-sm text-slate-500 mb-3 truncate">{book.author}</p>
+
+                        <div className="flex items-center justify-between">
+                          {/* 16px Price */}
+                          <span className="text-base font-bold text-slate-900">{formatPrice(book.price)}</span>
+                          <div className="flex items-center text-amber-500 text-sm font-semibold">
+                            <FiStar className="w-3.5 h-3.5 fill-current mr-1" />
+                            <span>{book.rating || 4.8}</span>
+                          </div>
                         </div>
-                        <span className="text-primary font-bold text-lg">${book.price}</span>
                       </div>
                     </div>
-                  </div>
-                  <div className="px-4 pb-4 sm:px-5 sm:pb-5">
-                    <Link to={`/book/${book.id}`}>
-                      <Button className="w-full" size="sm">
-                        View Details
-                      </Button>
-                    </Link>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
+
+                    <div className="p-4 pt-0">
+                      <Link to={`/book/${book.id}`}>
+                        {/* 14px Button */}
+                        <Button size="sm" variant="outline" className="w-full text-sm font-semibold py-2">
+                          View Book
+                        </Button>
+                      </Link>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-14 sm:py-20 bg-gradient-primary">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-4 sm:mb-6 tracking-tight">
-              Ready to Elevate Your Knowledge?
+      {/* 4 Pillars Category Grid (No emojis, vector CategoryIcon) */}
+      <section className="py-12 sm:py-16 bg-white border-t border-slate-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-xl mx-auto mb-10 sm:mb-12">
+            <span className="text-sm font-bold text-primary uppercase tracking-wider">Explore By Topic</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
+              Categories
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 max-w-2xl mx-auto px-2">
-              Join thousands of readers who are already transforming their lives with our curated collection.
+            <p className="text-base text-slate-600 mt-2">
+              Choose your focus area and find deep, actionable knowledge.
             </p>
-            <Link to="/library">
-              <Button size="lg" className="bg-white text-primary hover:bg-slate-100 shadow-xl px-8">
-                Get Started Today
-              </Button>
-            </Link>
-          </motion.div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {CATEGORIES.map((cat) => (
+              <Link
+                key={cat.id}
+                to={`/library?category=${encodeURIComponent(cat.name)}`}
+                className="group p-5 rounded-2xl bg-white border border-slate-200/80 hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="w-12 h-12 rounded-xl bg-primary-50 text-primary flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                    <CategoryIcon slug={cat.slug} className="w-6 h-6" />
+                  </div>
+                  {/* 18px Category Name */}
+                  <h3 className="font-bold text-slate-900 text-lg mb-1.5 group-hover:text-primary transition-colors">
+                    {cat.name}
+                  </h3>
+                  {/* 14px Category Description */}
+                  <p className="text-sm text-slate-500 leading-relaxed mb-4 line-clamp-2">
+                    {cat.description}
+                  </p>
+                </div>
+                {/* 14px Link */}
+                <div className="flex items-center text-sm font-semibold text-primary">
+                  <span>Browse books</span>
+                  <FiArrowRight className="ml-1 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
     </div>

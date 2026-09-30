@@ -11,17 +11,27 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// Root info
 app.get('/', (req, res) => {
   res.json({
     message: 'MidusaElibrary API',
     version: '1.0.0',
-    status: 'running'
+    status: 'running',
+    categories: [
+      'Self Development',
+      'Psychology',
+      'Finance & Business',
+      'Christianity'
+    ]
   });
 });
 
@@ -29,6 +39,16 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+
+// Register API Routes
+try {
+  app.use('/api/auth', require('./routes/authRoutes'));
+  app.use('/api/books', require('./routes/bookRoutes'));
+  app.use('/api/categories', require('./routes/categoryRoutes'));
+  app.use('/api/orders', require('./routes/orderRoutes'));
+} catch (e) {
+  console.warn('Some route modules require database connection:', e.message);
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -1,16 +1,11 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiArrowLeft } from 'react-icons/fi';
+import { FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiArrowLeft, FiShield } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
-
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 }
-};
+import { formatPrice } from '../utils/currency';
 
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, clearCart, cartTotal, cartCount } = useCart();
@@ -18,11 +13,7 @@ export default function Cart() {
 
   const handleRemoveFromCart = (bookId, bookTitle) => {
     removeFromCart(bookId);
-    success(`${bookTitle} removed from cart`);
-  };
-
-  const handleUpdateQuantity = (bookId, quantity) => {
-    updateQuantity(bookId, quantity);
+    success(`"${bookTitle}" removed from cart`);
   };
 
   const handleClearCart = () => {
@@ -32,196 +23,153 @@ export default function Cart() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 py-12 sm:py-20 flex items-center justify-center">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center"
-          >
-            <div className="text-5xl sm:text-6xl mb-4">🛒</div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-3">
-              Your cart is empty
-            </h2>
-            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-8">
-              Looks like you haven't added any books to your cart yet.
-            </p>
-            <Link to="/library">
-              <Button size="lg" className="px-8">
-                Browse Library
-              </Button>
-            </Link>
-          </motion.div>
+      <div className="min-h-[75vh] bg-white py-12 sm:py-20 flex items-center justify-center">
+        <div className="max-w-md mx-auto px-4 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mx-auto mb-4">
+            <FiShoppingCart className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">
+            Your cart is empty
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 mb-6">
+            Explore our curated collection across Self Development, Psychology, Finance, and Christianity.
+          </p>
+          <Link to="/library">
+            <Button size="md" className="px-6 text-xs sm:text-sm font-semibold">
+              Browse Library
+            </Button>
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 py-8 sm:py-12 lg:py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white py-8 sm:py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 sm:mb-8"
-        >
-          <Link to="/library">
-            <Button variant="ghost" className="mb-4">
-              <FiArrowLeft className="mr-2" />
-              Continue Shopping
-            </Button>
+        <div className="mb-6 sm:mb-8">
+          <Link to="/library" className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-primary transition-colors mb-3">
+            <FiArrowLeft className="mr-1.5 h-4 w-4" />
+            Continue Browsing
           </Link>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-2">
-            Shopping Cart ({cartCount} {cartCount === 1 ? 'item' : 'items'})
-          </h1>
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* Cart Items */}
-          <div className="lg:col-span-2">
-            <motion.div
-              variants={fadeInUp}
-              initial="initial"
-              animate="animate"
-              className="space-y-4"
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Shopping Cart ({cartCount} {cartCount === 1 ? 'book' : 'books'})
+            </h1>
+            <button
+              onClick={handleClearCart}
+              className="text-xs font-semibold text-slate-400 hover:text-rose-600 transition-colors"
             >
-              {cart.map((item) => (
-                <motion.div
-                  key={item.id}
-                  variants={fadeInUp}
-                >
-                  <Card className="p-4 sm:p-6 border border-slate-100 dark:border-slate-800">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <Link to={`/book/${item.id}`} className="flex-shrink-0 flex justify-center sm:block">
-                        <img
-                          src={item.coverImage}
-                          alt={item.title}
-                          className="w-28 h-40 sm:w-20 sm:h-28 object-cover rounded-xl"
-                        />
-                      </Link>
-                      <div className="flex-1 flex flex-col justify-between">
-                        <div className="flex justify-between items-start gap-2 mb-2">
-                          <div>
-                            <Link to={`/book/${item.id}`}>
-                              <h3 className="font-semibold text-slate-900 dark:text-white hover:text-primary transition-colors text-base sm:text-lg">
-                                {item.title}
-                              </h3>
-                            </Link>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">{item.author}</p>
-                          </div>
-                          <button
-                            onClick={() => handleRemoveFromCart(item.id, item.title)}
-                            className="text-red-500 hover:text-red-600 p-1 transition-colors"
-                            title="Remove from cart"
-                          >
-                            <FiTrash2 className="w-5 h-5" />
-                          </button>
-                        </div>
+              Clear Cart
+            </button>
+          </div>
+        </div>
 
-                        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                              className="w-8 h-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                            >
-                              <FiMinus className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="w-8 text-center font-medium text-slate-900 dark:text-white">
-                              {item.quantity}
-                            </span>
-                            <button
-                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                              className="w-8 h-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                            >
-                              <FiPlus className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-lg sm:text-xl font-bold text-primary">
-                              ${(item.price * item.quantity).toFixed(2)}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              ${item.price} each
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </motion.div>
-
-            {cart.length > 1 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-6"
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Cart Items List */}
+          <div className="lg:col-span-8 space-y-3.5">
+            {cart.map((item) => (
+              <div
+                key={item.id}
+                className="p-4 sm:p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between"
               >
-                <Button
-                  variant="outline"
-                  onClick={handleClearCart}
-                  className="w-full"
-                >
-                  Clear Cart
-                </Button>
-              </motion.div>
-            )}
+                <div className="flex gap-3.5 items-center min-w-0">
+                  <Link to={`/book/${item.id}`} className="flex-shrink-0">
+                    <img
+                      src={item.coverImage}
+                      alt={item.title}
+                      className="w-16 h-22 object-cover rounded-xl bg-slate-100 border border-slate-100"
+                    />
+                  </Link>
+
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-semibold text-primary block truncate mb-0.5">
+                      {item.category}
+                    </span>
+                    <Link to={`/book/${item.id}`} className="hover:text-primary transition-colors">
+                      <h3 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                        {item.title}
+                      </h3>
+                    </Link>
+                    <p className="text-[11px] text-slate-500 mb-1.5 truncate">By {item.author}</p>
+                    <span className="text-sm font-bold text-slate-900">
+                      {formatPrice(item.price)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100">
+                  {/* Quantity controls */}
+                  <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-2 py-1 bg-slate-50/50">
+                    <button
+                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      className="text-slate-500 hover:text-slate-800 p-1"
+                    >
+                      <FiMinus className="w-3 h-3" />
+                    </button>
+                    <span className="text-xs font-bold text-slate-800 w-5 text-center">
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      className="text-slate-500 hover:text-slate-800 p-1"
+                    >
+                      <FiPlus className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  <span className="text-sm font-extrabold text-slate-900 min-w-[80px] text-right">
+                    {formatPrice(item.price * item.quantity)}
+                  </span>
+
+                  <button
+                    onClick={() => handleRemoveFromCart(item.id, item.title)}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors rounded-lg hover:bg-rose-50"
+                    title="Remove item"
+                  >
+                    <FiTrash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="p-6 sticky top-24">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">
-                  Order Summary
-                </h2>
+          {/* Cart Summary Column */}
+          <div className="lg:col-span-4 sticky top-24">
+            <div className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+              <h2 className="text-base font-bold text-slate-900 mb-4 pb-3 border-b border-slate-100">
+                Order Summary
+              </h2>
 
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>Subtotal ({cartCount} items)</span>
-                    <span>${cartTotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>Shipping</span>
-                    <span className="text-green-600">FREE</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span>Tax</span>
-                    <span>${(cartTotal * 0).toFixed(2)}</span>
-                  </div>
-                  <div className="border-t border-slate-200 dark:border-slate-700 pt-3">
-                    <div className="flex justify-between text-xl font-bold text-slate-900 dark:text-white">
-                      <span>Total</span>
-                      <span className="text-primary">${cartTotal.toFixed(2)}</span>
-                    </div>
-                  </div>
+              <div className="space-y-2.5 text-xs mb-6">
+                <div className="flex justify-between text-slate-600">
+                  <span>Subtotal ({cartCount} items)</span>
+                  <span className="font-semibold text-slate-800">{formatPrice(cartTotal)}</span>
                 </div>
-
-                <Link to="/checkout">
-                  <Button size="lg" className="w-full mb-4">
-                    Proceed to Checkout
-                  </Button>
-                </Link>
-
-                <Link to="/library">
-                  <Button variant="outline" className="w-full">
-                    Continue Shopping
-                  </Button>
-                </Link>
-
-                <div className="mt-6 p-4 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                  <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
-                    🔒 Secure checkout powered by Stripe
-                  </p>
+                <div className="flex justify-between text-slate-600">
+                  <span>Delivery Method</span>
+                  <span className="font-semibold text-emerald-600">Instant Digital (Free)</span>
                 </div>
-              </Card>
-            </motion.div>
+                <div className="border-t border-slate-100 pt-3 flex justify-between items-baseline">
+                  <span className="text-sm font-bold text-slate-900">Total</span>
+                  <span className="text-xl font-extrabold text-slate-900">
+                    {formatPrice(cartTotal)}
+                  </span>
+                </div>
+              </div>
+
+              <Link to="/checkout" className="block w-full">
+                <Button size="md" className="w-full py-3 text-sm font-semibold shadow-sm">
+                  Proceed to Checkout ({formatPrice(cartTotal)})
+                </Button>
+              </Link>
+
+              <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+                <FiShield className="text-emerald-500 w-3.5 h-3.5" />
+                <span>Instant access sent directly to your account</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
