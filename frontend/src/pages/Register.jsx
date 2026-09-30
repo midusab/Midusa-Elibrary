@@ -66,20 +66,20 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-20 flex items-center justify-center">
-      <div className="max-w-md w-full px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white dark:bg-slate-950 py-8 sm:py-16 flex items-center justify-center px-4">
+      <div className="max-w-md w-full">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
           <Link to="/">
-            <Button variant="ghost" className="mb-6">
+            <Button variant="ghost" className="mb-4 sm:mb-6">
               <FiArrowLeft className="mr-2" />
               Back to Home
             </Button>
           </Link>
 
-          <Card className="p-8">
+          <Card className="p-6 sm:p-8 border border-slate-100 dark:border-slate-800">
             <div className="text-center mb-8">
               <img src="/src/assets/logo.jpg" alt="MidusaElibrary" className="h-16 w-16 rounded-full mx-auto mb-4" />
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">

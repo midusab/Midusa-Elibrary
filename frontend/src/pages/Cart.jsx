@@ -32,22 +32,22 @@ export default function Cart() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-white dark:bg-slate-950 py-12 sm:py-20 flex items-center justify-center">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <div className="text-6xl mb-4">🛒</div>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+            <div className="text-5xl sm:text-6xl mb-4">🛒</div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-3">
               Your cart is empty
             </h2>
-            <p className="text-slate-600 dark:text-slate-400 mb-8">
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-8">
               Looks like you haven't added any books to your cart yet.
             </p>
             <Link to="/library">
-              <Button size="lg">
+              <Button size="lg" className="px-8">
                 Browse Library
               </Button>
             </Link>
@@ -58,13 +58,13 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-20">
+    <div className="min-h-screen bg-white dark:bg-slate-950 py-8 sm:py-12 lg:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
           <Link to="/library">
             <Button variant="ghost" className="mb-4">
@@ -72,12 +72,12 @@ export default function Cart() {
               Continue Shopping
             </Button>
           </Link>
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-2">
             Shopping Cart ({cartCount} {cartCount === 1 ? 'item' : 'items'})
           </h1>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2">
             <motion.div
@@ -91,20 +91,20 @@ export default function Cart() {
                   key={item.id}
                   variants={fadeInUp}
                 >
-                  <Card className="p-6">
-                    <div className="flex gap-4">
-                      <Link to={`/book/${item.id}`} className="flex-shrink-0">
+                  <Card className="p-4 sm:p-6 border border-slate-100 dark:border-slate-800">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <Link to={`/book/${item.id}`} className="flex-shrink-0 flex justify-center sm:block">
                         <img
                           src={item.coverImage}
                           alt={item.title}
-                          className="w-24 h-36 object-cover rounded-lg"
+                          className="w-28 h-40 sm:w-20 sm:h-28 object-cover rounded-xl"
                         />
                       </Link>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1 flex flex-col justify-between">
+                        <div className="flex justify-between items-start gap-2 mb-2">
                           <div>
                             <Link to={`/book/${item.id}`}>
-                              <h3 className="font-semibold text-slate-900 dark:text-white hover:text-primary transition-colors">
+                              <h3 className="font-semibold text-slate-900 dark:text-white hover:text-primary transition-colors text-base sm:text-lg">
                                 {item.title}
                               </h3>
                             </Link>
@@ -112,20 +112,20 @@ export default function Cart() {
                           </div>
                           <button
                             onClick={() => handleRemoveFromCart(item.id, item.title)}
-                            className="text-red-500 hover:text-red-600 transition-colors"
+                            className="text-red-500 hover:text-red-600 p-1 transition-colors"
                             title="Remove from cart"
                           >
                             <FiTrash2 className="w-5 h-5" />
                           </button>
                         </div>
 
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t sm:border-t-0 border-slate-100 dark:border-slate-800">
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                               className="w-8 h-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                             >
-                              <FiMinus className="w-4 h-4" />
+                              <FiMinus className="w-3.5 h-3.5" />
                             </button>
                             <span className="w-8 text-center font-medium text-slate-900 dark:text-white">
                               {item.quantity}
@@ -134,14 +134,14 @@ export default function Cart() {
                               onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                               className="w-8 h-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                             >
-                              <FiPlus className="w-4 h-4" />
+                              <FiPlus className="w-3.5 h-3.5" />
                             </button>
                           </div>
                           <div className="text-right">
-                            <p className="text-xl font-bold text-primary">
+                            <p className="text-lg sm:text-xl font-bold text-primary">
                               ${(item.price * item.quantity).toFixed(2)}
                             </p>
-                            <p className="text-sm text-slate-500">
+                            <p className="text-xs text-slate-500">
                               ${item.price} each
                             </p>
                           </div>

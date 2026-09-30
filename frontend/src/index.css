@@ -93,9 +93,36 @@
   background-clip: text;
 }
 
-/* Smooth scrolling */
+/* Base Resets & Layout Defaults */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Smooth scrolling and text adjustment */
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
+  color: #0f172a;
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dark body {
+  background-color: #020617;
+  color: #f8fafc;
+}
+
+img, svg, video, canvas, audio, iframe, embed, object {
+  max-width: 100%;
 }
 
 /* Custom scrollbar */

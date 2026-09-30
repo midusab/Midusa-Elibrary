@@ -97,11 +97,11 @@ const Footer = () => {
 
         {/* Bottom Section */}
         <div className="border-t border-slate-800 mt-8 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-slate-400 text-sm mb-4 md:mb-0">
+          <div className="flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4">
+            <p className="text-slate-400 text-sm">
               © {currentYear} MidusaElibrary. All rights reserved.
             </p>
-            <div className="flex space-x-6">
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
               <a href="#" className="text-slate-400 hover:text-primary text-sm transition-colors">Terms & Conditions</a>
               <a href="#" className="text-slate-400 hover:text-primary text-sm transition-colors">Privacy Policy</a>
               <a href="#" className="text-slate-400 hover:text-primary text-sm transition-colors">FAQ</a>

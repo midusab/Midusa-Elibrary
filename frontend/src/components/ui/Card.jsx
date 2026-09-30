@@ -12,7 +12,7 @@ const Card = ({
   
   return (
     <motion.div
-      whileHover={hover ? { y: -8 } : {}}
+      whileHover={hover ? { y: -4 } : {}}
       className={`${baseStyles} ${hoverStyles} ${glassStyles} ${className}`}
     >
       {children}

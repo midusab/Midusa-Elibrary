@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  fullname  String
+  email     String   @unique
+  password  String
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  orders    Order[]
+  favorites Favorite[]
+  downloads Download[]
+  
+  @@index([email])
+}
+
+model Book {
+  id          String   @id @default(uuid())
+  title       String
+  author      String
+  description String   @db.Text
+  category    String
+  coverImage  String   @db.Text
+  pdfUrl      String   @db.Text
+  price       Float
+  rating      Float    @default(0)
+  featured    Boolean  @default(false)
+  bestseller  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  orderItems  OrderItem[]
+  favorites   Favorite[]
+  downloads   Download[]
+  
+  @@index([category])
+  @@index([featured])
+  @@index([bestseller])
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String   @db.Text
+  bookCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([name])
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  userId    String
+  amount    Float
+  status    String      @default("pending")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     OrderItem[]
+  
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String
+  bookId    String
+  quantity  Int    @default(1)
+  price     Float
+  
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  book      Book  @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  
+  @@index([orderId])
+  @@index([bookId])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  bookId    String
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, bookId])
+  @@index([userId])
+  @@index([bookId])
+}
+
+model Download {
+  id           String   @id @default(uuid())
+  userId       String
+  bookId       String
+  downloadedAt DateTime @default(now())
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book         Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, bookId])
+  @@index([userId])
+  @@index([bookId])
+}

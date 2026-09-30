@@ -43,17 +43,17 @@ export default function Dashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
-        <Card className="p-12 text-center">
-          <div className="text-6xl mb-4">🔐</div>
-          <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2">
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center p-4">
+        <Card className="p-8 sm:p-12 text-center max-w-md w-full border border-slate-100 dark:border-slate-800">
+          <div className="text-5xl sm:text-6xl mb-4">🔐</div>
+          <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white mb-2">
             Please Sign In
           </h2>
-          <p className="text-slate-600 dark:text-slate-400 mb-6">
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-6">
             You need to be logged in to access your dashboard
           </p>
           <Link to="/login">
-            <Button>Sign In</Button>
+            <Button className="px-8">Sign In</Button>
           </Link>
         </Card>
       </div>
@@ -61,18 +61,18 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-20">
+    <div className="min-h-screen bg-white dark:bg-slate-950 py-8 sm:py-12 lg:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-1 tracking-tight">
             Welcome back, {user.fullname?.split(' ')[0]}!
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
             Manage your library and account settings
           </p>
         </motion.div>
@@ -82,7 +82,7 @@ export default function Dashboard() {
           variants={staggerContainer}
           initial="initial"
           animate="animate"
-          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8"
         >
           {[
             { icon: FiBookOpen, label: 'Purchased', value: purchasedBooks.length, color: 'bg-primary' },
@@ -94,91 +94,92 @@ export default function Dashboard() {
               key={stat.label}
               variants={fadeInUp}
             >
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full ${stat.color} bg-opacity-10`}>
-                    <stat.icon className={`w-6 h-6 ${stat.color.replace('bg-', 'text-')}`} />
+              <Card className="p-4 sm:p-6 border border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className={`inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full ${stat.color} bg-opacity-10`}>
+                    <stat.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color.replace('bg-', 'text-')}`} />
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
+                <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-0.5">
                   {stat.value}
                 </div>
-                <div className="text-slate-600 dark:text-slate-400">{stat.label}</div>
+                <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">{stat.label}</div>
               </Card>
             </motion.div>
           ))}
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="p-6">
-              <div className="flex items-center mb-6">
-                <div className="w-16 h-16 rounded-full bg-gradient-primary flex items-center justify-center text-white text-2xl font-bold">
+            <Card className="p-4 sm:p-6 border border-slate-100 dark:border-slate-800">
+              <div className="flex items-center mb-5 sm:mb-6">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-primary flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
                   {user.fullname?.charAt(0).toUpperCase()}
                 </div>
-                <div className="ml-4">
-                  <h3 className="font-semibold text-slate-900 dark:text-white">
+                <div className="ml-3 sm:ml-4 min-w-0">
+                  <h3 className="font-semibold text-slate-900 dark:text-white truncate text-base">
                     {user.fullname}
                   </h3>
-                  <p className="text-sm text-slate-500">{user.email}</p>
+                  <p className="text-xs sm:text-sm text-slate-500 truncate">{user.email}</p>
                 </div>
               </div>
 
-              <nav className="space-y-2">
+              <nav className="grid grid-cols-2 lg:grid-cols-1 gap-2">
                 <button
                   onClick={() => setActiveTab('purchased')}
-                  className={`w-full flex items-center px-4 py-3 rounded-xl transition-colors ${
+                  className={`w-full flex items-center justify-center lg:justify-start px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl transition-colors text-xs sm:text-sm font-medium ${
                     activeTab === 'purchased'
-                      ? 'bg-primary text-white'
+                      ? 'bg-primary text-white shadow-sm'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
-                  <FiBookOpen className="mr-3" />
-                  Purchased Books
+                  <FiBookOpen className="mr-2 sm:mr-3 w-4 h-4" />
+                  Purchased
                 </button>
                 <button
                   onClick={() => setActiveTab('favorites')}
-                  className={`w-full flex items-center px-4 py-3 rounded-xl transition-colors ${
+                  className={`w-full flex items-center justify-center lg:justify-start px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl transition-colors text-xs sm:text-sm font-medium ${
                     activeTab === 'favorites'
-                      ? 'bg-primary text-white'
+                      ? 'bg-primary text-white shadow-sm'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
-                  <FiHeart className="mr-3" />
+                  <FiHeart className="mr-2 sm:mr-3 w-4 h-4" />
                   Favorites
                 </button>
                 <button
                   onClick={() => setActiveTab('downloads')}
-                  className={`w-full flex items-center px-4 py-3 rounded-xl transition-colors ${
+                  className={`w-full flex items-center justify-center lg:justify-start px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl transition-colors text-xs sm:text-sm font-medium ${
                     activeTab === 'downloads'
-                      ? 'bg-primary text-white'
+                      ? 'bg-primary text-white shadow-sm'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
-                  <FiDownload className="mr-3" />
-                  Download History
+                  <FiDownload className="mr-2 sm:mr-3 w-4 h-4" />
+                  Downloads
                 </button>
                 <button
                   onClick={() => setActiveTab('settings')}
-                  className={`w-full flex items-center px-4 py-3 rounded-xl transition-colors ${
+                  className={`w-full flex items-center justify-center lg:justify-start px-3 py-2.5 sm:px-4 sm:py-3 rounded-xl transition-colors text-xs sm:text-sm font-medium ${
                     activeTab === 'settings'
-                      ? 'bg-primary text-white'
+                      ? 'bg-primary text-white shadow-sm'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
-                  <FiSettings className="mr-3" />
+                  <FiSettings className="mr-2 sm:mr-3 w-4 h-4" />
                   Settings
                 </button>
               </nav>
 
-              <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+              <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-slate-200 dark:border-slate-700">
                 <Button
                   variant="outline"
-                  className="w-full"
+                  size="sm"
+                  className="w-full text-xs sm:text-sm py-2"
                   onClick={handleLogout}
                 >
-                  <FiLogOut className="mr-2" />
+                  <FiLogOut className="mr-2 w-4 h-4" />
                   Sign Out
                 </Button>
               </div>

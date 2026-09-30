@@ -56,14 +56,17 @@ export default function Checkout() {
 
   if (cart.length === 0 && !orderComplete) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="text-6xl mb-4">🛒</div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+      <div className="min-h-screen bg-white dark:bg-slate-950 py-12 sm:py-20 flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center">
+          <div className="text-5xl sm:text-6xl mb-4">🛒</div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-3">
             Your cart is empty
           </h2>
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-6">
+            Add some books to your cart before proceeding to checkout.
+          </p>
           <Link to="/library">
-            <Button size="lg">Browse Library</Button>
+            <Button size="lg" className="px-8">Browse Library</Button>
           </Link>
         </div>
       </div>
@@ -72,23 +75,22 @@ export default function Checkout() {
 
   if (orderComplete) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-20">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-white dark:bg-slate-950 py-12 sm:py-20 flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center"
           >
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 dark:bg-green-900 mb-6">
-              <FiCheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+            <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100 dark:bg-green-900/50 mb-6">
+              <FiCheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-green-600 dark:text-green-400" />
             </div>
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-3 tracking-tight">
               Order Complete!
             </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-400 mb-8">
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 mb-8">
               Thank you for your purchase. Your books are now available in your dashboard.
             </p>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <Link to="/dashboard">
                 <Button size="lg" className="w-full">
                   Go to Dashboard
@@ -107,13 +109,13 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-20">
+    <div className="min-h-screen bg-white dark:bg-slate-950 py-8 sm:py-12 lg:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
           <Link to="/cart">
             <Button variant="ghost" className="mb-4">
@@ -121,15 +123,15 @@ export default function Checkout() {
               Back to Cart
             </Button>
           </Link>
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-2">
             Checkout
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
             Complete your purchase securely
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Checkout Form */}
           <div className="lg:col-span-2">
             <motion.form
@@ -195,7 +197,7 @@ export default function Checkout() {
                       placeholder="123 Main St"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                         City
@@ -277,7 +279,7 @@ export default function Checkout() {
                       className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                         Expiry Date

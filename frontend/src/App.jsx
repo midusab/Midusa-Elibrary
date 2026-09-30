@@ -25,7 +25,7 @@ export default function App(){
         <CartProvider>
           <AuthProvider>
             <ToastProvider>
-              <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 transition-colors">
+              <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors overflow-x-hidden w-full">
                 <Navigation/>
                 <main className="flex-1">
                   <Routes>

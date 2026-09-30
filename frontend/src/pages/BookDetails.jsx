@@ -26,10 +26,10 @@ export default function BookDetails() {
 
   if (!book) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
-        <Card className="p-12 text-center">
-          <div className="text-6xl mb-4">📚</div>
-          <h2 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2">
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center p-4">
+        <Card className="p-8 sm:p-12 text-center max-w-md w-full border border-slate-100 dark:border-slate-800">
+          <div className="text-5xl sm:text-6xl mb-4">📚</div>
+          <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white mb-2">
             Book not found
           </h2>
           <Link to="/library">
@@ -64,11 +64,11 @@ export default function BookDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-20">
+    <div className="min-h-screen bg-white dark:bg-slate-950 py-8 sm:py-12 lg:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <Link to="/library">
-          <Button variant="ghost" className="mb-6">
+          <Button variant="ghost" className="mb-4 sm:mb-6">
             <FiArrowLeft className="mr-2" />
             Back to Library
           </Button>
@@ -122,39 +122,39 @@ export default function BookDetails() {
               )}
             </div>
             
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
               {book.title}
             </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-400 mb-4">
+            <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 mb-4">
               by {book.author}
             </p>
 
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-6">
               <div className="flex items-center text-yellow-500">
                 {[...Array(5)].map((_, i) => (
                   <FiStar
                     key={i}
-                    className={`w-5 h-5 ${i < Math.floor(book.rating) ? 'fill-current' : ''}`}
+                    className={`w-4 h-4 sm:w-5 sm:h-5 ${i < Math.floor(book.rating) ? 'fill-current' : ''}`}
                   />
                 ))}
-                <span className="ml-2 text-slate-900 dark:text-white font-medium">
+                <span className="ml-2 text-slate-900 dark:text-white font-medium text-sm sm:text-base">
                   {book.rating}
                 </span>
               </div>
-              <span className="text-slate-500">|</span>
-              <span className="text-slate-600 dark:text-slate-400">{book.category}</span>
+              <span className="text-slate-400">|</span>
+              <span className="text-xs sm:text-sm px-2.5 py-0.5 bg-primary/10 text-primary font-medium rounded-full">{book.category}</span>
             </div>
 
             <div className="mb-6">
-              <span className="text-4xl font-bold text-primary">${book.price}</span>
+              <span className="text-3xl sm:text-4xl font-bold text-primary">${book.price}</span>
             </div>
 
-            <div className="flex gap-4 mb-8">
-              <Button size="lg" className="flex-1" onClick={handleAddToCart}>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8">
+              <Button size="lg" className="w-full sm:flex-1" onClick={handleAddToCart}>
                 <FiShoppingCart className="mr-2" />
                 Add to Cart
               </Button>
-              <Button variant="outline" size="lg" className="flex-1">
+              <Button variant="outline" size="lg" className="w-full sm:flex-1">
                 <FiDownload className="mr-2" />
                 Download Sample
               </Button>

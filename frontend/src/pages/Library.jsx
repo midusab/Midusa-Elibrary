@@ -101,53 +101,84 @@ export default function Library() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-20">
+    <div className="min-h-screen bg-white dark:bg-slate-950 py-8 sm:py-12 lg:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-6 sm:mb-8"
         >
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-2">
             Library
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
             {filteredBooks.length} books found
           </p>
         </motion.div>
 
         {/* Search and Filters */}
-        <Card className="mb-8 p-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search books, authors, or categories..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-              />
+        <Card className="mb-6 sm:mb-8 p-4 sm:p-6 border border-slate-100 dark:border-slate-800">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Search */}
+              <div className="flex-1 relative">
+                <FiSearch className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search books, authors, or categories..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 sm:py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm sm:text-base"
+                />
+              </div>
+
+              {/* Mobile Filter Toggle & View Mode Buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="lg:hidden flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 sm:py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <FiFilter className="w-4 h-4" />
+                  <span>Filters</span>
+                  {(selectedCategory !== 'all' || selectedPriceRange !== 'all') && (
+                    <span className="w-2 h-2 rounded-full bg-primary" />
+                  )}
+                </button>
+
+                <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 sm:p-2.5 rounded-lg transition-colors ${
+                      viewMode === 'grid'
+                        ? 'bg-white dark:bg-slate-700 text-primary shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400'
+                    }`}
+                    title="Grid view"
+                  >
+                    <FiGrid className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 sm:p-2.5 rounded-lg transition-colors ${
+                      viewMode === 'list'
+                        ? 'bg-white dark:bg-slate-700 text-primary shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400'
+                    }`}
+                    title="List view"
+                  >
+                    <FiList className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </button>
+                </div>
+              </div>
             </div>
 
-            {/* Mobile Filter Toggle */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="lg:hidden flex items-center justify-center gap-2 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-            >
-              <FiFilter />
-              Filters
-            </button>
-
-            {/* Filters */}
-            <div className={`${showFilters ? 'block' : 'hidden'} lg:flex flex-1 gap-4`}>
-              {/* Category Filter */}
+            {/* Filter Dropdowns */}
+            <div className={`${showFilters ? 'grid' : 'hidden lg:grid'} grid-cols-1 sm:grid-cols-3 gap-3 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-200 dark:border-slate-700`}>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm sm:text-base"
               >
                 <option value="all">All Categories</option>
                 {CATEGORIES.map(cat => (
@@ -155,63 +186,37 @@ export default function Library() {
                 ))}
               </select>
 
-              {/* Price Filter */}
               <select
                 value={selectedPriceRange}
                 onChange={(e) => setSelectedPriceRange(e.target.value)}
-                className="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm sm:text-base"
               >
                 {PRICE_RANGES.map(range => (
                   <option key={range.id} value={range.id}>{range.label}</option>
                 ))}
               </select>
 
-              {/* Sort */}
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="flex-1 px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm sm:text-base"
               >
                 {SORT_OPTIONS.map(option => (
                   <option key={option.id} value={option.id}>{option.label}</option>
                 ))}
               </select>
             </div>
-
-            {/* View Toggle */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-3 rounded-xl transition-colors ${
-                  viewMode === 'grid'
-                    ? 'bg-primary text-white'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-600'
-                }`}
-              >
-                <FiGrid />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-3 rounded-xl transition-colors ${
-                  viewMode === 'list'
-                    ? 'bg-primary text-white'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-600'
-                }`}
-              >
-                <FiList />
-              </button>
-            </div>
           </div>
         </Card>
 
         {/* Books Grid */}
         {filteredBooks.length === 0 ? (
-          <Card className="p-12 text-center">
-            <div className="text-6xl mb-4">📚</div>
-            <h3 className="text-2xl font-semibold text-slate-900 dark:text-white mb-2">
+          <Card className="p-8 sm:p-12 text-center border border-slate-100 dark:border-slate-800">
+            <div className="text-5xl sm:text-6xl mb-4">📚</div>
+            <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white mb-2">
               No books found
             </h3>
-            <p className="text-slate-600 dark:text-slate-400">
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
               Try adjusting your search or filters
             </p>
           </Card>
@@ -222,7 +227,7 @@ export default function Library() {
             animate="animate"
             className={
               viewMode === 'grid'
-                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'
                 : 'space-y-4'
             }
           >
@@ -230,95 +235,99 @@ export default function Library() {
               <motion.div
                 key={book.id}
                 variants={fadeInUp}
-                whileHover={{ y: -8 }}
+                whileHover={{ y: -6 }}
               >
                 {viewMode === 'grid' ? (
-                  <Card className="overflow-hidden h-full">
-                    <Link to={`/book/${book.id}`}>
-                      <div className="relative">
-                        <img
-                          src={book.coverImage}
-                          alt={book.title}
-                          className="w-full h-64 object-cover"
-                        />
-                        {book.bestseller && (
-                          <div className="absolute top-3 right-3 bg-primary text-white px-3 py-1 rounded-full text-sm font-medium">
-                            Bestseller
-                          </div>
-                        )}
-                        {book.featured && (
-                          <div className="absolute top-3 left-3 bg-secondary-1 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            Featured
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-                    <div className="p-5">
+                  <Card className="overflow-hidden h-full flex flex-col justify-between border border-slate-100 dark:border-slate-800">
+                    <div>
                       <Link to={`/book/${book.id}`}>
-                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2 line-clamp-2 hover:text-primary transition-colors">
-                          {book.title}
-                        </h3>
+                        <div className="relative">
+                          <img
+                            src={book.coverImage}
+                            alt={book.title}
+                            className="w-full h-56 sm:h-64 object-cover"
+                          />
+                          {book.bestseller && (
+                            <div className="absolute top-3 right-3 bg-primary text-white px-2.5 py-0.5 rounded-full text-xs font-semibold shadow">
+                              Bestseller
+                            </div>
+                          )}
+                          {book.featured && (
+                            <div className="absolute top-3 left-3 bg-secondary-1 text-white px-2.5 py-0.5 rounded-full text-xs font-semibold shadow">
+                              Featured
+                            </div>
+                          )}
+                        </div>
                       </Link>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{book.author}</p>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xs px-2 py-1 bg-primary-10 dark:bg-primary-20 text-primary rounded-full">
-                          {book.category}
-                        </span>
-                        <div className="flex items-center text-yellow-500">
-                          <FiStar className="w-4 h-4 fill-current" />
-                          <span className="ml-1 text-sm">{book.rating}</span>
+                      <div className="p-4 sm:p-5">
+                        <Link to={`/book/${book.id}`}>
+                          <h3 className="font-semibold text-slate-900 dark:text-white mb-1.5 line-clamp-1 hover:text-primary transition-colors text-base sm:text-lg">
+                            {book.title}
+                          </h3>
+                        </Link>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{book.author}</p>
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-xs px-2.5 py-0.5 bg-primary/10 text-primary font-medium rounded-full">
+                            {book.category}
+                          </span>
+                          <div className="flex items-center text-yellow-500">
+                            <FiStar className="w-4 h-4 fill-current" />
+                            <span className="ml-1 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">{book.rating}</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-primary font-bold text-lg">${book.price}</span>
-                        <Button
-                          size="sm"
-                          onClick={() => handleAddToCart(book)}
-                          className="flex items-center gap-2"
-                        >
-                          <FiShoppingCart />
-                          Add
-                        </Button>
-                      </div>
+                    </div>
+                    <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-0 flex items-center justify-between">
+                      <span className="text-primary font-bold text-lg">${book.price}</span>
+                      <Button
+                        size="sm"
+                        onClick={() => handleAddToCart(book)}
+                        className="flex items-center gap-1.5 px-3 py-1.5"
+                      >
+                        <FiShoppingCart className="w-4 h-4" />
+                        Add
+                      </Button>
                     </div>
                   </Card>
                 ) : (
-                  <Card className="p-4 flex gap-4">
-                    <Link to={`/book/${book.id}`} className="flex-shrink-0">
+                  <Card className="p-4 sm:p-5 flex flex-col sm:flex-row gap-4 border border-slate-100 dark:border-slate-800">
+                    <Link to={`/book/${book.id}`} className="flex-shrink-0 flex justify-center sm:block">
                       <img
                         src={book.coverImage}
                         alt={book.title}
-                        className="w-24 h-36 object-cover rounded-lg"
+                        className="w-32 h-44 sm:w-28 sm:h-38 object-cover rounded-xl"
                       />
                     </Link>
-                    <div className="flex-1">
-                      <Link to={`/book/${book.id}`}>
-                        <h3 className="font-semibold text-slate-900 dark:text-white mb-1 hover:text-primary transition-colors">
-                          {book.title}
-                        </h3>
-                      </Link>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{book.author}</p>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs px-2 py-1 bg-primary-10 dark:bg-primary-20 text-primary rounded-full">
-                          {book.category}
-                        </span>
-                        <div className="flex items-center text-yellow-500">
-                          <FiStar className="w-4 h-4 fill-current" />
-                          <span className="ml-1 text-sm">{book.rating}</span>
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <Link to={`/book/${book.id}`}>
+                          <h3 className="font-semibold text-slate-900 dark:text-white mb-1 hover:text-primary transition-colors text-base sm:text-lg">
+                            {book.title}
+                          </h3>
+                        </Link>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{book.author}</p>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs px-2.5 py-0.5 bg-primary/10 text-primary font-medium rounded-full">
+                            {book.category}
+                          </span>
+                          <div className="flex items-center text-yellow-500">
+                            <FiStar className="w-4 h-4 fill-current" />
+                            <span className="ml-1 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">{book.rating}</span>
+                          </div>
                         </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
+                          {book.description}
+                        </p>
                       </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
-                        {book.description}
-                      </p>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
                         <span className="text-primary font-bold text-lg">${book.price}</span>
                         <Button
                           size="sm"
                           onClick={() => handleAddToCart(book)}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-1.5 px-4"
                         >
-                          <FiShoppingCart />
-                          Add
+                          <FiShoppingCart className="w-4 h-4" />
+                          Add to Cart
                         </Button>
                       </div>
                     </div>
