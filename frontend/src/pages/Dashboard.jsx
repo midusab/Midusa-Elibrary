@@ -253,14 +253,15 @@ export default function Dashboard() {
 
           {/* Admin Notice Bar if signed in as admin */}
           {isAdmin && (
-            <div className="mt-5 p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs text-amber-900">
-                <FiShield className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                <span>
-                  <strong>Admin Account Verified:</strong> You are signed in with administrator email <code>{user.email}</code>. Full system privileges active.
+            <div className="mt-5 p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2 text-xs text-amber-900 min-w-0">
+                <FiShield className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <span className="min-w-0">
+                  <strong>Admin Account Verified:</strong> Signed in as{' '}
+                  <code className="break-all">{user.email}</code>. Full system privileges active.
                 </span>
               </div>
-              <Link to="/admin" className="text-xs font-bold text-amber-800 hover:underline flex-shrink-0">
+              <Link to="/admin" className="text-xs font-bold text-amber-800 hover:underline flex-shrink-0 self-end sm:self-auto">
                 Launch Portal →
               </Link>
             </div>
@@ -645,8 +646,8 @@ export default function Dashboard() {
               <h3 className="text-sm font-bold text-slate-900 mb-3">
                 Live Catalog ({safeBooks.length} Books)
               </h3>
-              <div className="border border-slate-200 rounded-xl overflow-hidden text-xs bg-white shadow-sm">
-                <table className="w-full text-left border-collapse">
+              <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm">
+                <table className="w-full text-left border-collapse text-xs min-w-[480px]">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
                     <tr>
                       <th className="p-3">Title</th>
@@ -672,9 +673,9 @@ export default function Dashboard() {
                     ) : (
                       safeBooks.map(b => (
                         <tr key={b.id} className="hover:bg-slate-50/50">
-                          <td className="p-3 font-medium text-slate-900 max-w-xs truncate">{b.title}</td>
-                          <td className="p-3 text-slate-600">{b.category}</td>
-                          <td className="p-3 font-semibold text-slate-900">{formatPrice(b.price)}</td>
+                          <td className="p-3 font-medium text-slate-900 max-w-[180px] truncate">{b.title}</td>
+                          <td className="p-3 text-slate-600 whitespace-nowrap">{b.category}</td>
+                          <td className="p-3 font-semibold text-slate-900 whitespace-nowrap">{formatPrice(b.price)}</td>
                           <td className="p-3 text-right">
                             <Link to={`/book/${b.id}`} className="text-[#1E90FF] hover:underline font-medium">View</Link>
                           </td>

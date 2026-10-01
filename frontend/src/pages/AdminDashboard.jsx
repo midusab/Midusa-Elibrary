@@ -578,9 +578,8 @@ export default function AdminDashboard() {
               </Card>
             </div>
 
-            {/* Performance Highlights: Most Purchased & Category Breakdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Most Purchased Book Spotlight */}
+            {/* Performance Highlight: Most Purchased Book */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-4">
@@ -633,55 +632,44 @@ export default function AdminDashboard() {
                     </div>
                   )}
                 </div>
-
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <span>Auto-updated from live transactions</span>
-                  <button
-                    onClick={handleSyncBestsellers}
-                    className="font-semibold text-[#1E90FF] hover:underline cursor-pointer"
-                  >
-                    Sync Bestsellers →
-                  </button>
+                <div className="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-400">
+                  Auto-updated from live transactions
                 </div>
               </Card>
 
-              {/* Category Performance */}
-              <Card className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm lg:col-span-2">
-                <div className="flex items-center justify-between mb-5">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                      Category Performance & Catalogue Distribution
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Titles and sales performance grouped by category
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleOpenAddCategory}
-                    className="text-xs font-semibold text-[#1E90FF] hover:underline cursor-pointer"
-                  >
-                    + Add Category
-                  </button>
-                </div>
-
-                {categories.length > 0 ? (
+              {/* Quick Stats: Recent Orders Summary */}
+              <Card className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-5">
+                  Order Status Breakdown
+                </h3>
+                {orders.length > 0 ? (
                   <div className="space-y-4">
-                    {categories.map((cat) => {
-                      const bookCount = books.filter((b) => b.category === cat.name).length;
-                      const percentage = books.length > 0 ? Math.round((bookCount / books.length) * 100) : 0;
+                    {['completed', 'pending', 'cancelled'].map((st) => {
+                      const count = orders.filter((o) => o.status === st).length;
+                      const pct = orders.length > 0 ? Math.round((count / orders.length) * 100) : 0;
+                      const colorMap = {
+                        completed: 'bg-emerald-500',
+                        pending: 'bg-amber-400',
+                        cancelled: 'bg-rose-400'
+                      };
+                      const labelMap = {
+                        completed: 'Completed',
+                        pending: 'Pending',
+                        cancelled: 'Cancelled'
+                      };
                       return (
-                        <div key={cat.id || cat.name} className="space-y-1.5">
+                        <div key={st} className="space-y-1.5">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="font-semibold text-slate-800">{cat.name}</span>
+                            <span className="font-semibold text-slate-800 capitalize">{labelMap[st]}</span>
                             <div className="flex items-center gap-3 text-slate-500">
-                              <span>{bookCount} books</span>
-                              <span className="font-medium text-slate-700">{percentage}% of library</span>
+                              <span>{count} orders</span>
+                              <span className="font-medium text-slate-700">{pct}%</span>
                             </div>
                           </div>
                           <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
                             <div
-                              className="h-full bg-[#1E90FF] rounded-full transition-all duration-500"
-                              style={{ width: `${Math.max(percentage, 4)}%` }}
+                              className={`h-full ${colorMap[st]} rounded-full transition-all duration-500`}
+                              style={{ width: `${Math.max(pct, 2)}%` }}
                             />
                           </div>
                         </div>
@@ -690,7 +678,7 @@ export default function AdminDashboard() {
                   </div>
                 ) : (
                   <div className="py-8 text-center text-slate-400 text-xs">
-                    No categories found in the catalogue. Click "+ Add Category" to create one.
+                    No orders recorded yet. Order statistics will appear here once customers make purchases.
                   </div>
                 )}
               </Card>
@@ -1508,32 +1496,6 @@ export default function AdminDashboard() {
                       value={reviewForm.rating}
                       onChange={(e) => setReviewForm({ ...reviewForm, rating: e.target.value })}
                       className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-base font-bold text-amber-600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Featured Reviewer Name (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Editorial Review, NYT Bestseller Critic"
-                      value={reviewForm.reviewerName}
-                      onChange={(e) => setReviewForm({ ...reviewForm, reviewerName: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Review Excerpt / Praise (Optional)
-                    </label>
-                    <textarea
-                      rows={3}
-                      placeholder="An indispensable guide to mastering personal psychology..."
-                      value={reviewForm.comment}
-                      onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] resize-none"
                     />
                   </div>
 

@@ -81,7 +81,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] mb-5 sm:mb-6 max-w-4xl mx-auto drop-shadow-md"
+            className="text-3xl sm:text-5xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] mb-5 sm:mb-6 max-w-4xl mx-auto drop-shadow-md"
           >
             Curated eBooks to <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300 bg-clip-text text-transparent">Elevate Your Mind</span>
           </motion.h1>
@@ -116,7 +116,7 @@ export default function Hero() {
           </motion.div>
 
           {/* Value Highlights in Dark Frosted Glass Cards */}
-          <div className="mt-12 pt-8 border-t border-white/15 grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+          <div className="mt-12 pt-8 border-t border-white/15 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-left">
             <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-white/15 shadow-sm">
               <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-sky-400 flex items-center justify-center flex-shrink-0">
                 <FiDownloadCloud className="w-4 h-4" />

@@ -71,14 +71,14 @@ export default function Navigation() {
           {/* Left Section: Logo + Navigation Links */}
           <div className="flex items-center gap-6 lg:gap-8 flex-shrink-0">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 group  rounded-xl py-1">
+            <Link to="/" className="flex items-center gap-2 sm:gap-3 group rounded-xl py-1">
               
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#1E90FF] via-[#2563EB] to-[#60A5FA] flex items-center justify-center text-white shadow-md shadow-[#1E90FF]/25 border border-white/50 ring-2 ring-[#1E90FF]/15 group-hover:scale-105 transition-transform duration-200">
-              <img className='rounded-xl' src={Logo}></img>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-[#1E90FF] via-[#2563EB] to-[#60A5FA] flex items-center justify-center text-white shadow-md shadow-[#1E90FF]/25 border border-white/50 ring-2 ring-[#1E90FF]/15 group-hover:scale-105 transition-transform duration-200">
+              <img className='rounded-xl w-full h-full object-cover' src={Logo}></img>
               </div>
 
-              {/* Large Logo Text: "Midusa" dark navy (#0F172A), "Elibrary" DodgerBlue (#1E90FF) */}
-              <span className="text-2xl font-extrabold tracking-tight select-none">
+              {/* Logo Text: hidden on very small screens, visible from xs+ */}
+              <span className="text-xl sm:text-2xl font-extrabold tracking-tight select-none">
                 <span className="text-[#0F172A]">Midusa</span>
                 <span className="text-[#1E90FF]">Elibrary</span>
               </span>
@@ -335,126 +335,128 @@ export default function Navigation() {
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer */}
+        {/* Mobile Navigation Drawer — fixed below nav bar */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-slate-200/70 bg-white/95 backdrop-blur-2xl rounded-2xl mt-2 p-4 shadow-xl space-y-4 animate-in fade-in duration-200">
-            {/* Search Bar in Mobile Menu */}
-            <form onSubmit={handleSearch} className="relative">
-              <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search books, authors, categories..."
-                className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                >
-                  <FiX className="w-4 h-4" />
-                </button>
-              )}
-            </form>
-
-            {/* Navigation Links: Inter Medium 16px */}
-            <div className="flex flex-col space-y-1 pt-1 text-base font-medium text-slate-800">
-              <Link
-                to="/library"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors"
-              >
-                Browse All Books
-              </Link>
-
-              <div className="px-3.5 pt-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Categories
-              </div>
-              {CATEGORIES.map((cat) => (
-                <Link
-                  key={cat.id}
-                  to={`/library?category=${encodeURIComponent(cat.name)}`}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-3.5 py-2 rounded-xl hover:bg-slate-50 flex items-center gap-3 text-slate-600 hover:text-[#1E90FF] transition-colors text-base"
-                >
-                  <div className="w-7 h-7 rounded-lg bg-blue-50 text-[#1E90FF] flex items-center justify-center flex-shrink-0">
-                    <CategoryIcon slug={cat.slug} className="w-4 h-4" />
-                  </div>
-                  <span>{cat.name}</span>
-                </Link>
-              ))}
-
-              <div className="border-t border-slate-100 pt-2 my-1" />
-              <Link
-                to="/about"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors"
-              >
-                About
-              </Link>
-              <Link
-                to="/contact"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors"
-              >
-                Contact
-              </Link>
-              {user && (
-                <>
-                  <Link
-                    to="/dashboard"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FiUser className="w-4 h-4 text-slate-400" />
-                      <span>My Profile & Library</span>
-                    </div>
-                    {isAdmin && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
-                        Admin
-                      </span>
-                    )}
-                  </Link>
-
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="px-3.5 py-2.5 rounded-xl hover:bg-amber-50 text-amber-700 font-semibold transition-colors flex items-center gap-2"
-                    >
-                      <FiShield className="w-4 h-4 text-amber-500" />
-                      <span>Admin Portal</span>
-                    </Link>
-                  )}
-
+          <div className="md:hidden fixed top-20 left-0 right-0 z-40 bg-white/98 backdrop-blur-2xl border-t border-slate-200/70 shadow-xl max-h-[calc(100vh-5rem)] overflow-y-auto">
+            <div className="px-4 py-4 space-y-4">
+              {/* Search Bar in Mobile Menu */}
+              <form onSubmit={handleSearch} className="relative">
+                <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search books, authors, categories..."
+                  className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20"
+                />
+                {searchQuery && (
                   <button
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      handleLogout();
-                    }}
-                    className="w-full px-3.5 py-2.5 rounded-xl hover:bg-rose-50 text-rose-600 transition-colors flex items-center gap-2 cursor-pointer text-left font-medium"
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                   >
-                    <FiLogOut className="w-4 h-4 text-rose-500" />
-                    <span>Sign Out</span>
+                    <FiX className="w-4 h-4" />
                   </button>
-                </>
+                )}
+              </form>
+
+              {/* Navigation Links */}
+              <div className="flex flex-col space-y-1 text-base font-medium text-slate-800">
+                <Link
+                  to="/library"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors"
+                >
+                  Browse All Books
+                </Link>
+
+                <div className="px-3.5 pt-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Categories
+                </div>
+                {CATEGORIES.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    to={`/library?category=${encodeURIComponent(cat.name)}`}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="px-3.5 py-2 rounded-xl hover:bg-slate-50 flex items-center gap-3 text-slate-600 hover:text-[#1E90FF] transition-colors text-base"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-blue-50 text-[#1E90FF] flex items-center justify-center flex-shrink-0">
+                      <CategoryIcon slug={cat.slug} className="w-4 h-4" />
+                    </div>
+                    <span>{cat.name}</span>
+                  </Link>
+                ))}
+
+                <div className="border-t border-slate-100 pt-2 my-1" />
+                <Link
+                  to="/about"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors"
+                >
+                  About
+                </Link>
+                <Link
+                  to="/contact"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors"
+                >
+                  Contact
+                </Link>
+                {user && (
+                  <>
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FiUser className="w-4 h-4 text-slate-400" />
+                        <span>My Profile &amp; Library</span>
+                      </div>
+                      {isAdmin && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                          Admin
+                        </span>
+                      )}
+                    </Link>
+
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="px-3.5 py-2.5 rounded-xl hover:bg-amber-50 text-amber-700 font-semibold transition-colors flex items-center gap-2"
+                      >
+                        <FiShield className="w-4 h-4 text-amber-500" />
+                        <span>Admin Portal</span>
+                      </Link>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl hover:bg-rose-50 text-rose-600 transition-colors flex items-center gap-2 cursor-pointer text-left font-medium"
+                    >
+                      <FiLogOut className="w-4 h-4 text-rose-500" />
+                      <span>Sign Out</span>
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Mobile Auth Button */}
+              {!user && (
+                <div className="pt-2 border-t border-slate-100">
+                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                    <button className="w-full flex items-center justify-center gap-2.5 py-3 rounded-full bg-[#1E90FF] text-white text-sm font-semibold shadow-sm transition-all cursor-pointer">
+                      <FiUser className="w-4 h-4" />
+                      <span>Sign In to Account</span>
+                    </button>
+                  </Link>
+                </div>
               )}
             </div>
-
-            {/* Mobile Auth Button */}
-            {!user && (
-              <div className="pt-2 border-t border-slate-100">
-                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                  <button className="w-full flex items-center justify-center gap-2.5 py-3 rounded-full bg-[#1E90FF] text-white text-sm font-semibold shadow-sm transition-all cursor-pointer">
-                    <FiUser className="w-4 h-4" />
-                    <span>Sign In to Account</span>
-                  </button>
-                </Link>
-              </div>
-            )}
           </div>
         )}
       </div>

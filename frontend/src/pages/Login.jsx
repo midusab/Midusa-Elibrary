@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FiArrowLeft, FiShield, FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle, /** FiCheckCircle*/ } from 'react-icons/fi';
+import { FiArrowLeft, FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
 import { ADMIN_EMAIL } from '../constants/auth';
@@ -27,13 +27,6 @@ export default function Login() {
       navigate(from, { replace: true });
     }
   }, [user, navigate, from]);
-
-  // Quick fill for Admin testing
-  const handleQuickAdmin = () => {
-    setEmail(ADMIN_EMAIL);
-    setPassword('Admin@1234');
-    setFormError('');
-  };
 
   const handleEmailSignIn = async (e) => {
     e.preventDefault();
@@ -253,25 +246,7 @@ export default function Login() {
               </button>
             </form>
 
-            {/* Quick Admin Account Helper Box 
-            <div className="mt-5 p-3.5 rounded-xl bg-amber-50/80 border border-amber-200/70 text-left">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
-                  <FiShield className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Admin Sign In</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleQuickAdmin}
-                  className="text-[11px] font-semibold text-amber-700 hover:text-amber-900 underline cursor-pointer"
-                >
-                  Fill Admin
-                </button>
-              </div>
-              <p className="text-[11px] text-amber-800 mt-1">
-                Admin email: <code className="bg-amber-100/70 px-1 py-0.5 rounded font-mono font-bold text-amber-900">{ADMIN_EMAIL}</code>
-              </p>
-            </div>*/}
+            {/* Register Link */}
 
             {/* Register Link */}
             <div className="mt-5 text-center text-xs text-slate-500">
