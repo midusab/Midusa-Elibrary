@@ -268,3 +268,151 @@ export async function getCurrentUser(token) {
   }
   return res.json();
 }
+
+// ==========================================
+// ADMIN DASHBOARD API (Real-time Backend Data)
+// ==========================================
+
+/**
+ * Fetch all orders for admin
+ */
+export async function getAllOrders(token, params = {}) {
+  try {
+    const query = new URLSearchParams();
+    if (params.status && params.status !== 'all') query.append('status', params.status);
+    if (params.page) query.append('page', params.page);
+    if (params.limit) query.append('limit', params.limit);
+
+    const res = await fetch(`${API_BASE_URL}/orders/admin/all?${query.toString()}`, {
+      headers: {
+        ...authHeader(token)
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        orders: Array.isArray(data.orders) ? data.orders : (Array.isArray(data) ? data : []),
+        total: data.total || (Array.isArray(data.orders) ? data.orders.length : (Array.isArray(data) ? data.length : 0))
+      };
+    }
+    return { orders: [], total: 0 };
+  } catch (err) {
+    console.error('Error fetching admin orders:', err);
+    return { orders: [], total: 0 };
+  }
+}
+
+/**
+ * Update order status (Admin)
+ */
+export async function updateOrderStatus(orderId, status, token) {
+  const res = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeader(token)
+    },
+    body: JSON.stringify({ status })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update order status');
+  }
+  return res.json();
+}
+
+/**
+ * Update Category (Admin)
+ */
+export async function updateCategory(id, categoryData, token) {
+  const res = await fetch(`${API_BASE_URL}/categories/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeader(token)
+    },
+    body: JSON.stringify(categoryData)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update category');
+  }
+  return res.json();
+}
+
+/**
+ * Delete Category (Admin)
+ */
+export async function deleteCategory(id, token) {
+  const res = await fetch(`${API_BASE_URL}/categories/${id}`, {
+    method: 'DELETE',
+    headers: {
+      ...authHeader(token)
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to delete category');
+  }
+  return res.json();
+}
+
+/**
+ * Get all registered users for admin
+ */
+export async function getAdminUsers(token) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/users`, {
+      headers: {
+        ...authHeader(token)
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+    return [];
+  } catch (err) {
+    console.error('Error fetching admin users:', err);
+    return [];
+  }
+}
+
+/**
+ * Get live analytics for admin
+ */
+export async function getAdminAnalytics(token) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/analytics`, {
+      headers: {
+        ...authHeader(token)
+      }
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+    return null;
+  } catch (err) {
+    console.error('Error fetching admin analytics:', err);
+    return null;
+  }
+}
+
+/**
+ * Sync bestsellers according to sales count
+ */
+export async function syncBestsellers(token) {
+  const res = await fetch(`${API_BASE_URL}/admin/sync-bestsellers`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeader(token)
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to sync bestsellers');
+  }
+  return res.json();
+}
+

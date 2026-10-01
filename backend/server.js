@@ -47,6 +47,7 @@ const routes = [
   { path: '/api/books',      module: './routes/bookRoutes' },
   { path: '/api/categories', module: './routes/categoryRoutes' },
   { path: '/api/orders',     module: './routes/orderRoutes' },
+  { path: '/api/admin',      module: './routes/adminRoutes' },
 ];
 
 routes.forEach(({ path, module }) => {

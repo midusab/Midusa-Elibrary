@@ -1,99 +1,273 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiShield } from 'react-icons/fi';
+import { FiArrowLeft, /*FiShield*/ FiUser, FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
+import { ADMIN_EMAIL } from '../constants/auth';
 import { useToast } from '../context/ToastContext';
 
 export default function Register() {
+  const [fullname, setFullname] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
-  const { success } = useToast();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const { user, registerWithEmail, signInWithGoogle } = useAuth();
+  const { success, error } = useToast();
   const navigate = useNavigate();
 
-  const handleGoogleSignUp = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      const googleUser = {
-        id: 'google-usr-' + Date.now(),
-        email: 'newuser@gmail.com',
-        fullname: 'New Reader',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
-        role: 'user',
-        provider: 'google'
-      };
-
-      register(googleUser);
-      success('Account created with Google!');
-      setIsLoading(false);
+  useEffect(() => {
+    if (user) {
       navigate('/dashboard', { replace: true });
-    }, 400);
+    }
+  }, [user, navigate]);
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setFormError('');
+
+    if (!fullname.trim()) {
+      setFormError('Please enter your full name');
+      error('Please enter your full name');
+      return;
+    }
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setFormError('Please enter your email address');
+      error('Please enter your email address');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setFormError('Please enter a valid email address');
+      error('Please enter a valid email address');
+      return;
+    }
+
+    if (password.length < 6) {
+      setFormError('Password must be at least 6 characters long');
+      error('Password must be at least 6 characters long');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const result = await registerWithEmail(fullname.trim(), trimmedEmail, password);
+      if (result?.success) {
+        const isAdmin = result.user?.role === 'admin' || trimmedEmail.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        if (isAdmin) {
+          success(`Account created! Welcome Administrator ${fullname}.`);
+        } else {
+          success(`Account created successfully! Welcome, ${fullname}.`);
+        }
+        navigate('/dashboard', { replace: true });
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      const msg = err.message || 'Failed to register account. Please try again.';
+      setFormError(msg);
+      error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    setFormError('');
+    setIsGoogleLoading(true);
+    try {
+      const result = await signInWithGoogle();
+      if (result?.success) {
+        const loggedInUser = result.user;
+        const isAdmin = loggedInUser?.role === 'admin' || loggedInUser?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        if (isAdmin) {
+          success(`Welcome Administrator ${loggedInUser.fullname || 'Brian'}!`);
+        } else {
+          success(`Welcome to Midusa Elibrary, ${loggedInUser.fullname || 'Reader'}!`);
+        }
+        navigate('/dashboard', { replace: true });
+      }
+    } catch (err) {
+      console.error('Google sign-up failed:', err);
+      if (err.code !== 'auth/popup-closed-by-user') {
+        const msg = err.message || 'Google sign-up failed. Please try again.';
+        setFormError(msg);
+        error(msg);
+      }
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-[82vh] bg-white py-12 flex items-center justify-center px-4">
+    <div className="min-h-[82vh] bg-slate-50/50 py-12 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
         >
-          <div className="mb-6">
+          <div className="mb-5">
             <Link to="/">
-              <button className="inline-flex items-center text-xs sm:text-sm font-medium text-slate-500 hover:text-primary transition-colors">
+              <button className="inline-flex items-center text-xs sm:text-sm font-medium text-slate-500 hover:text-[#1E90FF] transition-colors cursor-pointer">
                 <FiArrowLeft className="mr-1.5 h-4 w-4" />
                 Back to Home
               </button>
             </Link>
           </div>
 
-          <Card className="p-8 sm:p-10 border border-slate-200/80 shadow-sm rounded-2xl bg-white text-center">
-            <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
-              <span className="text-2xl font-bold text-primary">M</span>
+          <Card className="p-7 sm:p-9 border border-slate-200 shadow-md rounded-2xl bg-white">
+            <div className="text-center mb-6">
+              <div className="mx-auto w-12 h-12 rounded-xl bg-[#1E90FF]/10 text-[#1E90FF] flex items-center justify-center mb-3">
+                <span className="text-2xl font-black">M</span>
+              </div>
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                Create Your Account
+              </h1>
+              <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
+                Join Midusa Elibrary to read, save favorites, and access premium digital books.
+              </p>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2 tracking-tight">
-              Create an Account
-            </h1>
-            <p className="text-sm text-slate-600 mb-8 max-w-xs mx-auto">
-              Get instant access to curated eBooks in Self Development, Psychology, Finance, and Christianity.
-            </p>
+            <AnimatePresence>
+              {formError && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-700"
+                >
+                  <FiAlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">{formError}</div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {/* Direct Google Sign-Up Button */}
+            {/* Google Signup Button */}
             <button
+              type="button"
               onClick={handleGoogleSignUp}
-              disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 px-5 py-3.5 border border-slate-300 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm sm:text-base shadow-sm hover:shadow transition-all duration-150 active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+              disabled={isGoogleLoading || isLoading}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-sm hover:shadow transition-all duration-150 active:scale-[0.99] disabled:opacity-60 cursor-pointer mb-5"
             >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              {isGoogleLoading ? (
+                <div className="w-4 h-4 border-2 border-[#1E90FF] border-t-transparent rounded-full animate-spin" />
               ) : (
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
               )}
-              <span>{isLoading ? 'Creating account...' : 'Sign up with Google'}</span>
+              <span>{isGoogleLoading ? 'Connecting to Google...' : 'Sign up with Google'}</span>
             </button>
 
-            <div className="mt-8 flex items-center justify-center gap-1.5 text-xs text-slate-400">
-              <FiShield className="w-3.5 h-3.5 text-emerald-500" />
-              <span>No password needed • 1-click Google authentication</span>
+            <div className="relative flex items-center justify-center mb-5">
+              <div className="border-t border-slate-200 w-full" />
+              <span className="bg-white px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider relative">
+                or sign up with email
+              </span>
+            </div>
+
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <FiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                  <input
+                    type="text"
+                    required
+                    value={fullname}
+                    onChange={(e) => {
+                      setFullname(e.target.value);
+                      if (formError) setFormError('');
+                    }}
+                    placeholder="e.g. Brian Midusa"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/25 focus:border-[#1E90FF] transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (formError) setFormError('');
+                    }}
+                    placeholder="e.g. yourname@example.com"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/25 focus:border-[#1E90FF] transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Password (min. 6 characters)
+                </label>
+                <div className="relative">
+                  <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (formError) setFormError('');
+                    }}
+                    placeholder="Choose a strong password"
+                    className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/25 focus:border-[#1E90FF] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading || isGoogleLoading}
+                className="w-full py-3 px-4 rounded-xl bg-[#1E90FF] hover:bg-[#1C86EE] text-white font-semibold text-xs sm:text-sm shadow-md shadow-[#1E90FF]/25 transition-all duration-150 active:scale-[0.99] disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Creating Account...</span>
+                  </>
+                ) : (
+                  <span>Create Account</span>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-5 text-center text-xs text-slate-500">
+              Already have an account?{' '}
+              <Link to="/login" className="font-semibold text-[#1E90FF] hover:underline">
+                Sign In
+              </Link>
             </div>
           </Card>
         </motion.div>
