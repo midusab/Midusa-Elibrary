@@ -35,7 +35,8 @@ import {
   updateOrderStatus,
   getAdminUsers,
   getAdminAnalytics,
-  syncBestsellers
+  syncBestsellers,
+  uploadPdf
 } from '../services/api';
 
 export default function AdminDashboard() {
@@ -78,6 +79,8 @@ export default function AdminDashboard() {
     featured: false,
     bestseller: false
   });
+  const [pdfFile, setPdfFile] = useState(null);       // raw File from picker
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -190,6 +193,7 @@ export default function AdminDashboard() {
       featured: false,
       bestseller: false
     });
+    setPdfFile(null);
     setIsBookModalOpen(true);
   };
 
@@ -207,6 +211,7 @@ export default function AdminDashboard() {
       featured: Boolean(book.featured),
       bestseller: Boolean(book.bestseller)
     });
+    setPdfFile(null);
     setIsBookModalOpen(true);
   };
 
@@ -219,8 +224,21 @@ export default function AdminDashboard() {
 
     setIsSaving(true);
     try {
+      let pdfUrl = bookForm.pdfUrl;
+
+      // Upload PDF to Supabase Storage first if a new file was selected
+      if (pdfFile) {
+        setIsUploadingPdf(true);
+        try {
+          pdfUrl = await uploadPdf(pdfFile, token);
+        } finally {
+          setIsUploadingPdf(false);
+        }
+      }
+
       const payload = {
         ...bookForm,
+        pdfUrl,
         price: parseFloat(bookForm.price),
         rating: parseFloat(bookForm.rating || 5)
       };
@@ -232,6 +250,7 @@ export default function AdminDashboard() {
         await createBook(payload, token);
         success('New book published to library.');
       }
+      setPdfFile(null);
       setIsBookModalOpen(false);
       loadDashboardData(true);
     } catch (err) {
@@ -1264,7 +1283,7 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block font-semibold text-slate-700 mb-1">
-                        Price (USD) *
+                        Price (KSH) *
                       </label>
                       <input
                         type="number"
@@ -1323,15 +1342,39 @@ export default function AdminDashboard() {
 
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1">
-                      eBook PDF / Asset URL
+                      eBook PDF File
+                      {bookForm.pdfUrl && !pdfFile && (
+                        <a
+                          href={bookForm.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 text-xs text-[#1E90FF] font-normal hover:underline"
+                        >
+                          ✓ View current PDF
+                        </a>
+                      )}
                     </label>
                     <input
-                      type="url"
-                      placeholder="https://storage.googleapis.com/... or download link"
-                      value={bookForm.pdfUrl}
-                      onChange={(e) => setBookForm({ ...bookForm, pdfUrl: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
+                      type="file"
+                      accept="application/pdf"
+                      onChange={(e) => {
+                        const file = e.target.files[0] || null;
+                        setPdfFile(file);
+                        if (file) setBookForm(prev => ({ ...prev, pdfUrl: '' }));
+                      }}
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-[#1E90FF]/10 file:text-[#1E90FF] file:font-semibold cursor-pointer"
                     />
+                    {pdfFile && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        Selected: <span className="font-medium">{pdfFile.name}</span> ({(pdfFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    )}
+                    {isUploadingPdf && (
+                      <p className="mt-1 text-xs text-[#1E90FF] flex items-center gap-1.5">
+                        <span className="inline-block w-3 h-3 border border-[#1E90FF] border-t-transparent rounded-full animate-spin" />
+                        Uploading PDF to Supabase Storage...
+                      </p>
+                    )}
                   </div>
 
                   {/* Badges Toggles */}

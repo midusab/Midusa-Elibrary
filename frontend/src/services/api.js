@@ -8,6 +8,35 @@ function authHeader(token) {
 }
 
 // ==========================================
+// UPLOAD API
+// ==========================================
+
+/**
+ * Upload a PDF file to Supabase Storage via the backend.
+ * Returns the public URL of the uploaded file.
+ * @param {File} file  - The PDF File object from an <input type="file">
+ * @param {string} token - Admin JWT token
+ */
+export async function uploadPdf(file, token) {
+  const formData = new FormData();
+  formData.append('pdf', file);
+
+  const res = await fetch(`${API_BASE_URL}/upload/pdf`, {
+    method: 'POST',
+    headers: authHeader(token), // NOTE: do NOT set Content-Type — browser sets it with boundary
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'PDF upload failed');
+  }
+
+  const data = await res.json();
+  return data.url; // Public Supabase Storage URL
+}
+
+// ==========================================
 // BOOKS API (Real-time Backend Data)
 // ==========================================
 

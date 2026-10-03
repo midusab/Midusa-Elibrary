@@ -4,9 +4,17 @@ import {
   signInWithRedirect,
   getRedirectResult,
   signOut as firebaseSignOut,
+  getIdToken,
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { ADMIN_EMAIL, checkIsAdmin } from '../constants/auth';
+
+/** Returns true if the string looks like a real signed JWT (three base64 parts). */
+function isRealJwt(token) {
+  if (!token || typeof token !== 'string') return false;
+  const parts = token.split('.');
+  return parts.length === 3 && token.startsWith('eyJ');
+}
 
 const AuthContext = createContext();
 
@@ -87,12 +95,12 @@ export const AuthProvider = ({ children }) => {
     async function init() {
       // 1. Restore saved session from localStorage
       const saved = localStorage.getItem('user');
+      let restoredUser = null;
       if (saved) {
         try {
-          if (!cancelled) {
-            const parsed = JSON.parse(saved);
-            setUser(processUser(parsed, parsed.token));
-          }
+          const parsed = JSON.parse(saved);
+          restoredUser = processUser(parsed, parsed.token);
+          if (!cancelled) setUser(restoredUser);
         } catch {
           localStorage.removeItem('user');
         }
@@ -107,6 +115,7 @@ export const AuthProvider = ({ children }) => {
             name: loggedInUser.fullname || loggedInUser.email,
             isAdmin: loggedInUser.role === 'admin'
           }));
+          restoredUser = loggedInUser;
         }
       } catch (err) {
         if (err?.code !== 'auth/no-auth-event') {
@@ -114,6 +123,31 @@ export const AuthProvider = ({ children }) => {
         }
       } finally {
         if (!cancelled) setLoading(false);
+      }
+
+      // 3. If the stored token is stale/fake, silently refresh it via Firebase
+      if (restoredUser && !isRealJwt(restoredUser.token) && !cancelled) {
+        const firebaseUser = auth.currentUser;
+        if (firebaseUser) {
+          try {
+            const freshIdToken = await getIdToken(firebaseUser, /* forceRefresh */ true);
+            const res = await fetch(`${API_BASE}/auth/google`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ idToken: freshIdToken }),
+            });
+            if (res.ok) {
+              const data = await res.json();
+              const refreshed = processUser(data.user, data.token);
+              if (!cancelled) {
+                setUser(refreshed);
+                localStorage.setItem('user', JSON.stringify(refreshed));
+              }
+            }
+          } catch (refreshErr) {
+            console.warn('Silent token refresh failed:', refreshErr.message);
+          }
+        }
       }
     }
 
@@ -166,19 +200,8 @@ export const AuthProvider = ({ children }) => {
       saveUserSession(sessionUser);
       return { success: true, user: sessionUser };
     } catch (err) {
-      // If server is not responding, handle admin demo credentials or local storage fallback
       if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        console.warn('Backend unavailable, using local authentication flow for:', normalizedEmail);
-        const fallbackUser = {
-          id: isAdmin ? 'admin-root' : 'usr-' + Date.now(),
-          email: normalizedEmail,
-          fullname: isAdmin ? 'Brian Midusa (Admin)' : normalizedEmail.split('@')[0],
-          avatar: isAdmin ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop' : '',
-          role: isAdmin ? 'admin' : 'user',
-          token: 'token-' + Date.now()
-        };
-        const sessionUser = saveUserSession(fallbackUser);
-        return { success: true, user: sessionUser };
+        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.');
       }
       throw err;
     }
@@ -208,16 +231,7 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user: sessionUser };
     } catch (err) {
       if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        const fallbackUser = {
-          id: 'usr-' + Date.now(),
-          email: normalizedEmail,
-          fullname: fullname.trim(),
-          avatar: '',
-          role: isAdmin ? 'admin' : 'user',
-          token: 'token-' + Date.now()
-        };
-        const sessionUser = saveUserSession(fallbackUser);
-        return { success: true, user: sessionUser };
+        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.');
       }
       throw err;
     }

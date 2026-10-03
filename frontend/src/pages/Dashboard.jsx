@@ -8,12 +8,13 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { getBooks, createBook, getUserOrders } from '../services/api';
+import { getBooks, createBook, getUserOrders, uploadPdf } from '../services/api';
 import { formatPrice } from '../utils/currency';
-import { CATEGORIES } from '../constants/categories';
+import { useCategories } from '../context/CategoryContext';
 
 export default function Dashboard() {
   const { user, logout, updateProfile, isAdmin } = useAuth();
+  const { categories } = useCategories();
   const { success, error } = useToast();
   const location = useLocation();
 
@@ -34,12 +35,18 @@ export default function Dashboard() {
   const [newBook, setNewBook] = useState({
     title: '',
     author: '',
-    category: 'Self Development',
+    category: '',
     price: '',
     description: '',
     coverImage: '',
     pdfUrl: ''
   });
+  const [pdfFile, setPdfFile] = useState(null);       // raw File object from picker
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+
+  // Derive the effective category without syncing it back into state.
+  // Falls back to the first available category when the user hasn't picked one yet.
+  const effectiveCategory = newBook.category || categories[0]?.name || '';
 
   const handleStartEdit = () => {
     setEditName(user?.fullname || '');
@@ -135,11 +142,29 @@ export default function Dashboard() {
       error('Please provide book title, author, and price in KSh');
       return;
     }
+    if (!pdfFile && !newBook.pdfUrl) {
+      error('Please upload a PDF file for this book.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
+      let pdfUrl = newBook.pdfUrl;
+
+      // Upload the PDF to Supabase Storage first
+      if (pdfFile) {
+        setIsUploadingPdf(true);
+        try {
+          pdfUrl = await uploadPdf(pdfFile, user?.token);
+        } finally {
+          setIsUploadingPdf(false);
+        }
+      }
+
       await createBook({
         ...newBook,
+        category: effectiveCategory,
+        pdfUrl,
         price: parseFloat(newBook.price)
       }, user?.token);
       success('Book added to database successfully!');
@@ -148,12 +173,13 @@ export default function Dashboard() {
       setNewBook({
         title: '',
         author: '',
-        category: 'Self Development',
+        category: '',
         price: '',
         description: '',
         coverImage: '',
         pdfUrl: ''
       });
+      setPdfFile(null);
     } catch (_err) {
       error(_err.message || 'Failed to create book in database');
     } finally {
@@ -593,15 +619,19 @@ export default function Dashboard() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Category (Core Niches)</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Category</label>
                     <select
-                      value={newBook.category}
+                      value={effectiveCategory}
                       onChange={(e) => setNewBook({ ...newBook, category: e.target.value })}
                       className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1E90FF]"
                     >
-                      {CATEGORIES.map(c => (
-                        <option key={c.id} value={c.name}>{c.name}</option>
-                      ))}
+                      {categories.length === 0 ? (
+                        <option value="">No categories available</option>
+                      ) : (
+                        categories.map(c => (
+                          <option key={c.id} value={c.name}>{c.name}</option>
+                        ))
+                      )}
                     </select>
                   </div>
 
@@ -617,6 +647,45 @@ export default function Dashboard() {
                       className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1E90FF]"
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Cover Image URL</label>
+                  <input
+                    type="url"
+                    placeholder="https://images.unsplash.com/..."
+                    value={newBook.coverImage}
+                    onChange={(e) => setNewBook({ ...newBook, coverImage: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1E90FF]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    eBook PDF File
+                    {newBook.pdfUrl && !pdfFile && (
+                      <span className="ml-2 text-green-600 font-normal">✓ URL set</span>
+                    )}
+                  </label>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) => {
+                      const file = e.target.files[0] || null;
+                      setPdfFile(file);
+                      // Clear any manually typed URL when a file is chosen
+                      if (file) setNewBook(prev => ({ ...prev, pdfUrl: '' }));
+                    }}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1E90FF] file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-[#1E90FF]/10 file:text-[#1E90FF] file:font-semibold cursor-pointer"
+                  />
+                  {pdfFile && (
+                    <p className="mt-1 text-[11px] text-slate-500">Selected: {pdfFile.name} ({(pdfFile.size / 1024 / 1024).toFixed(2)} MB)</p>
+                  )}
+                  {isUploadingPdf && (
+                    <p className="mt-1 text-[11px] text-[#1E90FF] flex items-center gap-1">
+                      <span className="inline-block w-3 h-3 border border-[#1E90FF] border-t-transparent rounded-full animate-spin" />
+                      Uploading PDF to storage...
+                    </p>
+                  )}
                 </div>
 
                 <div>

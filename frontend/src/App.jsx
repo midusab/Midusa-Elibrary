@@ -3,6 +3,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { CategoryProvider } from './context/CategoryContext';
 import Navigation from './components/Navigation';
 import Footer from './components/layout/Footer';
 import Hero from './pages/Hero';
@@ -25,8 +26,9 @@ export default function App() {
         <CartProvider>
           <AuthProvider>
             <ToastProvider>
-              <div className="min-h-screen flex flex-col bg-white text-slate-900 overflow-x-hidden w-full">
-                <Navigation />
+              <CategoryProvider>
+                <div className="min-h-screen flex flex-col bg-white text-slate-900 overflow-x-hidden w-full">
+                  <Navigation />
                 <main className="flex-1 pt-20 bg-white">
                   <Routes>
                     <Route path="/" element={<Hero />} />
@@ -45,7 +47,8 @@ export default function App() {
                 </main>
                 <Footer />
               </div>
-            </ToastProvider>
+            </CategoryProvider>
+          </ToastProvider>
           </AuthProvider>
         </CartProvider>
       </ThemeProvider>

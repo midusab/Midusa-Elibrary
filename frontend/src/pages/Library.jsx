@@ -6,13 +6,15 @@ import Card from '../components/ui/Card';
 import CategoryIcon from '../components/ui/CategoryIcon';
 import { getBooks } from '../services/api';
 import { formatPrice } from '../utils/currency';
-import { CATEGORIES, PRICE_RANGES, SORT_OPTIONS } from '../constants/categories';
+import { PRICE_RANGES, SORT_OPTIONS } from '../constants/categories';
+import { useCategories } from '../context/CategoryContext';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 
 export default function Library() {
   const [allBooks, setAllBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { categories } = useCategories();
   const { addToCart } = useCart();
   const { success } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -221,7 +223,7 @@ export default function Library() {
             All Books ({allBooks.length})
           </button>
 
-          {CATEGORIES.map((cat) => {
+          {categories.map((cat) => {
             const isSelected = selectedCategory.toLowerCase() === cat.name.toLowerCase();
             return (
               <button
@@ -233,7 +235,7 @@ export default function Library() {
                     : 'liquid-glass-pill text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <CategoryIcon slug={cat.slug} className="w-3.5 h-3.5" />
+                <CategoryIcon slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')} className="w-3.5 h-3.5" />
                 <span>{cat.name}</span>
               </button>
             );

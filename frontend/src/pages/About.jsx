@@ -74,7 +74,7 @@ export default function About() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {CATEGORIES.map((cat) => (
+            {/** {CATEGORIES.map((cat) => (
               <Card key={cat.id} className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col justify-between">
                 <div>
                   <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary flex items-center justify-center mb-4">
@@ -97,7 +97,7 @@ export default function About() {
                   </Link>
                 </div>
               </Card>
-            ))}
+            ))}*/}
           </div>
         </div>
 

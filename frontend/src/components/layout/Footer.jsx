@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { FiMail, FiPhone, FiMapPin, FiShield, FiHeart } from 'react-icons/fi';
-import { CATEGORIES } from '../../constants/categories';
+import { useCategories } from '../../context/CategoryContext';
 import CategoryIcon from '../ui/CategoryIcon';
 
 const Footer = () => {
+  const { categories } = useCategories();
   const currentYear = new Date().getFullYear();
 
   return (
@@ -19,7 +20,7 @@ const Footer = () => {
               <span className="text-2xl font-bold text-white tracking-tight">MidusaElibrary</span>
             </Link>
             <p className="text-sm text-slate-400 leading-relaxed mb-4">
-              Curated digital library focused strictly on Self Development, Psychology, Finance & Business, and Christianity.
+              Curated digital library empowering your intellectual and personal growth.
             </p>
             <div className="flex items-center gap-2 text-sm text-slate-400">
               <FiShield className="text-primary w-4 h-4" />
@@ -54,20 +55,24 @@ const Footer = () => {
           {/* 4 Core Categories: 18px Heading, 14px Links */}
           <div>
             <h3 className="text-lg font-bold text-white mb-4 tracking-tight">
-              Core Niches
+              Categories
             </h3>
             <ul className="space-y-2.5 text-sm">
-              {CATEGORIES.map((cat) => (
-                <li key={cat.id}>
-                  <Link
-                    to={`/library?category=${encodeURIComponent(cat.name)}`}
-                    className="text-slate-400 hover:text-white transition-colors flex items-center gap-2"
-                  >
-                    <CategoryIcon slug={cat.slug} className="w-4 h-4 text-primary" />
-                    <span>{cat.name}</span>
-                  </Link>
-                </li>
-              ))}
+              {categories.length === 0 ? (
+                <li className="text-slate-500 text-xs">No categories added yet</li>
+              ) : (
+                categories.map((cat) => (
+                  <li key={cat.id}>
+                    <Link
+                      to={`/library?category=${encodeURIComponent(cat.name)}`}
+                      className="text-slate-400 hover:text-white transition-colors flex items-center gap-2"
+                    >
+                      <CategoryIcon slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')} className="w-4 h-4 text-primary" />
+                      <span>{cat.name}</span>
+                    </Link>
+                  </li>
+                ))
+              )}
             </ul>
           </div>
 

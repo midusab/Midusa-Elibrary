@@ -4,7 +4,7 @@ import { FiSearch, FiShoppingCart, FiMenu, FiX, FiChevronDown, FiLogOut, FiUser,
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { CATEGORIES } from '../constants/categories';
+import { useCategories } from '../context/CategoryContext';
 import CategoryIcon from './ui/CategoryIcon';
 import Logo from '../assets/logo.jpg';
 
@@ -20,6 +20,7 @@ export default function Navigation() {
   const navigate = useNavigate();
 
   const { cartCount } = useCart();
+  const { categories } = useCategories();
   const { user, logout, isAdmin } = useAuth();
   const { success } = useToast();
 
@@ -123,29 +124,35 @@ export default function Navigation() {
                 {isCategoriesOpen && (
                   <div className="absolute left-0 mt-2 w-72 bg-white/95 backdrop-blur-2xl rounded-2xl p-2.5 shadow-2xl border border-slate-200/80 ring-1 ring-slate-900/5 animate-in fade-in zoom-in-95 duration-150 z-50">
                     <div className="px-3 py-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      The 4 Core Niches
+                      Categories
                     </div>
                     <div className="space-y-1 mt-1">
-                      {CATEGORIES.map((cat) => (
-                        <Link
-                          key={cat.id}
-                          to={`/library?category=${encodeURIComponent(cat.name)}`}
-                          onClick={() => setIsCategoriesOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors group/item"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#1E90FF] flex items-center justify-center flex-shrink-0 group-hover/item:scale-105 group-hover/item:bg-[#1E90FF] group-hover/item:text-white transition-all">
-                            <CategoryIcon slug={cat.slug} className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-slate-800 group-hover/item:text-[#1E90FF] transition-colors">
-                              {cat.name}
-                            </p>
-                            <p className="text-[11px] text-slate-400 line-clamp-1">
-                              {cat.description}
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
+                      {categories.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-slate-400">No categories found</div>
+                      ) : (
+                        categories.map((cat) => (
+                          <Link
+                            key={cat.id}
+                            to={`/library?category=${encodeURIComponent(cat.name)}`}
+                            onClick={() => setIsCategoriesOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors group/item"
+                          >
+                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#1E90FF] flex items-center justify-center flex-shrink-0 group-hover/item:scale-105 group-hover/item:bg-[#1E90FF] group-hover/item:text-white transition-all">
+                              <CategoryIcon slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')} className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-800 group-hover/item:text-[#1E90FF] transition-colors">
+                                {cat.name}
+                              </p>
+                              {cat._count?.books !== undefined && (
+                                <p className="text-[11px] text-slate-400 line-clamp-1">
+                                  {cat._count.books} {cat._count.books === 1 ? 'book' : 'books'}
+                                </p>
+                              )}
+                            </div>
+                          </Link>
+                        ))
+                      )}
                     </div>
 
                     <div className="border-t border-slate-100 mt-2 pt-2">
@@ -373,19 +380,23 @@ export default function Navigation() {
                 <div className="px-3.5 pt-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
                   Categories
                 </div>
-                {CATEGORIES.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    to={`/library?category=${encodeURIComponent(cat.name)}`}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-3.5 py-2 rounded-xl hover:bg-slate-50 flex items-center gap-3 text-slate-600 hover:text-[#1E90FF] transition-colors text-base"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-blue-50 text-[#1E90FF] flex items-center justify-center flex-shrink-0">
-                      <CategoryIcon slug={cat.slug} className="w-4 h-4" />
-                    </div>
-                    <span>{cat.name}</span>
-                  </Link>
-                ))}
+                {categories.length === 0 ? (
+                  <div className="px-3.5 py-2 text-xs text-slate-400">No categories found</div>
+                ) : (
+                  categories.map((cat) => (
+                    <Link
+                      key={cat.id}
+                      to={`/library?category=${encodeURIComponent(cat.name)}`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="px-3.5 py-2 rounded-xl hover:bg-slate-50 flex items-center gap-3 text-slate-600 hover:text-[#1E90FF] transition-colors text-base"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-blue-50 text-[#1E90FF] flex items-center justify-center flex-shrink-0">
+                        <CategoryIcon slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')} className="w-4 h-4" />
+                      </div>
+                      <span>{cat.name}</span>
+                    </Link>
+                  ))
+                )}
 
                 <div className="border-t border-slate-100 pt-2 my-1" />
                 <Link

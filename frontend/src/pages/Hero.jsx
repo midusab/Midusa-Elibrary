@@ -7,9 +7,10 @@ import Card from '../components/ui/Card';
 import CategoryIcon from '../components/ui/CategoryIcon';
 import { getBooks } from '../services/api';
 import { formatPrice } from '../utils/currency';
-import { CATEGORIES } from '../constants/categories';
-import Heroimg from '../assets/hero4.jpg'
+import { useCategories } from '../context/CategoryContext';
+import Heroimg from '../assets/hero5.jpg'
 export default function Hero() {
+  const { categories } = useCategories();
   const [featuredBooks, setFeaturedBooks] = useState([]);
   const [bestsellers, setBestsellers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -377,34 +378,41 @@ export default function Hero() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {CATEGORIES.map((cat) => (
-              <Link
-                key={cat.id}
-                to={`/library?category=${encodeURIComponent(cat.name)}`}
-                className="group p-5 rounded-2xl bg-white border border-slate-200/80 hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="w-12 h-12 rounded-xl bg-primary-50 text-primary flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                    <CategoryIcon slug={cat.slug} className="w-6 h-6" />
+          {categories.length === 0 ? (
+            <div className="text-center py-12 border border-dashed border-slate-200 rounded-2xl bg-white max-w-md mx-auto">
+              <p className="text-sm font-semibold text-slate-700">No categories added yet</p>
+              <p className="text-xs text-slate-400 mt-1">Categories created in the admin dashboard will appear here in real time.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {categories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  to={`/library?category=${encodeURIComponent(cat.name)}`}
+                  className="group p-5 rounded-2xl bg-white border border-slate-200/80 hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="w-12 h-12 rounded-xl bg-primary-50 text-primary flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                      <CategoryIcon slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')} className="w-6 h-6" />
+                    </div>
+                    {/* 18px Category Name */}
+                    <h3 className="font-bold text-slate-900 text-lg mb-1.5 group-hover:text-primary transition-colors">
+                      {cat.name}
+                    </h3>
+                    {/* Category Description */}
+                    <p className="text-sm text-slate-500 leading-relaxed mb-4 line-clamp-2">
+                      {cat.description || (cat._count?.books !== undefined ? `${cat._count.books} ${cat._count.books === 1 ? 'title available' : 'titles available'}` : 'Explore curated knowledge')}
+                    </p>
                   </div>
-                  {/* 18px Category Name */}
-                  <h3 className="font-bold text-slate-900 text-lg mb-1.5 group-hover:text-primary transition-colors">
-                    {cat.name}
-                  </h3>
-                  {/* 14px Category Description */}
-                  <p className="text-sm text-slate-500 leading-relaxed mb-4 line-clamp-2">
-                    {cat.description}
-                  </p>
-                </div>
-                {/* 14px Link */}
-                <div className="flex items-center text-sm font-semibold text-primary">
-                  <span>Browse books</span>
-                  <FiArrowRight className="ml-1 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </Link>
-            ))}
-          </div>
+                  {/* 14px Link */}
+                  <div className="flex items-center text-sm font-semibold text-primary">
+                    <span>Browse books</span>
+                    <FiArrowRight className="ml-1 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>
