@@ -7,113 +7,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  fullname  String
-  email     String   @unique
-  password  String?  // nullable — Google OAuth users have no password
-  googleId  String?  @unique // Firebase UID
-  avatar    String?  // profile picture URL from Google
-  role      String   @default("user")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  orders    Order[]
-  favorites Favorite[]
-  downloads Download[]
-  
-  @@index([email])
-  @@index([googleId])
-}
-
-model Book {
-  id          String   @id @default(uuid())
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model books {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title       String
   author      String
-  description String   @db.Text
-  category    String
-  coverImage  String   @db.Text
-  pdfUrl      String   @db.Text
-  price       Float
-  rating      Float    @default(0)
-  featured    Boolean  @default(false)
-  bestseller  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  orderItems  OrderItem[]
-  favorites   Favorite[]
-  downloads   Download[]
-  
-  @@index([category])
-  @@index([featured])
-  @@index([bestseller])
+  category_id String?     @db.Uuid
+  description String?
+  price       Int         @default(60)
+  rating      Decimal?    @default(0) @db.Decimal(2, 1)
+  cover_url   String
+  pdf_url     String
+  featured    Boolean?    @default(false)
+  bestseller  Boolean?    @default(false)
+  created_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  categories  categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+
+  @@index([author], map: "idx_books_author")
+  @@index([bestseller], map: "idx_books_bestseller")
+  @@index([category_id], map: "idx_books_category")
+  @@index([featured], map: "idx_books_featured")
+  @@index([title], map: "idx_books_title")
 }
 
-model Category {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String   @db.Text
-  bookCount   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@index([name])
-}
-
-model Order {
-  id        String      @id @default(uuid())
-  userId    String
-  amount    Float
-  status    String      @default("pending")
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     OrderItem[]
-  
-  @@index([userId])
-  @@index([status])
-}
-
-model OrderItem {
-  id        String @id @default(uuid())
-  orderId   String
-  bookId    String
-  quantity  Int    @default(1)
-  price     Float
-  
-  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  book      Book  @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  
-  @@index([orderId])
-  @@index([bookId])
-}
-
-model Favorite {
-  id        String   @id @default(uuid())
-  userId    String
-  bookId    String
-  createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, bookId])
-  @@index([userId])
-  @@index([bookId])
-}
-
-model Download {
-  id           String   @id @default(uuid())
-  userId       String
-  bookId       String
-  downloadedAt DateTime @default(now())
-  
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  book         Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, bookId])
-  @@index([userId])
-  @@index([bookId])
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model categories {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String    @unique
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  books      books[]
 }

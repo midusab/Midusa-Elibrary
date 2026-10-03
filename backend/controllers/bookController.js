@@ -1,70 +1,94 @@
 const { prisma } = require('../config/database');
 
-// Get all books with filtering and pagination
+/**
+ * Map a raw DB book row to the shape the frontend expects.
+ * DB uses snake_case & category_id FK; frontend expects camelCase & category name string.
+ */
+function formatBook(book) {
+  return {
+    id:          book.id,
+    title:       book.title,
+    author:      book.author,
+    description: book.description || '',
+    category:    book.categories?.name || '',
+    coverImage:  book.cover_url || '',
+    pdfUrl:      book.pdf_url || '',
+    price:       book.price,
+    rating:      book.rating ? parseFloat(book.rating) : 0,
+    featured:    book.featured || false,
+    bestseller:  book.bestseller || false,
+    createdAt:   book.created_at,
+    updatedAt:   book.updated_at,
+  };
+}
+
+/** Include category relation in every query so formatBook can access the name. */
+const bookInclude = { categories: true };
+
+// ─── Get all books with filtering and pagination ───────────────────────────────
 const getBooks = async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 12, 
-      category, 
-      search, 
-      minPrice, 
-      maxPrice, 
-      sortBy = 'createdAt',
+    const {
+      page      = 1,
+      limit     = 12,
+      category,
+      search,
+      minPrice,
+      maxPrice,
+      sortBy    = 'created_at',
       sortOrder = 'desc',
       featured,
-      bestseller
+      bestseller,
     } = req.query;
 
-    const skip = (page - 1) * limit;
+    const skip  = (parseInt(page) - 1) * parseInt(limit);
     const where = {};
 
-    // Category filter
+    // Category filter — look up by name
     if (category) {
-      where.category = category;
+      const cat = await prisma.categories.findUnique({ where: { name: category } });
+      if (cat) where.category_id = cat.id;
+      else      where.category_id = null; // category doesn't exist → return empty
     }
 
     // Search filter
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { author: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
+        { title:       { contains: search, mode: 'insensitive' } },
+        { author:      { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
       ];
     }
 
-    // Price range filter
+    // Price range filter (DB stores price as Int/KSh)
     if (minPrice || maxPrice) {
       where.price = {};
-      if (minPrice) where.price.gte = parseFloat(minPrice);
-      if (maxPrice) where.price.lte = parseFloat(maxPrice);
+      if (minPrice) where.price.gte = parseInt(minPrice);
+      if (maxPrice) where.price.lte = parseInt(maxPrice);
     }
 
-    // Featured/Bestseller filter
-    if (featured === 'true') where.featured = true;
+    if (featured   === 'true') where.featured   = true;
     if (bestseller === 'true') where.bestseller = true;
 
-    // Count total books
-    const total = await prisma.book.count({ where });
-
-    // Get books with pagination and sorting
-    const books = await prisma.book.findMany({
-      where,
-      skip: parseInt(skip),
-      take: parseInt(limit),
-      orderBy: {
-        [sortBy]: sortOrder
-      }
-    });
+    const [total, books] = await Promise.all([
+      prisma.books.count({ where }),
+      prisma.books.findMany({
+        where,
+        include:  bookInclude,
+        skip,
+        take:    parseInt(limit),
+        orderBy: { [sortBy]: sortOrder },
+      }),
+    ]);
 
     res.json({
-      books,
+      books: books.map(formatBook),
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page:       parseInt(page),
+        limit:      parseInt(limit),
         total,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / parseInt(limit)),
+      },
     });
   } catch (error) {
     console.error('Error fetching books:', error);
@@ -72,28 +96,80 @@ const getBooks = async (req, res) => {
   }
 };
 
-// Get single book by ID
+// ─── Get single book by ID ─────────────────────────────────────────────────────
 const getBookById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const book = await prisma.book.findUnique({
-      where: { id }
+    const book = await prisma.books.findUnique({
+      where:   { id: req.params.id },
+      include: bookInclude,
     });
 
-    if (!book) {
-      return res.status(404).json({ error: 'Book not found' });
-    }
-
-    res.json(book);
+    if (!book) return res.status(404).json({ error: 'Book not found' });
+    res.json(formatBook(book));
   } catch (error) {
     console.error('Error fetching book:', error);
     res.status(500).json({ error: 'Failed to fetch book' });
   }
 };
 
-// Create new book (Admin only)
+// ─── Create new book (Admin only) ─────────────────────────────────────────────
 const createBook = async (req, res) => {
   try {
+    const {
+      title,
+      author,
+      description = '',
+      category,
+      coverImage  = '',
+      pdfUrl      = '',
+      price,
+      rating      = 0,
+      featured    = false,
+      bestseller  = false,
+    } = req.body;
+
+    if (!title || !author || price === undefined) {
+      return res.status(400).json({ error: 'Title, author, and price are required.' });
+    }
+
+    // Resolve category name → UUID (upsert so new categories are created on the fly)
+    let categoryId = null;
+    if (category) {
+      const cat = await prisma.categories.upsert({
+        where:  { name: category },
+        update: {},
+        create: { name: category },
+      });
+      categoryId = cat.id;
+    }
+
+    const book = await prisma.books.create({
+      data: {
+        title,
+        author,
+        description,
+        category_id: categoryId,
+        cover_url:   coverImage,
+        pdf_url:     pdfUrl,
+        price:       parseInt(price),
+        rating:      parseFloat(rating),
+        featured:    Boolean(featured),
+        bestseller:  Boolean(bestseller),
+      },
+      include: bookInclude,
+    });
+
+    res.status(201).json(formatBook(book));
+  } catch (error) {
+    console.error('Error creating book:', error);
+    res.status(500).json({ error: 'Failed to create book' });
+  }
+};
+
+// ─── Update book (Admin only) ──────────────────────────────────────────────────
+const updateBook = async (req, res) => {
+  try {
+    const { id } = req.params;
     const {
       title,
       author,
@@ -102,84 +178,58 @@ const createBook = async (req, res) => {
       coverImage,
       pdfUrl,
       price,
-      rating = 0,
-      featured = false,
-      bestseller = false
+      rating,
+      featured,
+      bestseller,
     } = req.body;
 
-    const book = await prisma.book.create({
-      data: {
-        title,
-        author,
-        description,
-        category,
-        coverImage,
-        pdfUrl,
-        price: parseFloat(price),
-        rating: parseFloat(rating),
-        featured,
-        bestseller
+    const data = {};
+    if (title       !== undefined) data.title       = title;
+    if (author      !== undefined) data.author      = author;
+    if (description !== undefined) data.description = description;
+    if (coverImage  !== undefined) data.cover_url   = coverImage;
+    if (pdfUrl      !== undefined) data.pdf_url     = pdfUrl;
+    if (price       !== undefined) data.price       = parseInt(price);
+    if (rating      !== undefined) data.rating      = parseFloat(rating);
+    if (featured    !== undefined) data.featured    = Boolean(featured);
+    if (bestseller  !== undefined) data.bestseller  = Boolean(bestseller);
+
+    // Resolve updated category name → UUID
+    if (category !== undefined) {
+      if (category) {
+        const cat = await prisma.categories.upsert({
+          where:  { name: category },
+          update: {},
+          create: { name: category },
+        });
+        data.category_id = cat.id;
+      } else {
+        data.category_id = null;
       }
-    });
-
-    // Update category book count
-    await prisma.category.upsert({
-      where: { name: category },
-      update: { bookCount: { increment: 1 } },
-      create: { name: category, description: '', bookCount: 1 }
-    });
-
-    res.status(201).json(book);
-  } catch (error) {
-    console.error('Error creating book:', error);
-    res.status(500).json({ error: 'Failed to create book' });
-  }
-};
-
-// Update book (Admin only)
-const updateBook = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updateData = req.body;
-
-    // Handle price conversion
-    if (updateData.price) {
-      updateData.price = parseFloat(updateData.price);
-    }
-    if (updateData.rating) {
-      updateData.rating = parseFloat(updateData.rating);
     }
 
-    const book = await prisma.book.update({
-      where: { id },
-      data: updateData
+    const book = await prisma.books.update({
+      where:   { id },
+      data,
+      include: bookInclude,
     });
 
-    res.json(book);
+    res.json(formatBook(book));
   } catch (error) {
     console.error('Error updating book:', error);
     res.status(500).json({ error: 'Failed to update book' });
   }
 };
 
-// Delete book (Admin only)
+// ─── Delete book (Admin only) ──────────────────────────────────────────────────
 const deleteBook = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get book category before deletion
-    const book = await prisma.book.findUnique({ where: { id } });
-    if (!book) {
-      return res.status(404).json({ error: 'Book not found' });
-    }
+    const book = await prisma.books.findUnique({ where: { id } });
+    if (!book) return res.status(404).json({ error: 'Book not found' });
 
-    await prisma.book.delete({ where: { id } });
-
-    // Update category book count
-    await prisma.category.updateMany({
-      where: { name: book.category },
-      data: { bookCount: { decrement: 1 } }
-    });
+    await prisma.books.delete({ where: { id } });
 
     res.json({ message: 'Book deleted successfully' });
   } catch (error) {
@@ -188,32 +238,34 @@ const deleteBook = async (req, res) => {
   }
 };
 
-// Get featured books
+// ─── Get featured books ────────────────────────────────────────────────────────
 const getFeaturedBooks = async (req, res) => {
   try {
-    const books = await prisma.book.findMany({
-      where: { featured: true },
-      take: 6,
-      orderBy: { createdAt: 'desc' }
+    const books = await prisma.books.findMany({
+      where:   { featured: true },
+      include: bookInclude,
+      take:    6,
+      orderBy: { created_at: 'desc' },
     });
 
-    res.json(books);
+    res.json(books.map(formatBook));
   } catch (error) {
     console.error('Error fetching featured books:', error);
     res.status(500).json({ error: 'Failed to fetch featured books' });
   }
 };
 
-// Get bestseller books
+// ─── Get bestseller books ──────────────────────────────────────────────────────
 const getBestsellerBooks = async (req, res) => {
   try {
-    const books = await prisma.book.findMany({
-      where: { bestseller: true },
-      take: 8,
-      orderBy: { createdAt: 'desc' }
+    const books = await prisma.books.findMany({
+      where:   { bestseller: true },
+      include: bookInclude,
+      take:    8,
+      orderBy: { created_at: 'desc' },
     });
 
-    res.json(books);
+    res.json(books.map(formatBook));
   } catch (error) {
     console.error('Error fetching bestseller books:', error);
     res.status(500).json({ error: 'Failed to fetch bestseller books' });
@@ -227,5 +279,5 @@ module.exports = {
   updateBook,
   deleteBook,
   getFeaturedBooks,
-  getBestsellerBooks
+  getBestsellerBooks,
 };

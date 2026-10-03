@@ -16,8 +16,7 @@ const supabase = createClient(
 prisma.$connect()
   .then(() => console.log('Supabase database connected successfully via Prisma'))
   .catch((error) => {
-    console.error('Database connection error:', error);
-    process.exit(1);
+    console.error('Database connection error:', error.message || error);
   });
 
 // Graceful shutdown

@@ -25,13 +25,7 @@ app.get('/', (req, res) => {
   res.json({
     message: 'MidusaElibrary API',
     version: '1.0.0',
-    status: 'running',
-    categories: [
-      'Self Development',
-      'Psychology',
-      'Finance & Business',
-      'Christianity'
-    ]
+    status: 'running'
   });
 });
 
@@ -48,6 +42,7 @@ const routes = [
   { path: '/api/categories', module: './routes/categoryRoutes' },
   { path: '/api/orders',     module: './routes/orderRoutes' },
   { path: '/api/admin',      module: './routes/adminRoutes' },
+  { path: '/api/upload',     module: './routes/uploadRoutes' },
 ];
 
 routes.forEach(({ path, module }) => {
@@ -74,8 +69,8 @@ app.use((req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT} (http://localhost:${PORT})`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
