@@ -131,7 +131,10 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    loadDashboardData();
+    async function init() {
+      await loadDashboardData();
+    }
+    init();
   }, [token]);
 
   // -------------------------------------------------------------
