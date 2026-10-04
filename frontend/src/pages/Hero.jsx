@@ -8,7 +8,7 @@ import CategoryIcon from '../components/ui/CategoryIcon';
 import { getBooks } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import { useCategories } from '../context/CategoryContext';
-import Heroimg from '../assets/hero5.jpg'
+import Heroimg from '../assets/hero6.jpg'
 export default function Hero() {
   const { categories } = useCategories();
   const [featuredBooks, setFeaturedBooks] = useState([]);

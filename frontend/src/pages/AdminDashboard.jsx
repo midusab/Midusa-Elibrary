@@ -81,6 +81,7 @@ export default function AdminDashboard() {
   });
   const [pdfFile, setPdfFile] = useState(null);       // raw File from picker
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);  // 0-100
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -229,13 +230,15 @@ export default function AdminDashboard() {
     try {
       let pdfUrl = bookForm.pdfUrl;
 
-      // Upload PDF to Supabase Storage first if a new file was selected
+      // Upload PDF first if a new file was selected
       if (pdfFile) {
         setIsUploadingPdf(true);
+        setUploadProgress(0);
         try {
-          pdfUrl = await uploadPdf(pdfFile, token);
+          pdfUrl = await uploadPdf(pdfFile, token, (pct) => setUploadProgress(pct));
         } finally {
           setIsUploadingPdf(false);
+          setUploadProgress(0);
         }
       }
 
@@ -1373,10 +1376,21 @@ export default function AdminDashboard() {
                       </p>
                     )}
                     {isUploadingPdf && (
-                      <p className="mt-1 text-xs text-[#1E90FF] flex items-center gap-1.5">
-                        <span className="inline-block w-3 h-3 border border-[#1E90FF] border-t-transparent rounded-full animate-spin" />
-                        Uploading PDF to Supabase Storage...
-                      </p>
+                      <div className="mt-2 space-y-1">
+                        <div className="flex items-center justify-between text-xs text-[#1E90FF]">
+                          <span className="flex items-center gap-1.5">
+                            <span className="inline-block w-3 h-3 border border-[#1E90FF] border-t-transparent rounded-full animate-spin" />
+                            Uploading PDF…
+                          </span>
+                          <span className="font-semibold tabular-nums">{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#1E90FF] rounded-full transition-all duration-200"
+                            style={{ width: `${uploadProgress}%` }}
+                          />
+                        </div>
+                      </div>
                     )}
                   </div>
 

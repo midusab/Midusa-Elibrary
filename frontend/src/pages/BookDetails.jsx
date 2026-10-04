@@ -273,15 +273,6 @@ export default function BookDetails() {
                     <FiShoppingCart className="mr-2 w-5 h-5" />
                     Buy Now / Add to Cart
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="sm:w-44 py-3.5 text-xs sm:text-sm font-semibold"
-                    onClick={() => success('Sample preview ready for download')}
-                  >
-                    <FiDownload className="mr-1.5" />
-                    Free Sample
-                  </Button>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">

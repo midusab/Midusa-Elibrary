@@ -43,6 +43,7 @@ export default function Dashboard() {
   });
   const [pdfFile, setPdfFile] = useState(null);       // raw File object from picker
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Derive the effective category without syncing it back into state.
   // Falls back to the first available category when the user hasn't picked one yet.
@@ -151,13 +152,15 @@ export default function Dashboard() {
     try {
       let pdfUrl = newBook.pdfUrl;
 
-      // Upload the PDF to Supabase Storage first
+      // Upload the PDF first
       if (pdfFile) {
         setIsUploadingPdf(true);
+        setUploadProgress(0);
         try {
-          pdfUrl = await uploadPdf(pdfFile, user?.token);
+          pdfUrl = await uploadPdf(pdfFile, user?.token, (pct) => setUploadProgress(pct));
         } finally {
           setIsUploadingPdf(false);
+          setUploadProgress(0);
         }
       }
 
@@ -681,10 +684,21 @@ export default function Dashboard() {
                     <p className="mt-1 text-[11px] text-slate-500">Selected: {pdfFile.name} ({(pdfFile.size / 1024 / 1024).toFixed(2)} MB)</p>
                   )}
                   {isUploadingPdf && (
-                    <p className="mt-1 text-[11px] text-[#1E90FF] flex items-center gap-1">
-                      <span className="inline-block w-3 h-3 border border-[#1E90FF] border-t-transparent rounded-full animate-spin" />
-                      Uploading PDF to storage...
-                    </p>
+                    <div className="mt-2 space-y-1">
+                      <div className="flex items-center justify-between text-[11px] text-[#1E90FF]">
+                        <span className="flex items-center gap-1">
+                          <span className="inline-block w-3 h-3 border border-[#1E90FF] border-t-transparent rounded-full animate-spin" />
+                          Uploading PDF…
+                        </span>
+                        <span className="font-semibold tabular-nums">{uploadProgress}%</span>
+                      </div>
+                      <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[#1E90FF] rounded-full transition-all duration-200"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
 
