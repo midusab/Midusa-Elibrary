@@ -2,13 +2,17 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { FiBookOpen, FiTarget, FiUsers, FiAward, FiShield, FiArrowRight, FiCheck } from 'react-icons/fi';
 import Card from '../components/ui/Card';
+import Cardimg from '../assets/hero2.jpg'
 import Button from '../components/ui/Button';
 import { CATEGORIES } from '../constants/categories';
 import CategoryIcon from '../components/ui/CategoryIcon';
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-white py-10 sm:py-16">
+    <div className="min-h-screen bg-white py-10 sm:py-16 bg-cover bg-fixed bg-center bg-no-repeat overflow-hidden"  style={{
+          backgroundImage: `url(${Cardimg})`,
+        }} >
+         
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
@@ -24,10 +28,14 @@ export default function About() {
         </div>
 
         {/* Mission & Vision Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
-          <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col justify-between">
-            <div>
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16 " 
+         
+        >
+          <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col justify-between"
+          >
+            <div >
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mb-5"
+             >
                 <FiTarget className="w-6 h-6" />
               </div>
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">

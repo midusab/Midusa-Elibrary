@@ -8,7 +8,7 @@ import CategoryIcon from '../components/ui/CategoryIcon';
 import { getBooks } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import { useCategories } from '../context/CategoryContext';
-import Heroimg from '../assets/hero6.jpg'
+import Heroimg from '../assets/hero11.jpg'
 export default function Hero() {
   const { categories } = useCategories();
   const [featuredBooks, setFeaturedBooks] = useState([]);
@@ -46,13 +46,13 @@ export default function Hero() {
 
       {/* Hero Header Section */}
       <section
-        className="relative min-h-[92vh] sm:min-h-screen flex items-center justify-center pt-20 pb-14 sm:py-24 bg-cover bg-center bg-no-repeat overflow-hidden"
+        className="relative min-h-[92vh] sm:min-h-screen flex items-center justify-center pt-20 pb-14 sm:py-24 bg-cover bg-center bg-no-repeat bg-fixed overflow-hidden"
         style={{
           backgroundImage: `url(${Heroimg})`,
         }}
       >
         {/* Dark Vignette / Gradient Overlay for High-Contrast Text Legibility */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/50 via-slate-950/65 to-slate-950/85 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/65 to-slate-950/85 pointer-events-none" />
 
         {/* Ambient Subtle Blue Glow Behind Text */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-80  pointer-events-none rounded-full blur-3xl" />
@@ -84,7 +84,7 @@ export default function Hero() {
             transition={{ duration: 0.4, delay: 0.1 }}
             className="text-3xl sm:text-5xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] mb-5 sm:mb-6 max-w-4xl mx-auto drop-shadow-md"
           >
-            Curated eBooks to <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300 bg-clip-text text-transparent">Elevate Your Mind</span>
+           Take Your Dreams Off the Shelf <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300 bg-clip-text text-transparent">... Elevate Your Mind</span>
           </motion.h1>
 
           {/* Subtitle */}
