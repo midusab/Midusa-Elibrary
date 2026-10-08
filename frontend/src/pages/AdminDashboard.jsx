@@ -64,6 +64,7 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [analytics, setAnalytics] = useState(null);
+  const [sevenDaysAgo, setSevenDaysAgo] = useState(null);
 
   // Filters & Search
   const [bookSearch, setBookSearch] = useState('');
@@ -131,6 +132,7 @@ export default function AdminDashboard() {
       setOrders(Array.isArray(ordersRes?.orders) ? ordersRes.orders : []);
       setUsersList(Array.isArray(usersRes) ? usersRes : []);
       setAnalytics(analyticsRes);
+      setSevenDaysAgo(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
     } catch (err) {
       console.error('Failed to load admin dashboard data:', err);
       toastError('Could not refresh dashboard data. Please try again.');
@@ -196,9 +198,6 @@ export default function AdminDashboard() {
           conversionRate: (b.clicks || 0) > 0 ? Math.min(100, Math.round(((purchaseCounts[b.id] || 0) / b.clicks) * 100)) : 0
         }));
 
-    // Compute once inside useMemo so it's stable and never called during render
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
     return {
       revenue: analytics?.totalRevenue ?? totalRev,
       sales: analytics?.totalSales ?? totalSalesCount,
@@ -215,7 +214,7 @@ export default function AdminDashboard() {
       categoryStats: analytics?.categoryStats || [],
       sevenDaysAgo
     };
-  }, [orders, books, usersList, analytics]);
+  }, [orders, books, usersList, analytics, sevenDaysAgo]);
 
   // -------------------------------------------------------------
   // Book Actions
@@ -1131,7 +1130,6 @@ export default function AdminDashboard() {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {derivedStats.topClickedBooks.map((b, idx) => {
-                        const isTop = idx === 0;
                         const clicks = b.clicks || 0;
                         const sales = b.salesCount || 0;
                         const conv = b.conversionRate || (clicks > 0 ? Math.round((sales / clicks) * 100) : 0);
@@ -1633,7 +1631,7 @@ export default function AdminDashboard() {
                   <h3 className="text-2xl font-bold text-slate-900">
                     {
                       usersList.filter((u) => {
-                        if (!u.createdAt) return false;
+                        if (!u.createdAt || !derivedStats.sevenDaysAgo) return false;
                         return new Date(u.createdAt) >= derivedStats.sevenDaysAgo;
                       }).length
                     }
@@ -1742,7 +1740,7 @@ export default function AdminDashboard() {
                         }
 
                         const hasPurchases = completedOrders.length > 0;
-                        const isNew = u.createdAt && new Date(u.createdAt) >= derivedStats.sevenDaysAgo;
+                        const isNew = Boolean(u.createdAt && derivedStats.sevenDaysAgo && new Date(u.createdAt) >= derivedStats.sevenDaysAgo);
 
                         return (
                           <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">

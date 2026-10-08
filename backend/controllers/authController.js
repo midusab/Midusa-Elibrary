@@ -62,8 +62,9 @@ exports.login = async (req, res) => {
     const isAdmin = (normalizedEmail === ADMIN_EMAIL);
 
     try {
+      const userModel = prisma.users || prisma.user;
       // Look up user in database
-      let user = await prisma.user.findUnique({
+      let user = await userModel.findUnique({
         where: { email: normalizedEmail }
       });
 
@@ -71,7 +72,7 @@ exports.login = async (req, res) => {
         // If it's the admin signing in for the first time, auto-create the account
         if (isAdmin) {
           const hashedPassword = await bcrypt.hash(password, 10);
-          user = await prisma.user.create({
+          user = await userModel.create({
             data: {
               email: normalizedEmail,
               fullname: 'Brian Midusa (Admin)',
@@ -94,7 +95,7 @@ exports.login = async (req, res) => {
         
         // Ensure role is admin if matches admin email
         if (isAdmin && user.role !== 'admin') {
-          user = await prisma.user.update({
+          user = await userModel.update({
             where: { id: user.id },
             data: { role: 'admin' }
           });
@@ -142,21 +143,33 @@ exports.login = async (req, res) => {
 // ============================================================
 exports.register = async (req, res) => {
   try {
-    const { fullname, email, password } = req.body;
+    const { fullname, email, password, confirmPassword } = req.body;
 
     if (!fullname || !email || !password) {
       return res.status(400).json({ error: 'Please provide name, email, and password' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    if (confirmPassword !== undefined && password !== confirmPassword) {
+      return res.status(400).json({ error: 'Passwords do not match' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        error: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+      });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     const isAdmin = (normalizedEmail === ADMIN_EMAIL);
 
     try {
-      const existingUser = await prisma.user.findUnique({
+      const userModel = prisma.users || prisma.user;
+      const existingUser = await userModel.findUnique({
         where: { email: normalizedEmail }
       });
 
@@ -165,7 +178,7 @@ exports.register = async (req, res) => {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await prisma.user.create({
+      const user = await userModel.create({
         data: {
           fullname: fullname.trim(),
           email: normalizedEmail,

@@ -182,7 +182,6 @@ export const AuthProvider = ({ children }) => {
    */
   const loginWithEmail = async (email, password) => {
     const normalizedEmail = (email || '').trim().toLowerCase();
-    const isAdmin = checkIsAdmin(normalizedEmail);
 
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
@@ -200,8 +199,8 @@ export const AuthProvider = ({ children }) => {
       saveUserSession(sessionUser);
       return { success: true, user: sessionUser };
     } catch (err) {
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.');
+      if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.', { cause: err });
       }
       throw err;
     }
@@ -210,15 +209,14 @@ export const AuthProvider = ({ children }) => {
   /**
    * Register with Email, Full Name and Password
    */
-  const registerWithEmail = async (fullname, email, password) => {
+  const registerWithEmail = async (fullname, email, password, confirmPassword) => {
     const normalizedEmail = (email || '').trim().toLowerCase();
-    const isAdmin = checkIsAdmin(normalizedEmail);
 
     try {
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullname, email: normalizedEmail, password })
+        body: JSON.stringify({ fullname, email: normalizedEmail, password, confirmPassword })
       });
 
       const data = await res.json();
@@ -230,8 +228,8 @@ export const AuthProvider = ({ children }) => {
       saveUserSession(sessionUser);
       return { success: true, user: sessionUser };
     } catch (err) {
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.');
+      if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.', { cause: err });
       }
       throw err;
     }
