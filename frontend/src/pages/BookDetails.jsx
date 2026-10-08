@@ -4,7 +4,6 @@ import {
   FiStar, 
   FiShoppingCart, 
   FiHeart, 
-  FiDownload, 
   FiArrowLeft, 
   FiShare2, 
   FiCheck, 
@@ -17,7 +16,7 @@ import {
 } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { getBookById, getBooks } from '../services/api';
+import { getBookById, getBooks, recordBookClick } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
@@ -50,6 +49,9 @@ export default function BookDetails() {
         setBook(item || null);
 
         if (item) {
+          // Record book click/view
+          recordBookClick(item.id);
+
           // Set reviews
           setReviewsList(Array.isArray(item.reviews) ? item.reviews : []);
 

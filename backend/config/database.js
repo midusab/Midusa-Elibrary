@@ -24,4 +24,13 @@ process.on('beforeExit', async () => {
   await prisma.$disconnect();
 });
 
+// Provide model aliases for compatibility
+prisma.user = prisma.users;
+prisma.book = prisma.books;
+prisma.category = prisma.categories;
+prisma.order = prisma.orders;
+prisma.orderItem = prisma.order_items;
+prisma.siteVisit = prisma.site_visits;
+prisma.bookClick = prisma.book_clicks;
+
 module.exports = { prisma, supabase };

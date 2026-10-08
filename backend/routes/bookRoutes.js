@@ -8,6 +8,7 @@ router.get('/', bookController.getBooks);
 router.get('/featured', bookController.getFeaturedBooks);
 router.get('/bestsellers', bookController.getBestsellerBooks);
 router.get('/:id', bookController.getBookById);
+router.post('/:id/click', bookController.recordBookClick);
 
 // Admin only routes
 router.post('/', adminAuth, bookController.createBook);

@@ -19,6 +19,33 @@ import AdminDashboard from './pages/AdminDashboard';
 import About from './pages/About';
 import Contact from './pages/Contact';
 
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import { recordSiteVisit } from './services/api';
+
+function PageVisitTracker() {
+  const location = useLocation();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    let visitorId = localStorage.getItem('elibrary_visitor_id');
+    if (!visitorId) {
+      visitorId = 'v_' + Math.random().toString(36).substring(2, 10);
+      localStorage.setItem('elibrary_visitor_id', visitorId);
+    }
+
+    recordSiteVisit({
+      visitorId,
+      userId: user?.id || null,
+      pagePath: location.pathname,
+      referrer: document.referrer || ''
+    });
+  }, [location.pathname, user?.id]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <Router>
@@ -27,6 +54,7 @@ export default function App() {
           <AuthProvider>
             <ToastProvider>
               <CategoryProvider>
+                <PageVisitTracker />
                 <div className="min-h-screen flex flex-col bg-white text-slate-900 overflow-x-hidden w-full">
                   <Navigation />
                 <main className="flex-1 pt-20 bg-white">

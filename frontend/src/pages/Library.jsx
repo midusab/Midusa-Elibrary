@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { FiSearch, FiStar, FiShoppingCart, FiX } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import CategoryIcon from '../components/ui/CategoryIcon';
-import { getBooks } from '../services/api';
+import { getBooks, recordBookClick } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import { PRICE_RANGES, SORT_OPTIONS } from '../constants/categories';
 import { useCategories } from '../context/CategoryContext';
@@ -273,7 +273,11 @@ export default function Library() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25 }}
               >
-                <Link to={`/book/${book.id}`} className="group block h-full">
+                <Link
+                  to={`/book/${book.id}`}
+                  onClick={() => recordBookClick(book.id)}
+                  className="group block h-full"
+                >
                   <Card className="h-full flex flex-col justify-between overflow-hidden bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl shadow-sm hover:shadow transition-all duration-200">
                     <div>
                       {/* Book Cover */}

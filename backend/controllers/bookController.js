@@ -17,6 +17,7 @@ function formatBook(book) {
     rating:      book.rating ? parseFloat(book.rating) : 0,
     featured:    book.featured || false,
     bestseller:  book.bestseller || false,
+    clicks:      book.clicks_count || 0,
     createdAt:   book.created_at,
     updatedAt:   book.updated_at,
   };
@@ -272,6 +273,51 @@ const getBestsellerBooks = async (req, res) => {
   }
 };
 
+// ─── Record book click / view ──────────────────────────────────────────────────
+const recordBookClick = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { visitorId, userId } = req.body || {};
+
+    // Validate ID
+    if (!id) {
+      return res.status(400).json({ error: 'Book ID is required' });
+    }
+
+    // Check if book exists
+    const book = await prisma.books.findUnique({ where: { id } });
+    if (!book) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+
+    // Increment clicks_count
+    const updated = await prisma.books.update({
+      where: { id },
+      data: { clicks_count: { increment: 1 } },
+      select: { id: true, clicks_count: true, title: true }
+    });
+
+    // Record click log
+    try {
+      await prisma.book_clicks.create({
+        data: {
+          book_id: id,
+          visitor_id: visitorId || null,
+          user_id: userId || null
+        }
+      });
+    } catch (logErr) {
+      // Non-fatal if detail log fails
+      console.warn('Click log warning:', logErr.message);
+    }
+
+    res.json({ success: true, clicks: updated.clicks_count });
+  } catch (error) {
+    console.error('Error recording book click:', error);
+    res.status(500).json({ error: 'Failed to record click' });
+  }
+};
+
 module.exports = {
   getBooks,
   getBookById,
@@ -280,4 +326,5 @@ module.exports = {
   deleteBook,
   getFeaturedBooks,
   getBestsellerBooks,
+  recordBookClick,
 };

@@ -494,3 +494,49 @@ export async function syncBestsellers(token) {
   return res.json();
 }
 
+/**
+ * Record a page visit (Analytics)
+ */
+export async function recordSiteVisit(visitData = {}) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/visit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(visitData)
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+    return null;
+  } catch {
+    // Non-blocking for UI
+    return null;
+  }
+}
+
+/**
+ * Record a book click/view event (Analytics)
+ */
+export async function recordBookClick(bookId, data = {}) {
+  try {
+    if (!bookId) return null;
+    const res = await fetch(`${API_BASE_URL}/books/${bookId}/click`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+    return null;
+  } catch {
+    // Non-blocking for UI
+    return null;
+  }
+}
+
+
