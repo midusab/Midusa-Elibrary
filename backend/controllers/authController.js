@@ -165,7 +165,13 @@ exports.register = async (req, res) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const isAdmin = (normalizedEmail === ADMIN_EMAIL);
+
+    // ⛔ Block registration with the admin email — admin account is created only via first login.
+    if (normalizedEmail === ADMIN_EMAIL) {
+      return res.status(403).json({
+        error: 'This email address cannot be used to register. Please use a different email.'
+      });
+    }
 
     try {
       const userModel = prisma.users || prisma.user;
@@ -183,7 +189,7 @@ exports.register = async (req, res) => {
           fullname: fullname.trim(),
           email: normalizedEmail,
           password: hashedPassword,
-          role: isAdmin ? 'admin' : 'user',
+          role: 'user', // Always 'user' — admin role is set only via login for ADMIN_EMAIL
           avatar: ''
         }
       });
@@ -202,12 +208,13 @@ exports.register = async (req, res) => {
       });
     } catch (dbErr) {
       console.warn('Prisma DB error in register (using fallback):', dbErr.message);
+      // Fallback users are always 'user' role — admin email is already blocked above.
       const fallbackUser = {
         id: 'usr-' + Date.now(),
         email: normalizedEmail,
         fullname: fullname.trim(),
         avatar: '',
-        role: isAdmin ? 'admin' : 'user'
+        role: 'user'
       };
       const token = signToken(fallbackUser);
       return res.status(201).json({

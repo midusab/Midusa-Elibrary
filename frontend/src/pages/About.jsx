@@ -60,7 +60,7 @@ export default function About() {
                 Accessible & Fair
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                We bridge international quality with local accessibility in Kenya and beyond. Transparent pricing in Kenyan Shillings (KSh) with seamless M-PESA and card checkouts ensures everyone can access life-changing books without hurdles.
+                We bridge international quality with local accessibility in Kenya and beyond. Transparent pricing in Kenyan Shillings (KSh) with seamless M-PESA (Lipa Na M-PESA) checkout ensures everyone can access life-changing books without hurdles.
               </p>
             </div>
             <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-semibold text-primary">

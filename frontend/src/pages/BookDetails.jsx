@@ -279,8 +279,8 @@ export default function BookDetails() {
 
                 <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                   <div className="flex items-center gap-1.5">
-                    <FiShield className="text-primary w-4 h-4" />
-                    <span>Secure M-PESA & Card Checkout</span>
+                    <FiShield className="text-emerald-600 w-4 h-4" />
+                    <span>Secure M-PESA Checkout · Instant Digital Delivery</span>
                   </div>
                   <span>Lifetime Access</span>
                 </div>
