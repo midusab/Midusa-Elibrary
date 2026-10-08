@@ -7,23 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model books {
-  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  title       String
-  author      String
-  category_id String?     @db.Uuid
-  description String?
-  price       Int         @default(60)
-  rating      Decimal?    @default(0) @db.Decimal(2, 1)
-  cover_url   String
-  pdf_url     String
-  featured    Boolean?    @default(false)
-  bestseller  Boolean?    @default(false)
-  created_at  DateTime?   @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?   @default(now()) @db.Timestamptz(6)
-  categories  categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title        String
+  author       String
+  category_id  String?       @db.Uuid
+  description  String?
+  price        Int           @default(60)
+  rating       Decimal?      @default(0) @db.Decimal(2, 1)
+  cover_url    String
+  pdf_url      String
+  featured     Boolean?      @default(false)
+  bestseller   Boolean?      @default(false)
+  clicks_count Int?          @default(0)
+  created_at   DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime?     @default(now()) @db.Timestamptz(6)
+  categories   categories?   @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  order_items  order_items[]
+  book_clicks  book_clicks[]
 
   @@index([author], map: "idx_books_author")
   @@index([bestseller], map: "idx_books_bestseller")
@@ -32,10 +33,75 @@ model books {
   @@index([title], map: "idx_books_title")
 }
 
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model categories {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name       String    @unique
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   books      books[]
+}
+
+model users {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullname    String
+  email       String        @unique
+  password    String?
+  role        String?       @default("user")
+  avatar      String?       @default("")
+  created_at  DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?     @default(now()) @db.Timestamptz(6)
+  orders      orders[]
+
+  @@index([email], map: "idx_users_email")
+  @@index([created_at], map: "idx_users_created_at")
+}
+
+model orders {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String?       @db.Uuid
+  amount      Decimal?      @default(0)
+  status      String?       @default("pending")
+  created_at  DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?     @default(now()) @db.Timestamptz(6)
+  users       users?        @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  items       order_items[]
+
+  @@index([user_id], map: "idx_orders_user_id")
+  @@index([status], map: "idx_orders_status")
+  @@index([created_at], map: "idx_orders_created_at")
+}
+
+model order_items {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id   String    @db.Uuid
+  book_id    String    @db.Uuid
+  quantity   Int?      @default(1)
+  price      Decimal?  @default(0)
+  orders     orders    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  books      books     @relation(fields: [book_id], references: [id], onDelete: Cascade)
+
+  @@index([order_id], map: "idx_order_items_order")
+  @@index([book_id], map: "idx_order_items_book")
+}
+
+model site_visits {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  visitor_id String?
+  user_id    String?   @db.Uuid
+  page_path  String?
+  referrer   String?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at], map: "idx_site_visits_created")
+}
+
+model book_clicks {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  book_id    String    @db.Uuid
+  user_id    String?   @db.Uuid
+  visitor_id String?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  books      books     @relation(fields: [book_id], references: [id], onDelete: Cascade)
+
+  @@index([book_id], map: "idx_book_clicks_book")
+  @@index([created_at], map: "idx_book_clicks_created")
 }
