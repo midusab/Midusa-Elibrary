@@ -67,20 +67,21 @@ const mpesaCallback = async (req, res) => {
 const getPaymentStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.role === 'admin' ? null : req.user?.id;
 
     if (!id) {
       return res.status(400).json({ error: 'Payment ID or CheckoutRequestID is required' });
     }
 
-    const payment = await paymentService.checkPaymentStatus(id, userId);
+    const payment = await paymentService.checkPaymentStatus(id, req.user);
     res.status(200).json({
       success: true,
       payment,
     });
   } catch (error) {
     console.error('Error in getPaymentStatus controller:', error.message);
-    const status = error.message.includes('not found') ? 404 : 400;
+    const status = error.message.includes('not found')
+      ? 404
+      : (error.message.includes('Unauthorized') ? 403 : 400);
     res.status(status).json({
       error: error.message || 'Failed to retrieve payment status',
     });
@@ -90,8 +91,7 @@ const getPaymentStatus = async (req, res) => {
 // Get authenticated user payment history
 const getUserPayments = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const payments = await paymentService.getUserPayments(userId);
+    const payments = await paymentService.getUserPayments(req.user);
     res.status(200).json({
       success: true,
       payments,
