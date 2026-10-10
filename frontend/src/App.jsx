@@ -58,30 +58,30 @@ export default function App() {
                 <PageVisitTracker />
                 <div className="min-h-screen flex flex-col bg-white text-slate-900 overflow-x-hidden w-full">
                   <Navigation />
-                <main className="flex-1 pt-20 bg-white">
-                  <Routes>
-                    <Route path="/" element={<Hero />} />
-                    <Route path="/categories" element={<Categories />} />
-                    <Route path="/library" element={<Library />} />
-                    <Route path="/book/:id" element={<BookDetails />} />
-                    <Route path="/cart" element={<Cart />} />
-                    <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/legal" element={<Legal />} />
-                    <Route path="/refund-policy" element={<Legal />} />
-                    <Route path="/privacy" element={<Legal />} />
-                    <Route path="/terms" element={<Legal />} />
-                  </Routes>
-                </main>
-                <Footer />
-              </div>
-            </CategoryProvider>
-          </ToastProvider>
+                  <main className="flex-1 pt-20 bg-white">
+                    <Routes>
+                      <Route path="/" element={<Hero />} />
+                      <Route path="/categories" element={<Categories />} />
+                      <Route path="/library" element={<Library />} />
+                      <Route path="/book/:id" element={<BookDetails />} />
+                      <Route path="/cart" element={<Cart />} />
+                      <Route path="/checkout" element={<Checkout />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/register" element={<Register />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/admin" element={<AdminDashboard />} />
+                      <Route path="/about" element={<About />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="/legal" element={<Legal />} />
+                      <Route path="/refund-policy" element={<Legal />} />
+                      <Route path="/privacy" element={<Legal />} />
+                      <Route path="/terms" element={<Legal />} />
+                    </Routes>
+                  </main>
+                  <Footer />
+                </div>
+              </CategoryProvider>
+            </ToastProvider>
           </AuthProvider>
         </CartProvider>
       </ThemeProvider>

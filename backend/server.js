@@ -10,6 +10,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust proxy headers — required so ngrok / reverse-proxy forwarded HTTPS
+// headers (X-Forwarded-Proto, X-Forwarded-Host) are recognised by Express.
+// Without this, Safaricom's callback to your ngrok URL can be rejected.
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
@@ -81,6 +86,7 @@ if (require.main === module) {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT} (http://localhost:${PORT})`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`M-Pesa Callback URL: ${process.env.MPESA_CALLBACK_URL || '⚠ NOT SET'}`);
   });
 }
 

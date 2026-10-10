@@ -1,6 +1,7 @@
 const { prisma } = require('../config/database');
+const paymentService = require('../payment/payment.service');
 
-// Create new order
+// Create new order and trigger M-Pesa STK push
 const createOrder = async (req, res) => {
   try {
     const { items, phoneNumber, paymentMethod } = req.body;
@@ -8,6 +9,10 @@ const createOrder = async (req, res) => {
 
     if (!items || items.length === 0) {
       return res.status(400).json({ error: 'Order must contain at least one item' });
+    }
+
+    if (!phoneNumber || !String(phoneNumber).trim()) {
+      return res.status(400).json({ error: 'M-PESA phone number is required' });
     }
 
     // Calculate total amount & prepare items
@@ -36,12 +41,16 @@ const createOrder = async (req, res) => {
       });
     }
 
-    // Create order with order_items
+    if (totalAmount < 1) {
+      return res.status(400).json({ error: 'Order total must be at least KES 1' });
+    }
+
+    // Create order in 'pending' status — payment not yet confirmed
     const order = await prisma.orders.create({
       data: {
         user_id: userId,
         amount: totalAmount,
-        status: 'completed',
+        status: 'pending',
         items: {
           create: orderItemsToCreate
         }
@@ -55,31 +64,22 @@ const createOrder = async (req, res) => {
       }
     });
 
-    // Record purchases in user's digital library
-    for (const item of items) {
-      const bookId = item.bookId || item.book_id;
-      try {
-        await prisma.purchases.upsert({
-          where: {
-            user_id_book_id: {
-              user_id: userId,
-              book_id: bookId
-            }
-          },
-          update: {
-            order_id: order.id,
-            price: Number(item.price) || 0
-          },
-          create: {
-            user_id: userId,
-            book_id: bookId,
-            order_id: order.id,
-            price: Number(item.price) || 0
-          }
-        });
-      } catch (pErr) {
-        console.warn('Purchase record notice:', pErr.message);
-      }
+    // Trigger M-Pesa STK Push (Daraja API)
+    let paymentInfo = null;
+    try {
+      paymentInfo = await paymentService.initiateMpesaPayment({
+        userId,
+        orderId: order.id,
+        phoneNumber: String(phoneNumber).trim(),
+        amount: totalAmount,
+      });
+    } catch (mpesaErr) {
+      // If STK push fails, delete the pending order and surface the error
+      await prisma.orders.delete({ where: { id: order.id } }).catch(() => {});
+      console.error('STK Push failed:', mpesaErr.message);
+      return res.status(502).json({
+        error: mpesaErr.message || 'Failed to initiate M-Pesa payment. Please check your phone number and try again.',
+      });
     }
 
     // Format response to match frontend expectations
@@ -96,7 +96,9 @@ const createOrder = async (req, res) => {
           coverImage: it.books.cover_url,
           pdfUrl: it.books.pdf_url
         } : null
-      }))
+      })),
+      // Payment tracking info for frontend polling
+      payment: paymentInfo,
     };
 
     res.status(201).json(formattedOrder);

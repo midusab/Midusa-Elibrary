@@ -1,22 +1,88 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiLock, FiCheckCircle, FiShoppingCart, FiSmartphone, FiShield } from 'react-icons/fi';
-import Card from '../components/ui/Card';
+import {
+  FiArrowLeft, FiLock, FiCheckCircle, FiShoppingCart,
+  FiSmartphone, FiShield, FiRefreshCw, FiXCircle, FiClock,
+} from 'react-icons/fi';
+
 import Button from '../components/ui/Button';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { formatPrice } from '../utils/currency';
 import { createOrder } from '../services/api';
+import { API_BASE_URL, authHeader } from '../services/api/client';
+
+// Poll payment status from backend
+async function pollPaymentStatus(paymentId, token) {
+  const res = await fetch(`${API_BASE_URL}/payments/status/${paymentId}`, {
+    headers: { ...authHeader(token) },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.payment;
+}
 
 export default function Checkout() {
   const { cart, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
   const { success, error } = useToast();
   const navigate = useNavigate();
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [paymentFailed, setPaymentFailed] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
+
+  // Pending payment tracking
+  const [pendingPaymentId, setPendingPaymentId] = useState(null);
+  const [pendingMessage, setPendingMessage] = useState('');
+  const [isPolling, setIsPolling] = useState(false);
+  const [pollCount, setPollCount] = useState(0);
+  const pollIntervalRef = useRef(null);
+
+  // Clean up polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, []);
+
+  const startPolling = (paymentId) => {
+    setIsPolling(true);
+    setPollCount(0);
+    let count = 0;
+    pollIntervalRef.current = setInterval(async () => {
+      count++;
+      setPollCount(count);
+      try {
+        const payment = await pollPaymentStatus(paymentId, user.token);
+        if (!payment) return;
+
+        if (payment.status === 'completed') {
+          clearInterval(pollIntervalRef.current);
+          setIsPolling(false);
+          setOrderComplete(true);
+          clearCart();
+          success('Payment confirmed! Your books are now in your library.');
+        } else if (payment.status === 'failed') {
+          clearInterval(pollIntervalRef.current);
+          setIsPolling(false);
+          setPaymentFailed(true);
+          error('Payment was not completed. You may try again.');
+        }
+
+        // Stop polling after 90 seconds (18 x 5s = 90s)
+        if (count >= 18) {
+          clearInterval(pollIntervalRef.current);
+          setIsPolling(false);
+          // Show "still pending" note but don't mark as failed yet
+        }
+      } catch (pollErr) {
+        console.warn('Polling error:', pollErr.message);
+      }
+    }, 5000); // poll every 5 seconds
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,27 +98,52 @@ export default function Checkout() {
     }
 
     setIsProcessing(true);
+    setPaymentFailed(false);
     try {
-      await createOrder({
-        items: cart.map(item => ({
-          bookId: item.id,
-          quantity: item.quantity || 1
-        })),
-        phoneNumber: phoneNumber.trim(),
-        paymentMethod: 'mpesa'
-      }, user.token);
+      const orderResult = await createOrder(
+        {
+          items: cart.map(item => ({
+            bookId: item.id,
+            quantity: item.quantity || 1,
+          })),
+          phoneNumber: phoneNumber.trim(),
+          paymentMethod: 'mpesa',
+        },
+        user.token
+      );
 
-      setIsProcessing(false);
-      setOrderComplete(true);
-      clearCart();
-      success('Payment successful! Your books are ready in your dashboard.');
+      const paymentId = orderResult.payment?.paymentId;
+      if (paymentId) {
+        setPendingPaymentId(paymentId);
+        setPendingMessage(
+          orderResult.payment?.customerMessage ||
+            'M-PESA prompt sent! Enter your PIN on your phone.'
+        );
+        startPolling(paymentId);
+      } else {
+        // No payment ID but no error — treat as success (sandbox fallback)
+        setOrderComplete(true);
+        clearCart();
+        success('Order created! Books are available in your dashboard.');
+      }
     } catch (err) {
-      setIsProcessing(false);
       error(err.message || 'Payment processing failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  if (cart.length === 0 && !orderComplete) {
+  const handleRetry = () => {
+    setPaymentFailed(false);
+    setPendingPaymentId(null);
+    setPendingMessage('');
+    setIsPolling(false);
+    setPollCount(0);
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+  };
+
+  // ── Empty cart state ──────────────────────────────────────────────────────
+  if (cart.length === 0 && !orderComplete && !pendingPaymentId) {
     return (
       <div className="min-h-[75vh] bg-white py-12 flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
@@ -73,6 +164,7 @@ export default function Checkout() {
     );
   }
 
+  // ── Payment success state ─────────────────────────────────────────────────
   if (orderComplete) {
     return (
       <div className="min-h-[75vh] bg-white py-12 flex items-center justify-center p-4">
@@ -81,10 +173,10 @@ export default function Checkout() {
             <FiCheckCircle className="w-9 h-9" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">
-            Payment Successful!
+            Payment Confirmed! 🎉
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mb-2">
-            Thank you for your purchase. Your digital books are now unlocked and available in your dashboard.
+            Your digital books are now unlocked and available in your library.
           </p>
           <p className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2 mb-6">
             📱 Check your M-PESA messages for the payment confirmation SMS.
@@ -106,6 +198,117 @@ export default function Checkout() {
     );
   }
 
+  // ── Payment failed state ──────────────────────────────────────────────────
+  if (paymentFailed) {
+    return (
+      <div className="min-h-[75vh] bg-white py-12 flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center bg-white p-8 rounded-2xl border border-red-100 shadow-sm">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-500 mb-5">
+            <FiXCircle className="w-9 h-9" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Payment Cancelled</h1>
+          <p className="text-xs sm:text-sm text-slate-600 mb-6">
+            The M-PESA payment was not completed. You can try again or go back to your cart.
+          </p>
+          <div className="space-y-2.5">
+            <Button
+              size="md"
+              className="w-full text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 border-emerald-600"
+              onClick={handleRetry}
+            >
+              Try Again
+            </Button>
+            <Link to="/cart">
+              <Button variant="outline" size="md" className="w-full text-xs sm:text-sm">
+                Back to Cart
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Pending / Awaiting PIN state ──────────────────────────────────────────
+  if (pendingPaymentId && isPolling) {
+    return (
+      <div className="min-h-[75vh] bg-white py-12 flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center bg-white p-8 rounded-2xl border border-emerald-100 shadow-sm">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 mb-5 animate-pulse">
+            <FiSmartphone className="w-9 h-9" />
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 mb-2">Waiting for M-PESA PIN</h1>
+          <p className="text-xs sm:text-sm text-slate-600 mb-1">
+            {pendingMessage || 'A payment prompt has been sent to your phone.'}
+          </p>
+          <p className="text-xs text-slate-500 mb-5">
+            Please enter your M-PESA PIN on your Safaricom phone to confirm{' '}
+            <strong className="text-slate-700">{formatPrice(cartTotal)}</strong>.
+          </p>
+
+          <div className="flex items-center justify-center gap-2 text-xs text-slate-400 mb-6">
+            <FiRefreshCw className="w-3.5 h-3.5 animate-spin" />
+            <span>Checking payment status… ({pollCount * 5}s)</span>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-5 text-[11px] text-amber-800">
+            <FiClock className="inline w-3.5 h-3.5 mr-1" />
+            The prompt expires in about 60 seconds. If you missed it,{' '}
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="underline font-semibold cursor-pointer hover:text-amber-900"
+            >
+              click here to try again
+            </button>
+            .
+          </div>
+
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="text-xs text-slate-400 hover:text-red-500 underline transition-colors cursor-pointer"
+          >
+            Cancel payment
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Pending but polling stopped (timeout) ─────────────────────────────────
+  if (pendingPaymentId && !isPolling && !orderComplete && !paymentFailed) {
+    return (
+      <div className="min-h-[75vh] bg-white py-12 flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-500 mb-5">
+            <FiClock className="w-9 h-9" />
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 mb-2">Still waiting…</h1>
+          <p className="text-xs sm:text-sm text-slate-600 mb-5">
+            We haven't received payment confirmation yet. If you entered your PIN, please allow a moment and check your library.
+          </p>
+          <div className="space-y-2.5">
+            <Link to="/dashboard">
+              <Button size="md" className="w-full text-xs sm:text-sm font-semibold">
+                Check My Library
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              size="md"
+              className="w-full text-xs sm:text-sm"
+              onClick={handleRetry}
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Main checkout form ────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-white py-8 sm:py-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -166,7 +369,8 @@ export default function Checkout() {
                     className="w-full px-3.5 py-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                   />
                   <p className="text-[11px] text-slate-500 mt-1.5">
-                    Must be a registered Safaricom number. You will receive a prompt for <span className="font-bold text-slate-700">{formatPrice(cartTotal)}</span>.
+                    Must be a registered Safaricom number. You will receive a prompt for{' '}
+                    <span className="font-bold text-slate-700">{formatPrice(cartTotal)}</span>.
                   </p>
                 </div>
 
@@ -180,7 +384,7 @@ export default function Checkout() {
                     {isProcessing ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Sending M-PESA Prompt...
+                        Sending M-PESA Prompt…
                       </span>
                     ) : (
                       `Pay ${formatPrice(cartTotal)} via M-PESA`
@@ -223,7 +427,9 @@ export default function Checkout() {
                         <span className="text-[11px] text-slate-400">Qty: {item.quantity}</span>
                       </div>
                     </div>
-                    <span className="font-bold text-slate-900 ml-2 flex-shrink-0">{formatPrice(item.price * item.quantity)}</span>
+                    <span className="font-bold text-slate-900 ml-2 flex-shrink-0">
+                      {formatPrice(item.price * item.quantity)}
+                    </span>
                   </div>
                 ))}
               </div>

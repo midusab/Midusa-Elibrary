@@ -13,10 +13,12 @@ import {
   FiClock
 } from 'react-icons/fi';
 import { useCategories } from '../../context/CategoryContext';
+import { useCookie } from '../../context/CookieContext';
 import CategoryIcon from '../ui/CategoryIcon';
 
 const Footer = () => {
   const { categories } = useCategories();
+  const { openCookieSettings } = useCookie();
   const currentYear = new Date().getFullYear();
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -290,6 +292,14 @@ const Footer = () => {
               <Link to="/legal?tab=dmca" className="text-slate-400 hover:text-white transition-colors">
                 Copyright &amp; DMCA
               </Link>
+              <span className="text-slate-700">|</span>
+              <button
+                type="button"
+                onClick={openCookieSettings}
+                className="text-slate-400 hover:text-[#1E90FF] transition-colors cursor-pointer"
+              >
+                Cookie Settings
+              </button>
             </div>
           </div>
         </div>
