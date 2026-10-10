@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
@@ -15,28 +15,38 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
   const { user } = useAuth();
 
-  // Derive a stable, account-specific storage key based on user identity
   const userKey = user?.email ? user.email.trim().toLowerCase() : (user?.id || 'guest');
   const currentKey = `cart_user_${userKey}`;
-  const currentKeyRef = useRef(currentKey);
 
+  const [prevKey, setPrevKey] = useState(currentKey);
   const [cart, setCart] = useState(() => {
-    const saved = localStorage.getItem(currentKey);
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem(currentKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   });
 
-  // When active user changes (sign in, sign out, switch account), switch to their account-specific cart
-  useEffect(() => {
-    currentKeyRef.current = currentKey;
-    const saved = localStorage.getItem(currentKey);
-    setCart(saved ? JSON.parse(saved) : []);
-  }, [currentKey]);
+  // When active user identity changes, adjust state during render (React recommended pattern)
+  if (prevKey !== currentKey) {
+    setPrevKey(currentKey);
+    try {
+      const saved = localStorage.getItem(currentKey);
+      setCart(saved ? JSON.parse(saved) : []);
+    } catch {
+      setCart([]);
+    }
+  }
 
-  // Persist cart changes strictly under the current user's account key
+  // Persist cart changes strictly to the active account key
   useEffect(() => {
-    const key = currentKeyRef.current;
-    localStorage.setItem(key, JSON.stringify(cart));
-  }, [cart]);
+    try {
+      localStorage.setItem(currentKey, JSON.stringify(cart));
+    } catch (e) {
+      console.warn('Failed to save cart to localStorage:', e);
+    }
+  }, [currentKey, cart]);
 
   const addToCart = (book) => {
     setCart(prevCart => {
