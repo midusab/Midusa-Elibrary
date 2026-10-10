@@ -26,11 +26,12 @@ export const CATEGORIES = [
 ];
 
 export const PRICE_RANGES = [
-  { id: 'all', label: 'All Prices', min: 0, max: Infinity },
-  { id: 'free', label: 'Free', min: 0, max: 0 },
-  { id: 'under-1000', label: 'Under KSh 1,000', min: 0, max: 1000 },
-  { id: '1000-2000', label: 'KSh 1,000 - KSh 2,000', min: 1000, max: 2000 },
-  { id: 'over-2000', label: 'Over KSh 2,000', min: 2000, max: Infinity }
+  { id: 'all',       label: 'All Prices',           min: 0,   max: Infinity },
+  { id: '100-150',   label: 'KSh 100 – 150',        min: 100, max: 150 },
+  { id: '151-200',   label: 'KSh 151 – 200',        min: 151, max: 200 },
+  { id: '201-300',   label: 'KSh 201 – 300',        min: 201, max: 300 },
+  { id: '301-500',   label: 'KSh 301 – 500',        min: 301, max: 500 },
+  { id: 'over-500',  label: 'Over KSh 500',         min: 501, max: Infinity },
 ];
 
 export const SORT_OPTIONS = [
