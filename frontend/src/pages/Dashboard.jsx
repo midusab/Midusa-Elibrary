@@ -213,10 +213,31 @@ export default function Dashboard() {
     );
   }
 
-  // Derive purchased books directly from real user orders
-  const purchasedBooks = userOrders.flatMap((order) =>
-    (order.items || []).map((item) => item.book).filter(Boolean)
-  );
+  // Derive purchased books ready for download from user orders
+  const purchasedBooksMap = new Map();
+  userOrders.forEach((order) => {
+    // If order is completed or has items
+    if (order.status === 'completed' || order.status === 'success') {
+      (order.items || []).forEach((item) => {
+        const b = item.book;
+        if (b && b.id && !purchasedBooksMap.has(b.id)) {
+          purchasedBooksMap.set(b.id, b);
+        }
+      });
+    }
+  });
+  // Fallback: if user has orders, also include them if no completed filter matched yet
+  if (purchasedBooksMap.size === 0 && userOrders.length > 0) {
+    userOrders.forEach((order) => {
+      (order.items || []).forEach((item) => {
+        const b = item.book;
+        if (b && b.id && !purchasedBooksMap.has(b.id)) {
+          purchasedBooksMap.set(b.id, b);
+        }
+      });
+    });
+  }
+  const purchasedBooks = Array.from(purchasedBooksMap.values());
   const favoriteBooks = [];
 
   return (

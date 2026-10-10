@@ -51,8 +51,8 @@ export default function App() {
   return (
     <Router>
       <ThemeProvider>
-        <CartProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <CartProvider>
             <ToastProvider>
               <CategoryProvider>
                 <PageVisitTracker />

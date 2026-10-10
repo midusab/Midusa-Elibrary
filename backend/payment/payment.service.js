@@ -206,6 +206,9 @@ async function handleMpesaCallback(callbackBody) {
                 price: item.price || 0,
               },
             });
+
+            // Auto-mark book as bestseller after purchase
+            await updateBookBestsellerStatus(item.book_id);
           } catch (pErr) {
             console.warn(`Could not add purchase for book ${item.book_id}:`, pErr.message);
           }
@@ -337,6 +340,9 @@ async function checkPaymentStatus(identifier, user = null) {
                   price: item.price || 0,
                 },
               });
+
+              // Auto-mark book as bestseller after purchase
+              await updateBookBestsellerStatus(item.book_id);
             } catch (err) {}
           }
         }
@@ -439,10 +445,33 @@ async function getAllPayments({ page = 1, limit = 20, status }) {
   };
 }
 
+/**
+ * Auto-mark book as bestseller after a purchase has been made
+ */
+async function updateBookBestsellerStatus(bookId) {
+  if (!bookId) return;
+  try {
+    const purchaseCount = await prisma.purchases.count({
+      where: { book_id: bookId },
+    });
+
+    if (purchaseCount > 0) {
+      await prisma.books.update({
+        where: { id: bookId },
+        data: { bestseller: true },
+      });
+      console.log(`[BESTSELLER] Auto-marked book ${bookId} as bestseller (${purchaseCount} buyer(s))`);
+    }
+  } catch (err) {
+    console.warn(`Could not update bestseller status for book ${bookId}:`, err.message);
+  }
+}
+
 module.exports = {
   initiateMpesaPayment,
   handleMpesaCallback,
   checkPaymentStatus,
   getUserPayments,
   getAllPayments,
+  updateBookBestsellerStatus,
 };

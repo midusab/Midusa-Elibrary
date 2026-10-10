@@ -39,12 +39,31 @@ export default function UserLibraryTab({
                   {book.title}
                 </h3>
                 <p className="text-[11px] text-slate-500 truncate mb-2">{book.author}</p>
-                <button
-                  onClick={() => onReadNow ? onReadNow(book) : null}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#1E90FF] text-white text-[11px] font-semibold hover:bg-[#1C86EE] transition-colors cursor-pointer"
-                >
-                  <FiDownload className="w-3 h-3" /> Read Now
-                </button>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  {book.pdfUrl ? (
+                    <>
+                      <a
+                        href={book.pdfUrl}
+                        download={`${book.title}.pdf`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1E90FF] text-white text-xs font-bold hover:bg-[#1C86EE] transition-colors cursor-pointer shadow-sm"
+                      >
+                        <FiDownload className="w-3.5 h-3.5" /> Download
+                      </a>
+                      <a
+                        href={book.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors cursor-pointer"
+                      >
+                        Read
+                      </a>
+                    </>
+                  ) : (
+                    <span className="text-[11px] text-slate-400 italic">PDF unlocking...</span>
+                  )}
+                </div>
               </div>
             </Card>
           ))}

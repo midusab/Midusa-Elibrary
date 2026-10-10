@@ -424,9 +424,36 @@ const autoMarkBestsellers = async (req, res) => {
   }
 };
 
+/**
+ * Reset revenue and transaction records (Admin only)
+ */
+const resetRevenue = async (req, res) => {
+  try {
+    // 1. Delete payments (foreign key to orders)
+    await prisma.payments.deleteMany({});
+    // 2. Delete order_items
+    await prisma.order_items.deleteMany({});
+    // 3. Delete orders
+    await prisma.orders.deleteMany({});
+    // 4. Delete purchases
+    await prisma.purchases.deleteMany({});
+
+    res.json({
+      success: true,
+      message: 'Platform revenue and transaction history reset to KSh 0.',
+      revenue: 0,
+      sales: 0,
+    });
+  } catch (error) {
+    console.error('Error resetting revenue:', error);
+    res.status(500).json({ error: 'Failed to reset revenue', details: error.message });
+  }
+};
+
 module.exports = {
   recordSiteVisit,
   getUsers,
   getAnalytics,
-  autoMarkBestsellers
+  autoMarkBestsellers,
+  resetRevenue,
 };
