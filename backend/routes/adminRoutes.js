@@ -3,8 +3,8 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 const { auth, adminAuth } = require('../middleware/auth');
 
-// Visit tracking — requires a valid login to prevent bot inflation
-router.post('/visit', auth, adminController.recordSiteVisit);
+// Visit tracking — records pageviews and visitors for analytics
+router.post('/visit', adminController.recordSiteVisit);
 
 // Protected admin routes
 router.get('/users', adminAuth, adminController.getUsers);

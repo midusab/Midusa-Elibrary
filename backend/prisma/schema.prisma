@@ -19,12 +19,13 @@ model books {
   pdf_url      String
   featured     Boolean?      @default(false)
   bestseller   Boolean?      @default(false)
-  clicks_count Int?          @default(0)
   created_at   DateTime?     @default(now()) @db.Timestamptz(6)
   updated_at   DateTime?     @default(now()) @db.Timestamptz(6)
+  clicks_count Int?          @default(0)
+  book_clicks  book_clicks[]
   categories   categories?   @relation(fields: [category_id], references: [id], onUpdate: NoAction)
   order_items  order_items[]
-  book_clicks  book_clicks[]
+  purchases    purchases[]
 
   @@index([author], map: "idx_books_author")
   @@index([bestseller], map: "idx_books_bestseller")
@@ -41,29 +42,33 @@ model categories {
 }
 
 model users {
-  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  fullname    String
-  email       String        @unique
-  password    String?
-  role        String?       @default("user")
-  avatar      String?       @default("")
-  created_at  DateTime?     @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?     @default(now()) @db.Timestamptz(6)
-  orders      orders[]
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fullname   String
+  email      String      @unique
+  password   String?
+  role       String?     @default("user")
+  avatar     String?     @default("")
+  created_at DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at DateTime?   @default(now()) @db.Timestamptz(6)
+  orders     orders[]
+  payments   payments[]
+  purchases  purchases[]
 
   @@index([email], map: "idx_users_email")
   @@index([created_at], map: "idx_users_created_at")
 }
 
 model orders {
-  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id     String?       @db.Uuid
-  amount      Decimal?      @default(0)
-  status      String?       @default("pending")
-  created_at  DateTime?     @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?     @default(now()) @db.Timestamptz(6)
-  users       users?        @relation(fields: [user_id], references: [id], onDelete: SetNull)
-  items       order_items[]
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String?       @db.Uuid
+  amount     Decimal?      @default(0) @db.Decimal
+  status     String?       @default("pending")
+  created_at DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at DateTime?     @default(now()) @db.Timestamptz(6)
+  items      order_items[]
+  users      users?        @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+  payments   payments[]
+  purchases  purchases[]
 
   @@index([user_id], map: "idx_orders_user_id")
   @@index([status], map: "idx_orders_status")
@@ -71,16 +76,18 @@ model orders {
 }
 
 model order_items {
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  order_id   String    @db.Uuid
-  book_id    String    @db.Uuid
-  quantity   Int?      @default(1)
-  price      Decimal?  @default(0)
-  orders     orders    @relation(fields: [order_id], references: [id], onDelete: Cascade)
-  books      books     @relation(fields: [book_id], references: [id], onDelete: Cascade)
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id String?  @db.Uuid
+  book_id  String?  @db.Uuid
+  quantity Int?     @default(1)
+  price    Decimal? @default(0) @db.Decimal
+  books    books?   @relation(fields: [book_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  orders   orders?  @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([order_id], map: "idx_order_items_order")
   @@index([book_id], map: "idx_order_items_book")
+  @@index([book_id], map: "idx_order_items_book_id")
+  @@index([order_id], map: "idx_order_items_order_id")
 }
 
 model site_visits {
@@ -96,12 +103,62 @@ model site_visits {
 
 model book_clicks {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  book_id    String    @db.Uuid
+  book_id    String?   @db.Uuid
   user_id    String?   @db.Uuid
   visitor_id String?
   created_at DateTime? @default(now()) @db.Timestamptz(6)
-  books      books     @relation(fields: [book_id], references: [id], onDelete: Cascade)
+  books      books?    @relation(fields: [book_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([book_id], map: "idx_book_clicks_book")
   @@index([created_at], map: "idx_book_clicks_created")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model payments {
+  id                   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  order_id             String?     @db.Uuid
+  user_id              String?     @db.Uuid
+  amount               Decimal     @db.Decimal(10, 2)
+  currency             String      @default("KES") @db.VarChar(10)
+  payment_method       String      @default("mpesa") @db.VarChar(50)
+  status               String      @default("pending") @db.VarChar(50)
+  phone_number         String?     @db.VarChar(25)
+  merchant_request_id  String?     @db.VarChar(100)
+  checkout_request_id  String?     @db.VarChar(100)
+  mpesa_receipt_number String?     @db.VarChar(100)
+  result_code          Int?
+  result_desc          String?
+  transaction_date     DateTime?   @db.Timestamptz(6)
+  raw_callback         Json?
+  created_at           DateTime    @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  updated_at           DateTime    @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  orders               orders?     @relation(fields: [order_id], references: [id], onUpdate: NoAction)
+  users                users?      @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+  purchases            purchases[]
+
+  @@index([checkout_request_id], map: "idx_payments_checkout_id")
+  @@index([mpesa_receipt_number], map: "idx_payments_mpesa_receipt")
+  @@index([order_id], map: "idx_payments_order_id")
+  @@index([status], map: "idx_payments_status")
+  @@index([user_id], map: "idx_payments_user_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model purchases {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  book_id    String    @db.Uuid
+  order_id   String?   @db.Uuid
+  payment_id String?   @db.Uuid
+  price      Decimal   @default(0.00) @db.Decimal(10, 2)
+  created_at DateTime  @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  books      books     @relation(fields: [book_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  orders     orders?   @relation(fields: [order_id], references: [id], onUpdate: NoAction)
+  payments   payments? @relation(fields: [payment_id], references: [id], onUpdate: NoAction)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, book_id], map: "uq_user_book_purchase")
+  @@index([book_id], map: "idx_purchases_book_id")
+  @@index([order_id], map: "idx_purchases_order_id")
+  @@index([user_id], map: "idx_purchases_user_id")
 }
