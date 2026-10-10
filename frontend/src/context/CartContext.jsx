@@ -15,14 +15,9 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
   const { user } = useAuth();
 
-  // Compute a secure, account-specific storage key
-  const getCartKey = (u) => {
-    if (u?.email) return `cart_user_${u.email.trim().toLowerCase()}`;
-    if (u?.id) return `cart_user_${u.id}`;
-    return 'cart_guest';
-  };
-
-  const currentKey = getCartKey(user);
+  // Derive a stable, account-specific storage key based on user identity
+  const userKey = user?.email ? user.email.trim().toLowerCase() : (user?.id || 'guest');
+  const currentKey = `cart_user_${userKey}`;
   const currentKeyRef = useRef(currentKey);
 
   const [cart, setCart] = useState(() => {
@@ -32,11 +27,10 @@ export const CartProvider = ({ children }) => {
 
   // When active user changes (sign in, sign out, switch account), switch to their account-specific cart
   useEffect(() => {
-    const key = getCartKey(user);
-    currentKeyRef.current = key;
-    const saved = localStorage.getItem(key);
+    currentKeyRef.current = currentKey;
+    const saved = localStorage.getItem(currentKey);
     setCart(saved ? JSON.parse(saved) : []);
-  }, [user?.email, user?.id]);
+  }, [currentKey]);
 
   // Persist cart changes strictly under the current user's account key
   useEffect(() => {
