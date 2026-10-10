@@ -240,7 +240,7 @@ async function handleMpesaCallback(callbackBody) {
 /**
  * Check Payment Status (by payment ID or CheckoutRequestID)
  */
-async function checkPaymentStatus(identifier, userId = null) {
+async function checkPaymentStatus(identifier, user = null) {
   // Query by payment ID (if UUID) or checkout_request_id
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(identifier || ''));
   const where = isUuid
@@ -250,6 +250,9 @@ async function checkPaymentStatus(identifier, userId = null) {
   const payment = await prisma.payments.findFirst({
     where,
     include: {
+      users: {
+        select: { id: true, email: true }
+      },
       orders: {
         include: {
           items: {
@@ -264,8 +267,24 @@ async function checkPaymentStatus(identifier, userId = null) {
     throw new Error('Payment not found');
   }
 
-  if (userId && payment.user_id && payment.user_id !== userId) {
-    throw new Error('Unauthorized to view this payment');
+  // Check authorization — allow admin, or match by userId or user email
+  if (user && payment.user_id) {
+    const isAdmin = typeof user === 'object' && user.role === 'admin';
+    if (!isAdmin) {
+      const userId = typeof user === 'string' ? user : user.id;
+      const userEmail = typeof user === 'object' ? user.email : null;
+
+      const matchesId = payment.user_id === userId;
+      const matchesEmail = Boolean(
+        userEmail &&
+        payment.users?.email &&
+        payment.users.email.trim().toLowerCase() === String(userEmail).trim().toLowerCase()
+      );
+
+      if (!matchesId && !matchesEmail) {
+        throw new Error('Unauthorized to view this payment');
+      }
+    }
   }
 
   // If still pending and has CheckoutRequestID, query Safaricom directly
@@ -346,9 +365,22 @@ async function checkPaymentStatus(identifier, userId = null) {
 /**
  * Get User Payments History
  */
-async function getUserPayments(userId) {
+async function getUserPayments(user) {
+  if (!user) return [];
+  const rawId = typeof user === 'string' ? user : user.id;
+  const email = typeof user === 'object' ? user.email : null;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(rawId || ''));
+
+  let targetUserId = isUuid ? rawId : null;
+  if (!targetUserId && email) {
+    const dbUser = await prisma.users.findUnique({ where: { email: String(email).trim().toLowerCase() } });
+    if (dbUser) targetUserId = dbUser.id;
+  }
+
+  if (!targetUserId) return [];
+
   return prisma.payments.findMany({
-    where: { user_id: userId },
+    where: { user_id: targetUserId },
     include: {
       orders: {
         select: {
