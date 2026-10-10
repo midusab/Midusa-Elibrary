@@ -3,76 +3,109 @@ const { prisma } = require('../config/database');
 // Create new order
 const createOrder = async (req, res) => {
   try {
-    const { items } = req.body;
+    const { items, phoneNumber, paymentMethod } = req.body;
     const userId = req.user.id;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ error: 'Order must contain at least one item' });
     }
 
-    // Calculate total amount
+    // Calculate total amount & prepare items
     let totalAmount = 0;
-    const orderItems = [];
+    const orderItemsToCreate = [];
 
     for (const item of items) {
-      const book = await prisma.book.findUnique({
-        where: { id: item.bookId }
+      const bookId = item.bookId || item.book_id;
+      const book = await prisma.books.findUnique({
+        where: { id: bookId }
       });
 
       if (!book) {
-        return res.status(404).json({ error: `Book with id ${item.bookId} not found` });
+        return res.status(404).json({ error: `Book with id ${bookId} not found` });
       }
 
-      const itemTotal = book.price * item.quantity;
+      const qty = parseInt(item.quantity, 10) || 1;
+      const price = Number(book.price) || 0;
+      const itemTotal = price * qty;
       totalAmount += itemTotal;
 
-      orderItems.push({
-        bookId: item.bookId,
-        quantity: item.quantity,
-        price: book.price
+      orderItemsToCreate.push({
+        book_id: bookId,
+        quantity: qty,
+        price: price
       });
     }
 
-    // Create order with items
-    const order = await prisma.order.create({
+    // Create order with order_items
+    const order = await prisma.orders.create({
       data: {
-        userId,
+        user_id: userId,
         amount: totalAmount,
-        status: 'pending',
+        status: 'completed',
         items: {
-          create: orderItems
+          create: orderItemsToCreate
         }
       },
       include: {
         items: {
           include: {
-            book: true
+            books: true
           }
         }
       }
     });
 
-    // Add to downloads
+    // Record purchases in user's digital library
     for (const item of items) {
+      const bookId = item.bookId || item.book_id;
       try {
-        await prisma.download.create({
-          data: {
-            userId,
-            bookId: item.bookId
+        await prisma.purchases.upsert({
+          where: {
+            user_id_book_id: {
+              user_id: userId,
+              book_id: bookId
+            }
+          },
+          update: {
+            order_id: order.id,
+            price: Number(item.price) || 0
+          },
+          create: {
+            user_id: userId,
+            book_id: bookId,
+            order_id: order.id,
+            price: Number(item.price) || 0
           }
         });
-      } catch (error) {
-        // Ignore duplicate errors
-        if (error.code !== 'P2002') {
-          throw error;
-        }
+      } catch (pErr) {
+        console.warn('Purchase record notice:', pErr.message);
       }
     }
 
-    res.status(201).json(order);
+    // Format response to match frontend expectations
+    const formattedOrder = {
+      ...order,
+      userId: order.user_id,
+      createdAt: order.created_at,
+      updatedAt: order.updated_at,
+      items: (order.items || []).map(it => ({
+        ...it,
+        bookId: it.book_id,
+        book: it.books ? {
+          ...it.books,
+          coverImage: it.books.cover_url,
+          pdfUrl: it.books.pdf_url
+        } : null
+      }))
+    };
+
+    res.status(201).json(formattedOrder);
   } catch (error) {
     console.error('Error creating order:', error);
-    res.status(500).json({ error: 'Failed to create order' });
+    res.status(500).json({ 
+      error: 'Failed to create order',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined 
+    });
   }
 };
 
@@ -80,21 +113,37 @@ const createOrder = async (req, res) => {
 const getUserOrders = async (req, res) => {
   try {
     const userId = req.user.id;
-    const orders = await prisma.order.findMany({
-      where: { userId },
+    const orders = await prisma.orders.findMany({
+      where: { user_id: userId },
       include: {
         items: {
           include: {
-            book: true
+            books: true
           }
         }
       },
       orderBy: {
-        createdAt: 'desc'
+        created_at: 'desc'
       }
     });
 
-    res.json(orders);
+    const formattedOrders = orders.map(order => ({
+      ...order,
+      userId: order.user_id,
+      createdAt: order.created_at,
+      updatedAt: order.updated_at,
+      items: (order.items || []).map(it => ({
+        ...it,
+        bookId: it.book_id,
+        book: it.books ? {
+          ...it.books,
+          coverImage: it.books.cover_url,
+          pdfUrl: it.books.pdf_url
+        } : null
+      }))
+    }));
+
+    res.json(formattedOrders);
   } catch (error) {
     console.error('Error fetching orders:', error);
     res.status(500).json({ error: 'Failed to fetch orders' });
@@ -107,15 +156,15 @@ const getOrderById = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const order = await prisma.order.findFirst({
+    const order = await prisma.orders.findFirst({
       where: {
         id,
-        userId
+        user_id: userId
       },
       include: {
         items: {
           include: {
-            book: true
+            books: true
           }
         }
       }
@@ -125,7 +174,23 @@ const getOrderById = async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    res.json(order);
+    const formattedOrder = {
+      ...order,
+      userId: order.user_id,
+      createdAt: order.created_at,
+      updatedAt: order.updated_at,
+      items: (order.items || []).map(it => ({
+        ...it,
+        bookId: it.book_id,
+        book: it.books ? {
+          ...it.books,
+          coverImage: it.books.cover_url,
+          pdfUrl: it.books.pdf_url
+        } : null
+      }))
+    };
+
+    res.json(formattedOrder);
   } catch (error) {
     console.error('Error fetching order:', error);
     res.status(500).json({ error: 'Failed to fetch order' });
@@ -138,7 +203,7 @@ const updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const order = await prisma.order.update({
+    const order = await prisma.orders.update({
       where: { id },
       data: { status }
     });
@@ -159,12 +224,12 @@ const getAllOrders = async (req, res) => {
     const where = status ? { status } : {};
 
     const [orders, total] = await Promise.all([
-      prisma.order.findMany({
+      prisma.orders.findMany({
         where,
-        skip: parseInt(skip),
-        take: parseInt(limit),
+        skip: parseInt(skip, 10),
+        take: parseInt(limit, 10),
         include: {
-          user: {
+          users: {
             select: {
               id: true,
               fullname: true,
@@ -173,24 +238,40 @@ const getAllOrders = async (req, res) => {
           },
           items: {
             include: {
-              book: true
+              books: true
             }
           }
         },
         orderBy: {
-          createdAt: 'desc'
+          created_at: 'desc'
         }
       }),
-      prisma.order.count({ where })
+      prisma.orders.count({ where })
     ]);
 
+    const formattedOrders = orders.map(order => ({
+      ...order,
+      user: order.users,
+      createdAt: order.created_at,
+      updatedAt: order.updated_at,
+      items: (order.items || []).map(it => ({
+        ...it,
+        book: it.books ? {
+          ...it.books,
+          coverImage: it.books.cover_url,
+          pdfUrl: it.books.pdf_url
+        } : null
+      }))
+    }));
+
     res.json({
-      orders,
+      orders: formattedOrders,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         total,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
+        pages: Math.ceil(total / limit)
       }
     });
   } catch (error) {

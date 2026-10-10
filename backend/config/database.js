@@ -32,5 +32,7 @@ prisma.order = prisma.orders;
 prisma.orderItem = prisma.order_items;
 prisma.siteVisit = prisma.site_visits;
 prisma.bookClick = prisma.book_clicks;
+prisma.payment = prisma.payments;
+prisma.purchase = prisma.purchases;
 
 module.exports = { prisma, supabase };
