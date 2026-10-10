@@ -87,16 +87,28 @@ export default function Navigation() {
 
             {/* Desktop Navigation Links: Inter Medium 16px */}
             <div className="hidden md:flex items-center gap-1.5 lg:gap-2">
-              {/* Browse */}
+              {/* eBooks Store */}
               <Link
                 to="/library"
                 className={`px-3.5 py-2 rounded-full text-base font-medium transition-all duration-200 ${
-                  isActive('/library')
+                  isActive('/library') && !location.search.includes('bestseller')
                     ? 'text-[#1E90FF] bg-[#1E90FF]/10 font-semibold'
                     : 'text-slate-700 hover:text-[#1E90FF] hover:bg-slate-100/70'
                 }`}
               >
-                Browse
+                eBooks
+              </Link>
+
+              {/* Bestsellers Link */}
+              <Link
+                to="/library?bestseller=true"
+                className={`px-3.5 py-2 rounded-full text-base font-medium transition-all duration-200 ${
+                  location.search.includes('bestseller')
+                    ? 'text-amber-700 bg-amber-50 font-semibold'
+                    : 'text-slate-700 hover:text-amber-700 hover:bg-amber-50/70'
+                }`}
+              >
+                Bestsellers
               </Link>
 
               {/* Categories with Dropdown */}
@@ -374,7 +386,15 @@ export default function Navigation() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors"
                 >
-                  Browse All Books
+                  eBooks Catalog
+                </Link>
+                <Link
+                  to="/library?bestseller=true"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-3.5 py-2.5 rounded-xl hover:bg-amber-50 hover:text-amber-800 transition-colors flex items-center justify-between"
+                >
+                  <span>Top Bestsellers</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">★ Popular</span>
                 </Link>
 
                 <div className="px-3.5 pt-2 text-xs font-bold text-slate-400 uppercase tracking-wider">

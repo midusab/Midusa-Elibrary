@@ -18,6 +18,7 @@ import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import Legal from './pages/Legal';
 
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -71,6 +72,10 @@ export default function App() {
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
+                    <Route path="/legal" element={<Legal />} />
+                    <Route path="/refund-policy" element={<Legal />} />
+                    <Route path="/privacy" element={<Legal />} />
+                    <Route path="/terms" element={<Legal />} />
                   </Routes>
                 </main>
                 <Footer />

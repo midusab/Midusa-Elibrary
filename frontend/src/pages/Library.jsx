@@ -84,6 +84,11 @@ export default function Library() {
       list = list.filter(b => b.category.toLowerCase() === selectedCategory.toLowerCase());
     }
 
+    // Bestseller filter
+    if (searchParams.get('bestseller') === 'true') {
+      list = list.filter(b => Boolean(b.bestseller));
+    }
+
     // Sorting
     switch (sortBy) {
       case 'newest':
