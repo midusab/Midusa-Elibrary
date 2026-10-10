@@ -276,29 +276,23 @@ exports.googleAuth = async (req, res) => {
 
     try {
       // Upsert user — create if first login, update avatar/role if they exist
-      let user = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { googleId: uid },
-            { email: normalizedEmail }
-          ]
-        }
+      const userModel = prisma.users || prisma.user;
+      let user = await userModel.findUnique({
+        where: { email: normalizedEmail }
       });
 
       if (user) {
-        user = await prisma.user.update({
+        user = await userModel.update({
           where: { id: user.id },
           data: {
-            googleId: uid,
             avatar: picture || user.avatar,
             fullname: user.fullname || name || 'Google User',
-            role: isAdmin ? 'admin' : user.role,
+            role: isAdmin ? 'admin' : (user.role || 'user'),
           }
         });
       } else {
-        user = await prisma.user.create({
+        user = await userModel.create({
           data: {
-            googleId: uid,
             email: normalizedEmail,
             fullname: name || 'Google User',
             avatar: picture || '',

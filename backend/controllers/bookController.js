@@ -299,11 +299,12 @@ const recordBookClick = async (req, res) => {
 
     // Record click log
     try {
+      const isUuid = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
       await prisma.book_clicks.create({
         data: {
           book_id: id,
           visitor_id: visitorId || null,
-          user_id: userId || null
+          user_id: isUuid(userId) ? userId : null
         }
       });
     } catch (logErr) {

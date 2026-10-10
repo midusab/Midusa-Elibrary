@@ -81,6 +81,15 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+// Process safety handlers
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT EXCEPTION]:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[UNHANDLED REJECTION]:', reason);
+});
+
 // Start server if run directly
 if (require.main === module) {
   app.listen(PORT, '0.0.0.0', () => {

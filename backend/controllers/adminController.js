@@ -1,5 +1,8 @@
 const { prisma } = require('../config/database');
 
+const isUuid = (str) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
+
 /**
  * Record a public site visit (pageview)
  */
@@ -10,7 +13,7 @@ const recordSiteVisit = async (req, res) => {
     await prisma.site_visits.create({
       data: {
         visitor_id: visitorId || null,
-        user_id: userId || null,
+        user_id: isUuid(userId) ? userId : null,
         page_path: pagePath || '/',
         referrer: referrer || null
       }

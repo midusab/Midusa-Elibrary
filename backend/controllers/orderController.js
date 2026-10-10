@@ -1,13 +1,45 @@
 const { prisma } = require('../config/database');
 const paymentService = require('../payment/payment.service');
 
+const isUuid = (str) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
+
+// Helper to resolve an authenticated user to a valid PostgreSQL UUID
+async function resolveDbUserId(user) {
+  if (!user) return null;
+  const rawId = user.id;
+  const email = user.email;
+
+  if (isUuid(rawId)) {
+    const existing = await prisma.users.findUnique({ where: { id: rawId } });
+    if (existing) return existing.id;
+  }
+
+  if (email) {
+    const normalizedEmail = String(email).trim().toLowerCase();
+    let dbUser = await prisma.users.findUnique({ where: { email: normalizedEmail } });
+    if (!dbUser) {
+      dbUser = await prisma.users.create({
+        data: {
+          email: normalizedEmail,
+          fullname: user.fullname || user.name || normalizedEmail.split('@')[0],
+          avatar: user.avatar || '',
+          role: user.role || 'user'
+        }
+      });
+    }
+    return dbUser.id;
+  }
+
+  return null;
+}
+
 // Create new order and trigger M-Pesa STK push
 const createOrder = async (req, res) => {
   try {
     const { items, phoneNumber, paymentMethod } = req.body;
-    const userId = req.user.id;
 
-    if (!items || items.length === 0) {
+    if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Order must contain at least one item' });
     }
 
@@ -15,12 +47,19 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ error: 'M-PESA phone number is required' });
     }
 
+    // Resolve user ID in PostgreSQL database
+    const dbUserId = await resolveDbUserId(req.user);
+
     // Calculate total amount & prepare items
     let totalAmount = 0;
     const orderItemsToCreate = [];
 
     for (const item of items) {
       const bookId = item.bookId || item.book_id;
+      if (!bookId || !isUuid(bookId)) {
+        return res.status(400).json({ error: `Invalid book id format: ${bookId}` });
+      }
+
       const book = await prisma.books.findUnique({
         where: { id: bookId }
       });
@@ -48,7 +87,7 @@ const createOrder = async (req, res) => {
     // Create order in 'pending' status — payment not yet confirmed
     const order = await prisma.orders.create({
       data: {
-        user_id: userId,
+        user_id: dbUserId,
         amount: totalAmount,
         status: 'pending',
         items: {
@@ -68,14 +107,17 @@ const createOrder = async (req, res) => {
     let paymentInfo = null;
     try {
       paymentInfo = await paymentService.initiateMpesaPayment({
-        userId,
+        userId: dbUserId,
         orderId: order.id,
         phoneNumber: String(phoneNumber).trim(),
         amount: totalAmount,
       });
     } catch (mpesaErr) {
-      // If STK push fails, delete the pending order and surface the error
-      await prisma.orders.delete({ where: { id: order.id } }).catch(() => {});
+      // If STK push fails, mark the order as failed (avoids foreign key deletion conflicts)
+      await prisma.orders.update({
+        where: { id: order.id },
+        data: { status: 'failed' }
+      }).catch(() => {});
       console.error('STK Push failed:', mpesaErr.message);
       return res.status(502).json({
         error: mpesaErr.message || 'Failed to initiate M-Pesa payment. Please check your phone number and try again.',
@@ -114,9 +156,13 @@ const createOrder = async (req, res) => {
 // Get user orders
 const getUserOrders = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const dbUserId = await resolveDbUserId(req.user);
+    if (!dbUserId) {
+      return res.json([]);
+    }
+
     const orders = await prisma.orders.findMany({
-      where: { user_id: userId },
+      where: { user_id: dbUserId },
       include: {
         items: {
           include: {
@@ -156,13 +202,15 @@ const getUserOrders = async (req, res) => {
 const getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    if (!id || !isUuid(id)) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const dbUserId = await resolveDbUserId(req.user);
+    const where = dbUserId ? { id, user_id: dbUserId } : { id };
 
     const order = await prisma.orders.findFirst({
-      where: {
-        id,
-        user_id: userId
-      },
+      where,
       include: {
         items: {
           include: {

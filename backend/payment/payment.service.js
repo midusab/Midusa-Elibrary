@@ -241,14 +241,14 @@ async function handleMpesaCallback(callbackBody) {
  * Check Payment Status (by payment ID or CheckoutRequestID)
  */
 async function checkPaymentStatus(identifier, userId = null) {
-  // Query by payment ID or checkout_request_id
+  // Query by payment ID (if UUID) or checkout_request_id
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(identifier || ''));
+  const where = isUuid
+    ? { OR: [{ id: identifier }, { checkout_request_id: identifier }] }
+    : { checkout_request_id: identifier };
+
   const payment = await prisma.payments.findFirst({
-    where: {
-      OR: [
-        { id: identifier },
-        { checkout_request_id: identifier },
-      ],
-    },
+    where,
     include: {
       orders: {
         include: {
