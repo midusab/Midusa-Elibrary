@@ -40,7 +40,7 @@ export default function Library() {
     async function loadBooks() {
       setIsLoading(true);
       try {
-        const res = await getBooks();
+        const res = await getBooks({ limit: 100 });
         if (isMounted) {
           setAllBooks(Array.isArray(res?.books) ? res.books : []);
         }
@@ -175,8 +175,14 @@ export default function Library() {
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery('')}
+                onClick={() => {
+                  setSearchQuery('');
+                  const next = new URLSearchParams(searchParams);
+                  next.delete('search');
+                  setSearchParams(next);
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                aria-label="Clear search"
               >
                 <FiX className="w-4 h-4" />
               </button>
