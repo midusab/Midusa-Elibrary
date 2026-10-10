@@ -82,8 +82,8 @@ export default function App() {
                 </div>
               </CategoryProvider>
             </ToastProvider>
-          </AuthProvider>
-        </CartProvider>
+          </CartProvider>
+        </AuthProvider>
       </ThemeProvider>
     </Router>
   );
