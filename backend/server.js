@@ -47,6 +47,8 @@ const routes = [
   { path: '/api/books',      module: './routes/bookRoutes' },
   { path: '/api/categories', module: './routes/categoryRoutes' },
   { path: '/api/orders',     module: './routes/orderRoutes' },
+  { path: '/api/payments',   module: './payment/payment.routes' },
+  { path: '/api/payment',    module: './payment/payment.routes' },
   { path: '/api/admin',      module: './routes/adminRoutes' },
   { path: '/api/upload',     module: './routes/uploadRoutes' },
 ];
