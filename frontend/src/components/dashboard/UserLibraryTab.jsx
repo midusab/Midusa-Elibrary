@@ -55,6 +55,7 @@ export default function UserLibraryTab({
                         href={book.pdfUrl}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => onReadNow?.(book)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors cursor-pointer"
                       >
                         Read
