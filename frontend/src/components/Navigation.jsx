@@ -42,13 +42,15 @@ export default function Navigation() {
   const { user, logout, isAdmin } = useAuth();
   const { success } = useToast();
 
-  // Keep search input in sync with URL search param on /library page
-  useEffect(() => {
-    if (location.pathname === '/library') {
-      const q = new URLSearchParams(location.search).get('search') || '';
-      setSearchQuery(q);
-    }
-  }, [location.pathname, location.search]);
+  // Keep search input in sync with URL search param on /library page during render
+  const currentUrlSearch = location.pathname === '/library'
+    ? (new URLSearchParams(location.search).get('search') || '')
+    : '';
+  const [prevUrlSearch, setPrevUrlSearch] = useState(currentUrlSearch);
+  if (currentUrlSearch !== prevUrlSearch) {
+    setPrevUrlSearch(currentUrlSearch);
+    setSearchQuery(currentUrlSearch);
+  }
 
   // Close menus when route changes
   const [prevPathname, setPrevPathname] = useState(location.pathname);
@@ -77,30 +79,43 @@ export default function Navigation() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Live debounced search suggestions
+  // Live debounced search suggestions (asynchronous timer callback only)
   useEffect(() => {
     const trimmed = searchQuery.trim();
     if (trimmed.length < 2) {
-      setSuggestions([]);
-      setIsSuggestionsOpen(false);
       return;
     }
 
+    let isMounted = true;
     const timer = setTimeout(async () => {
       try {
         setIsSearching(true);
         const res = await getBooks({ search: trimmed, limit: 4 });
-        setSuggestions(Array.isArray(res?.books) ? res.books : []);
-        setIsSuggestionsOpen(true);
+        if (isMounted) {
+          setSuggestions(Array.isArray(res?.books) ? res.books : []);
+          setIsSuggestionsOpen(true);
+        }
       } catch {
-        setSuggestions([]);
+        if (isMounted) setSuggestions([]);
       } finally {
-        setIsSearching(false);
+        if (isMounted) setIsSearching(false);
       }
     }, 220);
 
-    return () => clearTimeout(timer);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [searchQuery]);
+
+  const handleQueryChange = (e) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+    if (val.trim().length < 2) {
+      setSuggestions([]);
+      setIsSuggestionsOpen(false);
+    }
+  };
 
   const handleSearchSubmit = useCallback((e) => {
     if (e) e.preventDefault();
@@ -279,7 +294,7 @@ export default function Navigation() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleQueryChange}
                 onFocus={() => {
                   if (searchQuery.trim().length >= 2 && suggestions.length > 0) {
                     setIsSuggestionsOpen(true);
@@ -515,7 +530,7 @@ export default function Navigation() {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={handleQueryChange}
                   placeholder="Search books, authors, categories..."
                   className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/25"
                 />
