@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   FiLogOut, FiLayers, FiLock, FiUser, 
-  FiShield, FiMail, FiCheckCircle, FiBookOpen, FiHeart
+  FiShield, FiMail, FiCheckCircle, FiBookOpen, FiHeart, FiCreditCard
 } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -15,6 +15,7 @@ import { useCategories } from '../context/CategoryContext';
 import UserProfileTab from '../components/dashboard/UserProfileTab';
 import UserLibraryTab from '../components/dashboard/UserLibraryTab';
 import UserFavoritesTab from '../components/dashboard/UserFavoritesTab';
+import UserPaymentsTab from '../components/dashboard/UserPaymentsTab';
 import UserAdminTab from '../components/dashboard/UserAdminTab';
 
 export default function Dashboard() {
@@ -361,6 +362,19 @@ export default function Dashboard() {
             )}
           </button>
 
+          <button
+            onClick={() => setActiveTab('payments')}
+            className={`pb-2.5 px-4 text-xs sm:text-sm font-semibold transition-colors relative cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+              activeTab === 'payments' ? 'text-[#1E90FF]' : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <FiCreditCard className="w-4 h-4" />
+            Payment History ({userOrders.length})
+            {activeTab === 'payments' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1E90FF] rounded-full" />
+            )}
+          </button>
+
           {isAdmin && (
             <button
               onClick={() => setActiveTab('backend-admin')}
@@ -410,6 +424,14 @@ export default function Dashboard() {
           <UserFavoritesTab
             isLoadingBooks={isLoadingBooks}
             favoriteBooks={favoriteBooks}
+          />
+        )}
+
+        {/* Tab 4: Payment History */}
+        {activeTab === 'payments' && (
+          <UserPaymentsTab
+            orders={userOrders}
+            isLoading={isLoadingOrders}
           />
         )}
 

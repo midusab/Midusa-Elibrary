@@ -62,7 +62,7 @@ export default function UserLibraryTab({
                       </a>
                     </>
                   ) : (
-                    <span className="text-[11px] text-slate-400 italic">PDF unlocking...</span>
+                    <span className="text-[11px] text-slate-400 italic">Unlocking title...</span>
                   )}
                 </div>
               </div>

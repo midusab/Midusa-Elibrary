@@ -168,6 +168,9 @@ const getUserOrders = async (req, res) => {
           include: {
             books: true
           }
+        },
+        payments: {
+          orderBy: { created_at: 'desc' }
         }
       },
       orderBy: {
@@ -175,21 +178,39 @@ const getUserOrders = async (req, res) => {
       }
     });
 
-    const formattedOrders = orders.map(order => ({
-      ...order,
-      userId: order.user_id,
-      createdAt: order.created_at,
-      updatedAt: order.updated_at,
-      items: (order.items || []).map(it => ({
-        ...it,
-        bookId: it.book_id,
-        book: it.books ? {
-          ...it.books,
-          coverImage: it.books.cover_url,
-          pdfUrl: it.books.pdf_url
-        } : null
-      }))
-    }));
+    const formattedOrders = orders.map(order => {
+      const latestPayment = order.payments?.[0] || null;
+      return {
+        ...order,
+        userId: order.user_id,
+        createdAt: order.created_at,
+        updatedAt: order.updated_at,
+        mpesaReceipt: latestPayment?.mpesa_receipt_number || null,
+        phoneNumber: latestPayment?.phone_number || null,
+        paymentMethod: latestPayment?.payment_method || 'mpesa',
+        paymentStatus: latestPayment?.status || order.status,
+        transactionDate: latestPayment?.transaction_date || order.created_at,
+        payment: latestPayment ? {
+          id: latestPayment.id,
+          status: latestPayment.status,
+          amount: latestPayment.amount,
+          currency: latestPayment.currency,
+          phoneNumber: latestPayment.phone_number,
+          mpesaReceipt: latestPayment.mpesa_receipt_number,
+          transactionDate: latestPayment.transaction_date,
+          resultDesc: latestPayment.result_desc,
+        } : null,
+        items: (order.items || []).map(it => ({
+          ...it,
+          bookId: it.book_id,
+          book: it.books ? {
+            ...it.books,
+            coverImage: it.books.cover_url,
+            pdfUrl: it.books.pdf_url
+          } : null
+        }))
+      };
+    });
 
     res.json(formattedOrders);
   } catch (error) {

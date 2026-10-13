@@ -1,31 +1,43 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FiBookOpen, FiDownloadCloud, FiStar, FiArrowRight, FiShield } from 'react-icons/fi';
+import {
+  FiBookOpen,
+  FiDownloadCloud,
+  FiStar,
+  FiArrowRight,
+  FiShield,
+  FiCheckCircle,
+  FiTrendingUp,
+  FiZap
+} from 'react-icons/fi';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import CategoryIcon from '../components/ui/CategoryIcon';
 import { getBooks } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import { useCategories } from '../context/CategoryContext';
-import Heroimg from '../assets/hero11.jpg'
+import HeroImg from '../assets/hero13.jpg'
 export default function Hero() {
   const { categories } = useCategories();
   const [featuredBooks, setFeaturedBooks] = useState([]);
   const [bestsellers, setBestsellers] = useState([]);
+  const [recentBooks, setRecentBooks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
       try {
-        const [featuredRes, bestsellersRes] = await Promise.all([
+        const [featuredRes, bestsellersRes, recentRes] = await Promise.all([
           getBooks({ featured: true, limit: 3 }),
-          getBooks({ bestseller: true, limit: 4 })
+          getBooks({ bestseller: true, limit: 4 }),
+          getBooks({ limit: 4 })
         ]);
         if (isMounted) {
           setFeaturedBooks(Array.isArray(featuredRes?.books) ? featuredRes.books.slice(0, 3) : []);
           setBestsellers(Array.isArray(bestsellersRes?.books) ? bestsellersRes.books.slice(0, 4) : []);
+          setRecentBooks(Array.isArray(recentRes?.books) ? recentRes.books.slice(0, 4) : []);
         }
       } catch (err) {
         console.error('Error loading hero books:', err);
@@ -39,129 +51,300 @@ export default function Hero() {
     };
   }, []);
 
+  // Reliable fallback books for instant showcase
+  const fallbackRecentBooks = [
+    {
+      id: 'recent-1',
+      title: 'Atomic Habits',
+      author: 'James Clear',
+      price: 450,
+      rating: 4.9,
+      category: 'Self Development',
+      coverImage: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&auto=format&fit=crop&q=80',
+      description: 'An easy & proven way to build good habits and break bad ones.'
+    },
+    {
+      id: 'recent-2',
+      title: 'The Psychology of Money',
+      author: 'Morgan Housel',
+      price: 500,
+      rating: 4.8,
+      category: 'Finance & Business',
+      coverImage: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500&auto=format&fit=crop&q=80',
+      description: 'Timeless lessons on wealth, greed, and happiness.'
+    }
+  ];
+
+  const bookOne = recentBooks[0] || fallbackRecentBooks[0];
+  const bookTwo = recentBooks[1] || fallbackRecentBooks[1];
+
   return (
     <div className="bg-white min-h-screen text-slate-900 relative">
-      {/* Subtle Ambient Liquid Light Glow Behind Header */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-96 bg-gradient-to-b from-blue-50/50 via-slate-50/30 to-transparent pointer-events-none -z-10 rounded-full blur-3xl opacity-70" />
+      <style>{`
+        @keyframes heroFloatBack {
+          0%, 100% {
+            transform: translateY(0px) rotate(-3deg);
+          }
+          50% {
+            transform: translateY(-10px) rotate(-2deg);
+          }
+        }
+        @keyframes heroFloatFront {
+          0%, 100% {
+            transform: translateY(0px) rotate(2deg);
+          }
+          50% {
+            transform: translateY(12px) rotate(3deg);
+          }
+        }
+        .hero-floating-card-1 {
+          animation: heroFloatBack 6.5s ease-in-out infinite;
+        }
+        .hero-floating-card-2 {
+          animation: heroFloatFront 7s ease-in-out infinite 0.9s;
+        }
+        .hero-floating-card-1:hover,
+        .hero-floating-card-2:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
 
-      {/* Hero Header Section */}
-      <section
-        className="relative min-h-[92vh] sm:min-h-screen flex items-center justify-center pt-20 pb-14 sm:py-24 bg-cover bg-center bg-no-repeat bg-fixed overflow-hidden"
-        style={{
-          backgroundImage: `url(${Heroimg})`,
-        }}
+      {/* ========================================================================= */}
+      {/* 1. HERO SECTION (Left: Headline & Buttons, Right: 2 Overlapping Cards)    */}
+      {/* ========================================================================= */}
+      <section className="relative pt-24 pb-16 sm:pt-28 sm:pb-20 lg:pt-32 lg:pb-24
+       bg-[url('./assets/hero13.jpg')] bg-cover bg-center bg-fixed
+      border-b border-slate-800/40 overflow-hidden"
       >
-        {/* Dark Vignette / Gradient Overlay for High-Contrast Text Legibility */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/65 to-slate-950/85 pointer-events-none" />
+        {/* Dark Overlay for rich contrast & readability */}
+        <div className="absolute inset-0 bg-slate-950/65 pointer-events-none z-0" />
 
-        {/* Ambient Subtle Blue Glow Behind Text */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-80  pointer-events-none rounded-full blur-3xl" />
+        {/* Ambient Subtle Glow Behind Cards */}
+        <div className="absolute top-1/2 right-10 -translate-y-1/2 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none z-0" />
 
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          {/* Frosted Category Pills Header
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="inline-flex flex-wrap items-center justify-center gap-2 mb-6"
-          >
-            {CATEGORIES.map((cat) => (
-              <Link
-                key={cat.id}
-                to={`/library?category=${encodeURIComponent(cat.name)}`}
-                className="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white/90 hover:text-white border border-white/20 backdrop-blur-md shadow-sm transition-all duration-200 hover:scale-[1.02] flex items-center gap-1.5"
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            
+            {/* ── Left Column: Headline, Subtitle, CTAs & Value Props ───────── */}
+            <div className="lg:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-left">
+              {/* Headline */}
+              <motion.h1
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+                className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.12] mb-6 max-w-2xl"
               >
-                <CategoryIcon slug={cat.slug} className="w-3.5 h-3.5 text-sky-400" />
-                <span>{cat.name}</span>
-              </Link>
-            ))}
-          </motion.div> */}
+                Take Your Dreams Off the Shelf{' '}
+                <span className="text-primary block sm:inline mt-1 sm:mt-0">
+                  ... Elevate Your Mind
+                </span>
+              </motion.h1>
 
-          {/* Main Title */}
-          <motion.h1
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            className="text-3xl sm:text-5xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1] mb-5 sm:mb-6 max-w-4xl mx-auto drop-shadow-md"
-          >
-           Take Your Dreams Off the Shelf <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300 bg-clip-text text-transparent">... Elevate Your Mind</span>
-          </motion.h1>
+              {/* Subtitle */}
+              <motion.p
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+                className="text-base sm:text-lg text-slate-200 mb-8 max-w-xl leading-relaxed"
+              >
+                Focused exclusively on Self Development, Psychology, Finance & Business, and Christianity. Instant digital delivery with automated M-PESA checkout.
+              </motion.p>
 
-          {/* Subtitle */}
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            className="text-lg sm:text-xl text-slate-200 mb-8 max-w-2xl mx-auto leading-relaxed drop-shadow-sm"
-          >
-            Focused exclusively on Self Development, Psychology, Finance & Business, and Christianity. Instant digital delivery with Mpesa checkout.
-          </motion.p>
+              {/* Action Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+                className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 w-full sm:w-auto mb-10"
+              >
+                <Link to="/library" className="w-full sm:w-auto">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto px-7 py-3 text-base font-semibold bg-primary hover:bg-primary-600 text-white rounded-md flex items-center justify-center gap-2"
+                  >
+                    <span>Explore Full Library</span>
+                    <FiArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+                <Link to="/categories" className="w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full sm:w-auto px-7 py-3 text-base font-semibold bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white backdrop-blur-md rounded-md"
+                  >
+                    Browse Categories
+                  </Button>
+                </Link>
+              </motion.div>
 
-          {/* Action Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto"
-          >
-            <Link to="/library" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto px-7 py-3 text-base font-semibold shadow-lg shadow-primary/30 hover:shadow-primary/50">
-                Explore Full Library
-              </Button>
-            </Link>
-            <Link to="/categories" className="w-full sm:w-auto">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto px-7 py-3 text-base font-semibold bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white backdrop-blur-md">
-                Browse Categories
-              </Button>
-            </Link>
-          </motion.div>
+              {/* Quick Trust Highlights directly under buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+                className="pt-6 border-t border-white/15 w-full grid grid-cols-2 sm:grid-cols-3 gap-4"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-md bg-white/10 text-sky-400 border border-white/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                    <FiDownloadCloud className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-white leading-tight">Instant Access</p>
+                    <p className="text-[11px] text-slate-300">Read on any device</p>
+                  </div>
+                </div>
 
-          {/* Value Highlights in Dark Frosted Glass Cards */}
-          <div className="mt-12 pt-8 border-t border-white/15 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 text-left">
-            <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-white/15 shadow-sm">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-sky-400 flex items-center justify-center flex-shrink-0">
-                <FiDownloadCloud className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white">Instant PDF Download</p>
-                <p className="text-[11px] text-slate-300">Read on any device</p>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-md bg-white/10 text-emerald-400 border border-white/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                    <FiShield className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-white leading-tight">M-PESA Ready</p>
+                    <p className="text-[11px] text-slate-300">Automated delivery</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 col-span-2 sm:col-span-1">
+                  <div className="w-8 h-8 rounded-md bg-white/10 text-amber-400 border border-white/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                    <FiBookOpen className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-white leading-tight">Strict Niches</p>
+                    <p className="text-[11px] text-slate-300">Curated value</p>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* ── Right Column: Two Overlapping Floating Cards of Recent Books ── */}
+            <div className="lg:col-span-5 relative flex items-center justify-center py-6 sm:py-8 lg:py-0">
+              <div className="relative w-full max-w-[380px] sm:max-w-[420px] h-[460px] sm:h-[500px]">
+                
+                {/* Back / Upper Card (Card 1) */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="absolute top-0 right-1 sm:right-4 w-[250px] sm:w-[280px] z-10 hero-floating-card-1"
+                >
+                  <Link
+                    to={`/book/${bookOne.id}`}
+                    className="block p-3.5 bg-white border border-slate-200/90 rounded-lg hover:border-primary/80 transition-all duration-200 group"
+                  >
+                    {/* Header badge */}
+                    <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-100">
+                      <span className="text-[10px] font-bold tracking-wider uppercase text-primary bg-primary-50 px-2 py-0.5 rounded">
+                        Recent Release
+                      </span>
+                      <div className="flex items-center text-amber-500 text-xs font-semibold">
+                        <FiStar className="w-3 h-3 fill-current mr-1" />
+                        <span>{bookOne.rating || 4.9}</span>
+                      </div>
+                    </div>
+
+                    {/* Book Cover Image */}
+                    <div className="relative aspect-[3/4] max-h-56 overflow-hidden rounded bg-slate-100 mb-3 border border-slate-100">
+                      <img
+                        src={bookOne.coverImage}
+                        alt={bookOne.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                      <span className="absolute bottom-2 left-2 bg-slate-900/85 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded">
+                        {bookOne.category}
+                      </span>
+                    </div>
+
+                    {/* Book Details */}
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 line-clamp-1 group-hover:text-primary transition-colors">
+                        {bookOne.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 truncate mb-2">
+                        {bookOne.author}
+                      </p>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                        <span className="text-sm font-extrabold text-slate-900">
+                          {formatPrice(bookOne.price)}
+                        </span>
+                        <span className="text-xs font-semibold text-primary group-hover:underline flex items-center gap-1">
+                          View details <FiArrowRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+
+                {/* Front / Lower Card (Card 2) - Overlapping Card 1 */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.35 }}
+                  className="absolute top-28 sm:top-32 left-0 sm:left-2 w-[260px] sm:w-[290px] z-20 hero-floating-card-2"
+                >
+                  <Link
+                    to={`/book/${bookTwo.id}`}
+                    className="block p-4 bg-white/95 backdrop-blur-md border border-slate-300 rounded-lg hover:border-primary transition-all duration-200 group"
+                  >
+                    {/* Header badge */}
+                    <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-100">
+                      <span className="text-[10px] font-bold tracking-wider uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                        Latest Addition
+                      </span>
+                      <span className="text-[11px] font-semibold text-slate-500">
+                        Ready to Read
+                      </span>
+                    </div>
+
+                    {/* Book Cover Image */}
+                    <div className="relative aspect-[3/4] max-h-56 overflow-hidden rounded bg-slate-100 mb-3 border border-slate-100">
+                      <img
+                        src={bookTwo.coverImage}
+                        alt={bookTwo.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                      <span className="absolute bottom-2 left-2 bg-slate-900/85 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded">
+                        {bookTwo.category}
+                      </span>
+                    </div>
+
+                    {/* Book Details */}
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900 line-clamp-1 group-hover:text-primary transition-colors">
+                        {bookTwo.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 truncate mb-2">
+                        {bookTwo.author}
+                      </p>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-sm sm:text-base font-extrabold text-slate-900">
+                            {formatPrice(bookTwo.price)}
+                          </span>
+                        </div>
+
+                        <div className="px-3 py-1 bg-primary text-white rounded text-xs font-semibold flex items-center gap-1 group-hover:bg-primary-600 transition-colors">
+                          <span>Get Book</span>
+                          <FiArrowRight className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-white/15 shadow-sm">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
-                <FiBookOpen className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white">Core Niches</p>
-                <p className="text-[11px] text-slate-300">Strictly curated</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-white/15 shadow-sm">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
-                <FiStar className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white">Trusted Platform</p>
-                <p className="text-[11px] text-slate-300">M-PESA ready</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-slate-900/60 backdrop-blur-md border border-white/15 shadow-sm">
-              <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center flex-shrink-0">
-                <FiShield className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white">Google - Fast Auth</p>
-                <p className="text-[11px] text-slate-300">Fast & verified</p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Picks Section */}
+      {/* ========================================================================= */}
+      {/* 2. FEATURED PICKS SECTION                                                 */}
+      {/* ========================================================================= */}
       <section className="py-12 sm:py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-3">
@@ -182,24 +365,24 @@ export default function Hero() {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((n) => (
-                <div key={n} className="rounded-2xl border border-slate-100 p-5 bg-white animate-pulse">
-                  <div className="aspect-[16/10] bg-slate-100 rounded-xl mb-4" />
-                  <div className="h-5 bg-slate-100 rounded-lg w-3/4 mb-2" />
-                  <div className="h-4 bg-slate-100 rounded-lg w-1/2 mb-3" />
-                  <div className="h-8 bg-slate-50 rounded-lg mb-4" />
+                <div key={n} className="rounded-lg border border-slate-100 p-5 bg-white animate-pulse">
+                  <div className="aspect-[16/10] bg-slate-100 rounded mb-4" />
+                  <div className="h-5 bg-slate-100 rounded w-3/4 mb-2" />
+                  <div className="h-4 bg-slate-100 rounded w-1/2 mb-3" />
+                  <div className="h-8 bg-slate-50 rounded mb-4" />
                   <div className="flex justify-between items-center pt-3 border-t border-slate-50">
                     <div className="h-5 bg-slate-100 rounded w-20" />
-                    <div className="h-8 bg-slate-100 rounded-xl w-24" />
+                    <div className="h-8 bg-slate-100 rounded w-24" />
                   </div>
                 </div>
               ))}
             </div>
           ) : featuredBooks.length === 0 ? (
-            <div className="py-12 text-center border border-dashed border-slate-200 rounded-2xl bg-white">
+            <div className="py-12 text-center border border-dashed border-slate-200 rounded-lg bg-white">
               <p className="text-sm font-semibold text-slate-700">No featured books currently listed</p>
               <p className="text-xs text-slate-400 mt-1">Check back soon or explore our full catalog</p>
-              <Link to="/library" className="mt-3 inline-block text-xs font-semibold text-primary">
-                Browse Library →
+              <Link to="/library" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                Browse Library <FiArrowRight className="w-3 h-3" />
               </Link>
             </div>
           ) : (
@@ -212,7 +395,7 @@ export default function Hero() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="h-full flex flex-col overflow-hidden bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl shadow-sm hover:shadow transition-all">
+                  <Card className="h-full flex flex-col overflow-hidden bg-white border border-slate-200/80 hover:border-slate-300 rounded-lg transition-all">
                     <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
                       <img
                         src={book.coverImage}
@@ -220,20 +403,17 @@ export default function Hero() {
                         className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                         loading="lazy"
                       />
-                      <span className="absolute top-2.5 left-2.5 bg-white/95 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded-md shadow-sm">
+                      <span className="absolute top-2.5 left-2.5 bg-white/95 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded-md border border-slate-200/60">
                         {book.category}
                       </span>
                     </div>
 
                     <div className="p-5 flex-1 flex flex-col justify-between">
                       <div>
-                        {/* 18px Title */}
                         <h3 className="text-lg font-bold text-slate-900 line-clamp-1 mb-1">
                           {book.title}
                         </h3>
-                        {/* 14px Author */}
                         <p className="text-sm text-slate-500 mb-2 truncate">{book.author}</p>
-                        {/* 14px Description */}
                         <p className="text-sm text-slate-600 line-clamp-2 mb-4 leading-relaxed">
                           {book.description}
                         </p>
@@ -241,7 +421,6 @@ export default function Hero() {
 
                       <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                         <div>
-                          {/* 16px Price */}
                           <span className="text-base font-bold text-slate-900">{formatPrice(book.price)}</span>
                           <div className="flex items-center text-amber-500 text-sm mt-0.5 font-semibold">
                             <FiStar className="w-3.5 h-3.5 fill-current mr-1" />
@@ -250,8 +429,7 @@ export default function Hero() {
                         </div>
 
                         <Link to={`/book/${book.id}`}>
-                          {/* 14px Button */}
-                          <Button size="sm" variant="outline" className="text-sm font-semibold px-4 py-2">
+                          <Button size="sm" variant="outline" className="text-sm font-semibold px-4 py-2 rounded-md">
                             View Details
                           </Button>
                         </Link>
@@ -265,7 +443,9 @@ export default function Hero() {
         </div>
       </section>
 
-      {/* Best Sellers Section */}
+      {/* ========================================================================= */}
+      {/* 3. BEST SELLERS SECTION                                                   */}
+      {/* ========================================================================= */}
       <section className="py-12 sm:py-16 bg-white border-t border-slate-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-3">
@@ -286,21 +466,21 @@ export default function Hero() {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {[1, 2, 3, 4].map((n) => (
-                <div key={n} className="rounded-2xl border border-slate-100 p-4 bg-white animate-pulse">
-                  <div className="aspect-[3/4] bg-slate-100 rounded-xl mb-3" />
+                <div key={n} className="rounded-lg border border-slate-100 p-4 bg-white animate-pulse">
+                  <div className="aspect-[3/4] bg-slate-100 rounded mb-3" />
                   <div className="h-4 bg-slate-100 rounded w-1/3 mb-2" />
                   <div className="h-5 bg-slate-100 rounded w-3/4 mb-2" />
                   <div className="h-4 bg-slate-100 rounded w-1/2 mb-4" />
-                  <div className="h-8 bg-slate-100 rounded-xl w-full" />
+                  <div className="h-8 bg-slate-100 rounded w-full" />
                 </div>
               ))}
             </div>
           ) : bestsellers.length === 0 ? (
-            <div className="py-12 text-center border border-dashed border-slate-200 rounded-2xl bg-white">
+            <div className="py-12 text-center border border-dashed border-slate-200 rounded-lg bg-white">
               <p className="text-sm font-semibold text-slate-700">No bestseller books currently listed</p>
               <p className="text-xs text-slate-400 mt-1">Check back soon or explore our complete catalog</p>
-              <Link to="/library" className="mt-3 inline-block text-xs font-semibold text-primary">
-                Browse Library →
+              <Link to="/library" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary">
+                Browse Library <FiArrowRight className="w-3 h-3" />
               </Link>
             </div>
           ) : (
@@ -313,7 +493,7 @@ export default function Hero() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="h-full flex flex-col justify-between overflow-hidden bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl shadow-sm hover:shadow transition-all">
+                  <Card className="h-full flex flex-col justify-between overflow-hidden bg-white border border-slate-200/80 hover:border-slate-300 rounded-lg transition-all">
                     <div>
                       <div className="relative aspect-[3/4] overflow-hidden bg-slate-100">
                         <img
@@ -322,7 +502,7 @@ export default function Hero() {
                           className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                           loading="lazy"
                         />
-                        <span className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-semibold px-2 py-0.5 rounded shadow">
+                        <span className="absolute top-2 right-2 bg-emerald-600 text-white text-[11px] font-semibold px-2 py-0.5 rounded">
                           Bestseller
                         </span>
                       </div>
@@ -331,15 +511,12 @@ export default function Hero() {
                         <span className="text-xs font-semibold text-primary block mb-1 truncate">
                           {book.category}
                         </span>
-                        {/* 18px Title */}
                         <h3 className="text-lg font-bold text-slate-900 line-clamp-1 mb-1">
                           {book.title}
                         </h3>
-                        {/* 14px Author */}
                         <p className="text-sm text-slate-500 mb-3 truncate">{book.author}</p>
 
                         <div className="flex items-center justify-between">
-                          {/* 16px Price */}
                           <span className="text-base font-bold text-slate-900">{formatPrice(book.price)}</span>
                           <div className="flex items-center text-amber-500 text-sm font-semibold">
                             <FiStar className="w-3.5 h-3.5 fill-current mr-1" />
@@ -351,8 +528,7 @@ export default function Hero() {
 
                     <div className="p-4 pt-0">
                       <Link to={`/book/${book.id}`}>
-                        {/* 14px Button */}
-                        <Button size="sm" variant="outline" className="w-full text-sm font-semibold py-2">
+                        <Button size="sm" variant="outline" className="w-full text-sm font-semibold py-2 rounded-md">
                           View Book
                         </Button>
                       </Link>
@@ -365,7 +541,9 @@ export default function Hero() {
         </div>
       </section>
 
-      {/* 4 Pillars Category Grid (No emojis, vector CategoryIcon) */}
+      {/* ========================================================================= */}
+      {/* 4. CATEGORIES SECTION (Strictly vector icons, zero emojis)                */}
+      {/* ========================================================================= */}
       <section className="py-12 sm:py-16 bg-white border-t border-slate-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-xl mx-auto mb-10 sm:mb-12">
@@ -379,7 +557,7 @@ export default function Hero() {
           </div>
 
           {categories.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-slate-200 rounded-2xl bg-white max-w-md mx-auto">
+            <div className="text-center py-12 border border-dashed border-slate-200 rounded-lg bg-white max-w-md mx-auto">
               <p className="text-sm font-semibold text-slate-700">No categories added yet</p>
               <p className="text-xs text-slate-400 mt-1">Categories created in the admin dashboard will appear here in real time.</p>
             </div>
@@ -389,22 +567,19 @@ export default function Hero() {
                 <Link
                   key={cat.id}
                   to={`/library?category=${encodeURIComponent(cat.name)}`}
-                  className="group p-5 rounded-2xl bg-white border border-slate-200/80 hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between"
+                  className="group p-5 rounded-lg bg-white border border-slate-200/80 hover:border-primary/50 transition-all flex flex-col justify-between"
                 >
                   <div>
-                    <div className="w-12 h-12 rounded-xl bg-primary-50 text-primary flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                    <div className="w-12 h-12 rounded-md bg-primary-50 text-primary flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                       <CategoryIcon slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')} className="w-6 h-6" />
                     </div>
-                    {/* 18px Category Name */}
                     <h3 className="font-bold text-slate-900 text-lg mb-1.5 group-hover:text-primary transition-colors">
                       {cat.name}
                     </h3>
-                    {/* Category Description */}
                     <p className="text-sm text-slate-500 leading-relaxed mb-4 line-clamp-2">
                       {cat.description || (cat._count?.books !== undefined ? `${cat._count.books} ${cat._count.books === 1 ? 'title available' : 'titles available'}` : 'Explore curated knowledge')}
                     </p>
                   </div>
-                  {/* 14px Link */}
                   <div className="flex items-center text-sm font-semibold text-primary">
                     <span>Browse books</span>
                     <FiArrowRight className="ml-1 group-hover:translate-x-1 transition-transform" />

@@ -9,7 +9,8 @@ import {
   FiLogOut,
   FiUser,
   FiShield,
-  FiArrowRight
+  FiArrowRight,
+  FiCreditCard
 } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -458,11 +459,22 @@ export default function Navigation() {
                     <div className="space-y-1 mt-1">
                       <Link
                         to="/dashboard"
+                        state={{ tab: 'library' }}
                         onClick={() => setIsUserMenuOpen(false)}
                         className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#1E90FF] rounded-xl transition-colors"
                       >
                         <FiUser className="w-4 h-4 text-slate-400" />
-                        <span>My Library &amp; Orders</span>
+                        <span>My Library</span>
+                      </Link>
+
+                      <Link
+                        to="/dashboard"
+                        state={{ tab: 'payments' }}
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#1E90FF] rounded-xl transition-colors"
+                      >
+                        <FiCreditCard className="w-4 h-4 text-slate-400" />
+                        <span>Payment History</span>
                       </Link>
 
                       {isAdmin && (
@@ -621,6 +633,16 @@ export default function Navigation() {
                           Admin
                         </span>
                       )}
+                    </Link>
+
+                    <Link
+                      to="/dashboard"
+                      state={{ tab: 'payments' }}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors flex items-center gap-2"
+                    >
+                      <FiCreditCard className="w-4 h-4 text-slate-400" />
+                      <span>Payment History</span>
                     </Link>
 
                     {isAdmin && (

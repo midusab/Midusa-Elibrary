@@ -381,7 +381,7 @@ export default function Checkout() {
               </div>
             </div>
             <h1 className="text-2xl font-extrabold text-slate-900 mt-5 mb-1 tracking-tight text-center">
-              Payment Confirmed! 🎉
+              Payment Confirmed!
             </h1>
             <p className="text-sm text-slate-500 text-center">
               Tap below to download your book{purchasedBooks.length !== 1 ? 's' : ''}.
@@ -430,7 +430,7 @@ export default function Checkout() {
               <FiSmartphone className="w-3.5 h-3.5 text-emerald-600" />
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
-              📱 Check your <strong className="text-slate-700">M-PESA SMS</strong> for the
+              Check your <strong className="text-slate-700">M-PESA SMS</strong> for the
               payment confirmation from Safaricom.
             </p>
           </div>
@@ -659,7 +659,6 @@ export default function Checkout() {
                       }`}
                     >
                       <div className="flex items-center gap-2 px-3 py-3 bg-slate-50 border-r border-slate-200 flex-shrink-0">
-                        <span className="text-base">🇰🇪</span>
                         <span className="text-xs font-semibold text-slate-600">+254</span>
                       </div>
                       <input
@@ -781,7 +780,7 @@ export default function Checkout() {
               {/* Perks */}
               <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
                 {[
-                  'Instant PDF/EPUB access after payment',
+                  'Instant access after payment',
                   'Lifetime access — download anytime',
                   '24/7 WhatsApp support: 0112478220',
                 ].map((perk) => (
