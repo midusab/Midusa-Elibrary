@@ -41,48 +41,10 @@ const Footer = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             {/* Feature 1 */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[#1E90FF] flex items-center justify-center flex-shrink-0">
-                <FiDownload className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold text-slate-100">Instant PDF Download</h4>
-                <p className="text-[11px] text-slate-400">Direct download link right after checkout</p>
-              </div>
-            </div>
-
             {/* Feature 2 */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0">
-                <FiTablet className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold text-slate-100">Universal Compatibility</h4>
-                <p className="text-[11px] text-slate-400">Read on Phone, Tablet, PC &amp; e-Reader</p>
-              </div>
-            </div>
-
             {/* Feature 3 */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
-                <FiSmartphone className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold text-slate-100">Lipa Na M-PESA</h4>
-                <p className="text-[11px] text-slate-400">Instant Safaricom STK push payment</p>
-              </div>
-            </div>
 
             {/* Feature 4 */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
-                <FiLock className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold text-slate-100">256-Bit SSL Encryption</h4>
-                <p className="text-[11px] text-slate-400">Bank-grade data security &amp; privacy</p>
-              </div>
-            </div>
           </div>
         </div>
       </div>

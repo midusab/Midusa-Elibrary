@@ -388,9 +388,9 @@ export default function AdminDashboard() {
         {/* ========================================================= */}
         {/* Header Section */}
         {/* ========================================================= */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 sm:p-8 rounded-lg border border-slate-200/80">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-[#1E90FF] text-xs font-semibold mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-blue-50 text-[#1E90FF] text-xs font-semibold mb-3">
               <span className="w-2 h-2 rounded-full bg-[#1E90FF] animate-pulse" />
               Admin Portal
             </div>
@@ -406,7 +406,7 @@ export default function AdminDashboard() {
             <button
               onClick={() => loadDashboardData(true)}
               disabled={isRefreshing}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer disabled:opacity-60"
             >
               <FiRefreshCw className={`w-4 h-4 text-slate-500 ${isRefreshing ? 'animate-spin' : ''}`} />
               <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
@@ -414,7 +414,7 @@ export default function AdminDashboard() {
 
             <button
               onClick={handleOpenAddBook}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1E90FF] hover:bg-[#1873cc] text-white text-xs sm:text-sm font-semibold shadow-md shadow-blue-500/20 active:scale-[0.99] transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-[#1E90FF] hover:bg-[#1873cc] text-white text-xs sm:text-sm font-semibold active:scale-[0.99] transition-all cursor-pointer"
             >
               <FiPlus className="w-4 h-4" />
               <span>Post New Book</span>
@@ -439,9 +439,9 @@ export default function AdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-md text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
                   isActive
-                    ? 'bg-[#1E90FF] text-white shadow-md shadow-blue-500/20'
+                    ? 'bg-[#1E90FF] text-white font-bold'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
@@ -459,6 +459,7 @@ export default function AdminDashboard() {
           <AdminOverviewTab
             derivedStats={derivedStats}
             categories={categories}
+            books={books}
             trendViewMetric={trendViewMetric}
             setTrendViewMetric={setTrendViewMetric}
           />

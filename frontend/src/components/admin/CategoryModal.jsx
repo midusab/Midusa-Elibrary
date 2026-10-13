@@ -18,7 +18,7 @@ export default function CategoryModal({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200"
+            className="bg-white rounded-lg p-6 sm:p-8 max-w-md w-full border border-slate-200"
           >
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-bold text-slate-900">
@@ -26,7 +26,7 @@ export default function CategoryModal({
               </h3>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
               >
                 <FiX className="w-5 h-5" />
               </button>
@@ -43,7 +43,7 @@ export default function CategoryModal({
                   placeholder="e.g. Economics & Finance"
                   value={categoryForm.name}
                   onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
                 />
               </div>
 
@@ -58,7 +58,7 @@ export default function CategoryModal({
                   onChange={(e) =>
                     setCategoryForm({ ...categoryForm, description: e.target.value })
                   }
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] resize-none"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] resize-none"
                 />
               </div>
 
@@ -66,14 +66,14 @@ export default function CategoryModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer"
+                  className="px-4 py-2 rounded-md text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-5 py-2 rounded-xl bg-[#1E90FF] hover:bg-[#1873cc] text-white font-semibold disabled:opacity-60 cursor-pointer"
+                  className="px-5 py-2 rounded-md bg-[#1E90FF] hover:bg-[#1873cc] text-white font-semibold disabled:opacity-60 cursor-pointer"
                 >
                   {isSaving ? 'Saving...' : editingCategory ? 'Save' : 'Create Category'}
                 </button>

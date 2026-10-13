@@ -23,7 +23,7 @@ export default function BookModal({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-lg p-6 sm:p-8 max-w-xl w-full border border-slate-200 max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -36,7 +36,7 @@ export default function BookModal({
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 <FiX className="w-5 h-5" />
               </button>
@@ -53,7 +53,7 @@ export default function BookModal({
                   placeholder="e.g. Master Your Mindset"
                   value={bookForm.title}
                   onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
                 />
               </div>
 
@@ -68,7 +68,7 @@ export default function BookModal({
                     placeholder="e.g. Dr. Robert Greene"
                     value={bookForm.author}
                     onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
                   />
                 </div>
 
@@ -79,7 +79,7 @@ export default function BookModal({
                   <select
                     value={bookForm.category}
                     onChange={(e) => setBookForm({ ...bookForm, category: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] bg-white cursor-pointer"
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] bg-white cursor-pointer"
                   >
                     {categories.map((c) => (
                       <option key={c.id || c.name} value={c.name}>
@@ -103,7 +103,7 @@ export default function BookModal({
                     placeholder="19.99"
                     value={bookForm.price}
                     onChange={(e) => setBookForm({ ...bookForm, price: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
                   />
                 </div>
 
@@ -118,7 +118,7 @@ export default function BookModal({
                     max="5"
                     value={bookForm.rating}
                     onChange={(e) => setBookForm({ ...bookForm, rating: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
                   />
                 </div>
               </div>
@@ -133,7 +133,7 @@ export default function BookModal({
                   placeholder="Brief overview of the book contents..."
                   value={bookForm.description}
                   onChange={(e) => setBookForm({ ...bookForm, description: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] resize-none"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] resize-none"
                 />
               </div>
 
@@ -146,7 +146,7 @@ export default function BookModal({
                   placeholder="https://images.unsplash.com/..."
                   value={bookForm.coverImage}
                   onChange={(e) => setBookForm({ ...bookForm, coverImage: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
                 />
               </div>
 
@@ -172,7 +172,7 @@ export default function BookModal({
                     setPdfFile(file);
                     if (file) setBookForm((prev) => ({ ...prev, pdfUrl: '' }));
                   }}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-[#1E90FF]/10 file:text-[#1E90FF] file:font-semibold cursor-pointer"
+                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-[#1E90FF]/10 file:text-[#1E90FF] file:font-semibold cursor-pointer"
                 />
                 {pdfFile && (
                   <p className="mt-1 text-xs text-slate-500">
@@ -225,14 +225,14 @@ export default function BookModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer"
+                  className="px-4 py-2 rounded-md text-slate-600 hover:bg-slate-100 font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-5 py-2 rounded-xl bg-[#1E90FF] hover:bg-[#1873cc] text-white font-semibold shadow-md shadow-blue-500/20 disabled:opacity-60 cursor-pointer"
+                  className="px-5 py-2 rounded-md bg-[#1E90FF] hover:bg-[#1873cc] text-white font-semibold disabled:opacity-60 cursor-pointer"
                 >
                   {isSaving ? 'Saving...' : editingBook ? 'Save Changes' : 'Publish Book'}
                 </button>

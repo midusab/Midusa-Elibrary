@@ -1,7 +1,18 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FiArrowLeft, FiMail, FiLock, FiEye, FiEyeOff, FiAlertCircle } from 'react-icons/fi';
+import {
+  FiArrowLeft,
+  FiMail,
+  FiLock,
+  FiEye,
+  FiEyeOff,
+  FiAlertCircle,
+  FiKey,
+  FiCheckCircle,
+  FiRefreshCw,
+  FiX
+} from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
 import { ADMIN_EMAIL } from '../constants/auth';
@@ -15,18 +26,46 @@ export default function Login() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const { user, loginWithEmail, signInWithGoogle } = useAuth();
+  // Password / Token Reset Modal State
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [resetStep, setResetStep] = useState(1); // 1: request token, 2: set new password
+  const [isResetLoading, setIsResetLoading] = useState(false);
+  const [resetFeedback, setResetFeedback] = useState({ type: '', text: '' });
+  const [generatedTokenPreview, setGeneratedTokenPreview] = useState('');
+
+  const {
+    user,
+    loginWithEmail,
+    signInWithGoogle,
+    requestPasswordReset,
+    resetPasswordWithToken
+  } = useAuth();
   const { success, error } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/dashboard';
+  // Check query string ?redirect=... or location.state
+  const queryParams = new URLSearchParams(location.search);
+  const redirectTarget = queryParams.get('redirect') || location.state?.from?.pathname || '/dashboard';
+
+  // Check if user was automatically logged out due to session expiration
+  useEffect(() => {
+    const logoutReason = sessionStorage.getItem('session_logout_reason');
+    if (logoutReason) {
+      error(logoutReason);
+      sessionStorage.removeItem('session_logout_reason');
+    }
+  }, [error]);
 
   useEffect(() => {
     if (user) {
-      navigate(from, { replace: true });
+      navigate(redirectTarget, { replace: true });
     }
-  }, [user, navigate, from]);
+  }, [user, navigate, redirectTarget]);
 
   const handleEmailSignIn = async (e) => {
     e.preventDefault();
@@ -63,7 +102,7 @@ export default function Login() {
         } else {
           success(`Welcome back, ${result.user.fullname || trimmedEmail}! Signed in successfully.`);
         }
-        navigate('/dashboard', { replace: true });
+        navigate(redirectTarget, { replace: true });
       }
     } catch (err) {
       console.error('Email sign-in error:', err);
@@ -88,7 +127,7 @@ export default function Login() {
         } else {
           success(`Welcome back, ${loggedInUser.fullname || 'Reader'}! Successfully signed in.`);
         }
-        navigate('/dashboard', { replace: true });
+        navigate(redirectTarget, { replace: true });
       }
     } catch (err) {
       console.error('Google sign-in failed:', err);
@@ -102,6 +141,81 @@ export default function Login() {
     }
   };
 
+  // --------------------------------------------------------------------------
+  // Password Reset Token Flow
+  // --------------------------------------------------------------------------
+  const handleOpenResetModal = () => {
+    setResetEmail(email.trim());
+    setResetToken('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setResetStep(1);
+    setResetFeedback({ type: '', text: '' });
+    setGeneratedTokenPreview('');
+    setIsResetModalOpen(true);
+  };
+
+  const handleRequestToken = async (e) => {
+    e.preventDefault();
+    if (!resetEmail) {
+      setResetFeedback({ type: 'error', text: 'Please enter your account email.' });
+      return;
+    }
+
+    setIsResetLoading(true);
+    setResetFeedback({ type: '', text: '' });
+    try {
+      const res = await requestPasswordReset(resetEmail.trim());
+      setGeneratedTokenPreview(res.resetToken);
+      setResetToken(res.resetToken);
+      setResetFeedback({
+        type: 'success',
+        text: 'Reset token generated! Enter your new password below.'
+      });
+      setResetStep(2);
+    } catch (err) {
+      setResetFeedback({
+        type: 'error',
+        text: err.message || 'Failed to generate reset token. Verify email.'
+      });
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
+  const handleResetPasswordWithToken = async (e) => {
+    e.preventDefault();
+    if (!resetToken) {
+      setResetFeedback({ type: 'error', text: 'Reset token is required.' });
+      return;
+    }
+    if (newPassword.length < 8) {
+      setResetFeedback({ type: 'error', text: 'Password must be at least 8 characters long.' });
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setResetFeedback({ type: 'error', text: 'Passwords do not match.' });
+      return;
+    }
+
+    setIsResetLoading(true);
+    setResetFeedback({ type: '', text: '' });
+    try {
+      const res = await resetPasswordWithToken(resetToken.trim(), newPassword, confirmNewPassword);
+      success(res.message || 'Password reset successfully! Please sign in.');
+      setIsResetModalOpen(false);
+      setEmail(resetEmail);
+      setPassword(newPassword);
+    } catch (err) {
+      setResetFeedback({
+        type: 'error',
+        text: err.message || 'Failed to reset password. Token may be expired.'
+      });
+    } finally {
+      setIsResetLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-[82vh] bg-slate-50/50 py-12 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
@@ -111,7 +225,7 @@ export default function Login() {
           transition={{ duration: 0.35 }}
         >
           {/* Back Link */}
-          <div className="mb-5">
+          <div className="mb-4">
             <Link to="/">
               <button className="inline-flex items-center text-xs sm:text-sm font-medium text-slate-500 hover:text-[#1E90FF] transition-colors cursor-pointer">
                 <FiArrowLeft className="mr-1.5 h-4 w-4" />
@@ -120,13 +234,13 @@ export default function Login() {
             </Link>
           </div>
 
-          <Card className="p-7 sm:p-9 border border-slate-200 shadow-md rounded-2xl bg-white">
+          <Card className="p-6 sm:p-8 border border-slate-200/90 rounded-lg bg-white">
             {/* Header / Logo */}
             <div className="text-center mb-6">
-              <div className="mx-auto w-12 h-12 rounded-xl bg-[#1E90FF]/10 text-[#1E90FF] flex items-center justify-center mb-3">
-                <span className="text-2xl font-black">M</span>
+              <div className="mx-auto w-11 h-11 rounded-md bg-[#1E90FF]/10 text-[#1E90FF] flex items-center justify-center mb-3">
+                <span className="text-xl font-black">M</span>
               </div>
-              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
                 Sign In to Your Account
               </h1>
               <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
@@ -141,7 +255,7 @@ export default function Login() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-700"
+                  className="mb-4 p-3 rounded-md bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-700"
                 >
                   <FiAlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">{formError}</div>
@@ -154,7 +268,7 @@ export default function Login() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isGoogleLoading || isLoading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm shadow-sm hover:shadow transition-all duration-150 active:scale-[0.99] disabled:opacity-60 cursor-pointer mb-5"
+              className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-slate-200 rounded-md bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm transition-all duration-150 active:scale-[0.99] disabled:opacity-60 cursor-pointer mb-4"
             >
               {isGoogleLoading ? (
                 <div className="w-4 h-4 border-2 border-[#1E90FF] border-t-transparent rounded-full animate-spin" />
@@ -170,7 +284,7 @@ export default function Login() {
             </button>
 
             {/* Divider */}
-            <div className="relative flex items-center justify-center mb-5">
+            <div className="relative flex items-center justify-center mb-4">
               <div className="border-t border-slate-200 w-full" />
               <span className="bg-white px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider relative">
                 or sign in with email
@@ -178,7 +292,7 @@ export default function Login() {
             </div>
 
             {/* Email / Password Form */}
-            <form onSubmit={handleEmailSignIn} className="space-y-4">
+            <form onSubmit={handleEmailSignIn} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Email Address
@@ -194,7 +308,7 @@ export default function Login() {
                       if (formError) setFormError('');
                     }}
                     placeholder="e.g. reader@example.com"
-                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/25 focus:border-[#1E90FF] transition-all"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs sm:text-sm bg-slate-50/70 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/25 focus:border-[#1E90FF] transition-all"
                   />
                 </div>
               </div>
@@ -204,6 +318,13 @@ export default function Login() {
                   <label className="block text-xs font-semibold text-slate-700">
                     Password
                   </label>
+                  <button
+                    type="button"
+                    onClick={handleOpenResetModal}
+                    className="text-[11px] font-semibold text-[#1E90FF] hover:underline cursor-pointer"
+                  >
+                    Forgot Password / Reset Token?
+                  </button>
                 </div>
                 <div className="relative">
                   <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
@@ -216,7 +337,7 @@ export default function Login() {
                       if (formError) setFormError('');
                     }}
                     placeholder="Enter your password"
-                    className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm bg-slate-50/70 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/25 focus:border-[#1E90FF] transition-all"
+                    className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm bg-slate-50/70 border border-slate-200 rounded-md focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/25 focus:border-[#1E90FF] transition-all"
                   />
                   <button
                     type="button"
@@ -233,7 +354,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading || isGoogleLoading}
-                className="w-full py-3 px-4 rounded-xl bg-[#1E90FF] hover:bg-[#1C86EE] text-white font-semibold text-xs sm:text-sm shadow-md shadow-[#1E90FF]/25 transition-all duration-150 active:scale-[0.99] disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 rounded-md bg-[#1E90FF] hover:bg-[#1C86EE] text-white font-semibold text-xs sm:text-sm transition-all duration-150 active:scale-[0.99] disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2 mt-2"
               >
                 {isLoading ? (
                   <>
@@ -247,9 +368,7 @@ export default function Login() {
             </form>
 
             {/* Register Link */}
-
-            {/* Register Link */}
-            <div className="mt-5 text-center text-xs text-slate-500">
+            <div className="mt-4 pt-3 border-t border-slate-100 text-center text-xs text-slate-500">
               Don't have an account yet?{' '}
               <Link to="/register" className="font-semibold text-[#1E90FF] hover:underline">
                 Create Account
@@ -258,6 +377,175 @@ export default function Login() {
           </Card>
         </motion.div>
       </div>
+
+      {/* ========================================================= */}
+      {/* PASSWORD RESET / TOKEN RESET MODAL */}
+      {/* ========================================================= */}
+      <AnimatePresence>
+        {isResetModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-lg p-6 sm:p-7 max-w-md w-full border border-slate-200"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-md bg-blue-50 text-[#1E90FF] flex items-center justify-center">
+                    <FiKey className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">
+                      Token Reset & Recovery
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      {resetStep === 1 ? 'Step 1: Request Reset Token' : 'Step 2: Set New Password'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsResetModalOpen(false)}
+                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  <FiX className="w-4 h-4" />
+                </button>
+              </div>
+
+              {resetFeedback.text && (
+                <div
+                  className={`mb-4 p-2.5 rounded-md text-xs border flex items-start gap-2 ${
+                    resetFeedback.type === 'success'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : 'bg-rose-50 text-rose-800 border-rose-200'
+                  }`}
+                >
+                  {resetFeedback.type === 'success' ? (
+                    <FiCheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <FiAlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                  )}
+                  <span>{resetFeedback.text}</span>
+                </div>
+              )}
+
+              {/* STEP 1: REQUEST TOKEN */}
+              {resetStep === 1 && (
+                <form onSubmit={handleRequestToken} className="space-y-3.5 text-xs">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Account Email
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. reader@example.com"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1E90FF]"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      A secure, 15-minute password reset token will be created for this email.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setResetStep(2)}
+                      className="text-[#1E90FF] hover:underline font-semibold"
+                    >
+                      Already have a token? →
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isResetLoading}
+                      className="px-4 py-2 bg-[#1E90FF] hover:bg-[#1873cc] text-white rounded-md font-semibold cursor-pointer disabled:opacity-60"
+                    >
+                      {isResetLoading ? 'Generating…' : 'Generate Token'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* STEP 2: ENTER TOKEN AND NEW PASSWORD */}
+              {resetStep === 2 && (
+                <form onSubmit={handleResetPasswordWithToken} className="space-y-3 text-xs">
+                  {generatedTokenPreview && (
+                    <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-md">
+                      <span className="text-[10px] font-bold uppercase text-blue-700 tracking-wider block mb-1">
+                        Active Reset Token (auto-filled):
+                      </span>
+                      <p className="font-mono text-[10px] text-slate-700 break-all select-all">
+                        {generatedTokenPreview}
+                      </p>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Reset Token
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Paste your reset token here"
+                      value={resetToken}
+                      onChange={(e) => setResetToken(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-md font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-[#1E90FF]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      New Password (8+ characters, uppercase, symbol)
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Enter new password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1E90FF]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Repeat new password"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#1E90FF]"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setResetStep(1)}
+                      className="text-slate-500 hover:text-slate-700"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isResetLoading}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-semibold cursor-pointer disabled:opacity-60"
+                    >
+                      {isResetLoading ? 'Updating…' : 'Update Password'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

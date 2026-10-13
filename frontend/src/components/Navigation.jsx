@@ -155,7 +155,7 @@ export default function Navigation() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-20 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_2px_15px_-3px_rgba(15,23,42,0.04)]">
+    <nav className="fixed top-0 left-0 right-0 z-50 h-20 bg-white/90 backdrop-blur-xl border-b border-slate-200/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
         <div className="flex items-center justify-between h-full gap-2 sm:gap-4 lg:gap-6">
           
@@ -211,7 +211,7 @@ export default function Navigation() {
 
                 {/* Categories Dropdown Menu */}
                 {isCategoriesOpen && (
-                  <div className="absolute left-0 mt-2 w-72 bg-white/95 backdrop-blur-2xl rounded-2xl p-2.5 shadow-2xl border border-slate-200/90 ring-1 ring-slate-900/5 animate-in fade-in zoom-in-95 duration-150 z-50">
+                  <div className="absolute left-0 mt-2 w-72 bg-white/95 backdrop-blur-2xl rounded-lg p-2.5 border border-slate-200/90 animate-in fade-in zoom-in-95 duration-150 z-50">
                     <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                       Book Categories
                     </div>
@@ -325,7 +325,7 @@ export default function Navigation() {
 
             {/* Instant Live Search Suggestions Dropdown */}
             {isSuggestionsOpen && searchQuery.trim().length >= 2 && (
-              <div className="absolute left-0 right-0 top-full mt-2 bg-white/98 backdrop-blur-2xl rounded-2xl p-2.5 shadow-2xl border border-slate-200/90 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute left-0 right-0 top-full mt-2 bg-white/98 backdrop-blur-2xl rounded-lg p-2.5 border border-slate-200/90 z-50 animate-in fade-in zoom-in-95 duration-150">
                 {suggestions.length > 0 ? (
                   <div className="space-y-1">
                     <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
@@ -438,7 +438,7 @@ export default function Navigation() {
 
                 {/* User Dropdown */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-60 bg-white/98 backdrop-blur-2xl rounded-2xl p-2 shadow-2xl border border-slate-200/90 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute right-0 mt-2 w-60 bg-white/98 backdrop-blur-2xl rounded-lg p-2 border border-slate-200/90 z-50 animate-in fade-in zoom-in-95 duration-150">
                     <div className="px-3.5 py-2.5 border-b border-slate-100">
                       <div className="flex items-center justify-between gap-1 mb-0.5">
                         <p className="font-bold text-slate-900 text-sm truncate">{user.fullname}</p>
@@ -516,7 +516,7 @@ export default function Navigation() {
         {/* 4. MOBILE NAVIGATION DRAWER (FOR MOBILE SCREENS)          */}
         {/* ========================================================= */}
         {isMobileMenuOpen && (
-          <div className="md:hidden fixed top-20 left-0 right-0 z-40 bg-white/98 backdrop-blur-2xl border-t border-slate-200/80 shadow-2xl max-h-[calc(100vh-5rem)] overflow-y-auto">
+          <div className="md:hidden fixed top-20 left-0 right-0 z-40 bg-white/98 backdrop-blur-2xl border-t border-slate-200/80 max-h-[calc(100vh-5rem)] overflow-y-auto overscroll-contain">
             <div className="px-4 py-4 space-y-4">
               {/* Mobile Search Bar */}
               <form onSubmit={handleSearchSubmit} className="relative" ref={mobileSearchRef}>

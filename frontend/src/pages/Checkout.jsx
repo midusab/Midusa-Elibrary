@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   FiArrowLeft, FiLock, FiCheckCircle, FiShoppingCart,
   FiSmartphone, FiShield, FiRefreshCw, FiXCircle, FiClock,
+  FiZap, FiDownload, FiStar, FiBookOpen,
 } from 'react-icons/fi';
 
 import Button from '../components/ui/Button';
@@ -12,6 +13,114 @@ import { useToast } from '../context/ToastContext';
 import { formatPrice } from '../utils/currency';
 import { createOrder } from '../services/api';
 import { API_BASE_URL, authHeader } from '../services/api/client';
+
+// ── Inline styles ─────────────────────────────────────────────────────────────
+const styles = `
+  @keyframes co-pulse-ring {
+    0%   { transform: scale(1);   opacity: 0.6; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+  @keyframes co-spin-slow {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes co-bounce-dot {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40%            { transform: translateY(-6px); opacity: 1; }
+  }
+  @keyframes co-slide-up {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes co-success-pop {
+    0%   { transform: scale(0.6); opacity: 0; }
+    60%  { transform: scale(1.12); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes co-shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+  }
+  @keyframes co-tick {
+    from { stroke-dashoffset: 50; }
+    to   { stroke-dashoffset: 0; }
+  }
+
+  .co-slide-up  { animation: co-slide-up 0.38s cubic-bezier(0.16,1,0.3,1) forwards; }
+  .co-success   { animation: co-success-pop 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+  .co-pay-btn {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #00c853 0%, #1E90FF 100%);
+    border: none !important;
+    color: #fff !important;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: filter 0.2s, transform 0.15s;
+    cursor: pointer;
+  }
+  .co-pay-btn:not(:disabled):hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+  .co-pay-btn:not(:disabled):active { transform: translateY(0); }
+  .co-pay-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.18) 50%,transparent 100%);
+    background-size: 400px 100%;
+    animation: co-shimmer 2.4s infinite linear;
+    pointer-events: none;
+  }
+  .co-pay-btn:disabled { opacity: 0.7; filter: none; transform: none; cursor: not-allowed; }
+
+  .co-phone-wrap:focus-within {
+    border-color: #1E90FF !important;
+    box-shadow: 0 0 0 3px rgba(30,144,255,0.12) !important;
+  }
+
+  .co-pulse-ring {
+    position: absolute; inset: -8px; border-radius: 50%;
+    border: 2px solid #00c853;
+    animation: co-pulse-ring 1.6s ease-out infinite;
+  }
+  .co-dot {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #1E90FF;
+    animation: co-bounce-dot 1.2s ease-in-out infinite;
+  }
+  .co-dot:nth-child(2) { animation-delay: 0.15s; }
+  .co-dot:nth-child(3) { animation-delay: 0.3s; }
+
+  .co-progress-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #00c853, #1E90FF);
+    border-radius: 9999px;
+    transition: width 1s linear;
+  }
+
+  .co-step-active  { background: linear-gradient(135deg,#00c853,#1E90FF); color:#fff; }
+  .co-step-done    { background: #00c853; color:#fff; }
+  .co-step-pending { background: #f1f5f9; color: #94a3b8; }
+
+  .co-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+  }
+
+  .co-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+    padding: 3px 10px; border-radius: 9999px;
+  }
+
+  .co-mpesa-gradient {
+    background: linear-gradient(135deg, #005f2e 0%, #00a651 100%);
+  }
+
+  .co-svg-tick { stroke-dasharray: 50; animation: co-tick 0.4s 0.2s ease-out forwards; }
+`;
 
 // Poll payment status from backend
 async function pollPaymentStatus(paymentId, token) {
@@ -23,6 +132,56 @@ async function pollPaymentStatus(paymentId, token) {
   return data.payment;
 }
 
+// ── Step indicator ─────────────────────────────────────────────────────────────
+function StepIndicator({ step }) {
+  const steps = ['Cart', 'Payment', 'Confirm'];
+  return (
+    <div className="flex items-center justify-center gap-0 mb-8">
+      {steps.map((label, i) => {
+        const idx = i + 1;
+        const done   = idx < step;
+        const active = idx === step;
+        return (
+          <div key={label} className="flex items-center">
+            <div className="flex flex-col items-center gap-1">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  done ? 'co-step-done' : active ? 'co-step-active' : 'co-step-pending'
+                }`}
+              >
+                {done ? <FiCheckCircle className="w-3.5 h-3.5" /> : idx}
+              </div>
+              <span className={`text-[10px] font-semibold ${active ? 'text-primary' : done ? 'text-emerald-600' : 'text-slate-400'}`}>
+                {label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div className={`w-14 h-px mx-1 mb-4 ${done ? 'bg-emerald-400' : 'bg-slate-200'}`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TrustRow() {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-6 text-[11px] text-slate-400">
+      <span className="flex items-center gap-1.5">
+        <FiLock className="w-3 h-3 text-emerald-500" /> 256-bit Encrypted
+      </span>
+      <span className="flex items-center gap-1.5">
+        <FiShield className="w-3 h-3 text-emerald-500" /> Safaricom Certified
+      </span>
+      <span className="flex items-center gap-1.5">
+        <FiZap className="w-3 h-3 text-emerald-500" /> Instant Delivery
+      </span>
+    </div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
 export default function Checkout() {
   const { cart, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
@@ -33,6 +192,9 @@ export default function Checkout() {
   const [orderComplete, setOrderComplete] = useState(false);
   const [paymentFailed, setPaymentFailed] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  // Store purchased books for download buttons on success
+  const [purchasedBooks, setPurchasedBooks] = useState([]);
 
   // Pending payment tracking
   const [pendingPaymentId, setPendingPaymentId] = useState(null);
@@ -41,14 +203,13 @@ export default function Checkout() {
   const [pollCount, setPollCount] = useState(0);
   const pollIntervalRef = useRef(null);
 
-  // Clean up polling on unmount
   useEffect(() => {
     return () => {
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
   }, []);
 
-  const startPolling = (paymentId) => {
+  const startPolling = (paymentId, books) => {
     setIsPolling(true);
     setPollCount(0);
     let count = 0;
@@ -62,32 +223,44 @@ export default function Checkout() {
         if (payment.status === 'completed') {
           clearInterval(pollIntervalRef.current);
           setIsPolling(false);
+          setPurchasedBooks(books || []);
           setOrderComplete(true);
           clearCart();
-          success('Payment confirmed! Your books are now in your library.');
+          success('Payment confirmed! Your books are ready to download.');
         } else if (payment.status === 'failed') {
-          clearInterval(pollIntervalRef.current);
-          setIsPolling(false);
-          setPaymentFailed(true);
-          error('Payment was not completed. You may try again.');
+          // ⚠️ Grace period: only trust 'failed' after 40 s (8 polls × 5 s).
+          // Safaricom's webhook callback can arrive up to ~30 s after PIN entry.
+          // Showing "cancelled" too early causes the false-positive bug where
+          // the user paid but sees a failure screen.
+          if (count >= 8) {
+            clearInterval(pollIntervalRef.current);
+            setIsPolling(false);
+            setPaymentFailed(true);
+            error('Payment was not completed. You may try again.');
+          }
+          // Before 40 s, keep polling — the real callback may still arrive.
         }
 
-        // Stop polling after 90 seconds (18 x 5s = 90s)
-        if (count >= 18) {
+        // Hard stop at 2 min (24 × 5 s) — show "still waiting" screen
+        if (count >= 24) {
           clearInterval(pollIntervalRef.current);
           setIsPolling(false);
-          // Show "still pending" note but don't mark as failed yet
         }
       } catch (pollErr) {
         console.warn('Polling error:', pollErr.message);
       }
-    }, 5000); // poll every 5 seconds
+    }, 5000);
+  };
+
+  const handlePhoneChange = (e) => {
+    setPhoneNumber(e.target.value);
+    if (phoneError) setPhoneError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!phoneNumber.trim()) {
-      error('Please enter your M-PESA phone number');
+      setPhoneError('Enter your Safaricom M-PESA number to continue');
       return;
     }
 
@@ -112,6 +285,14 @@ export default function Checkout() {
         user.token
       );
 
+      // Collect book info for download buttons shown on success
+      const books = (orderResult.items || []).map(it => ({
+        id: it.bookId || it.book_id,
+        title: it.book?.title || it.title || 'Book',
+        pdfUrl: it.book?.pdfUrl || it.book?.pdf_url || null,
+        coverImage: it.book?.coverImage || it.book?.cover_url || null,
+      }));
+
       const paymentId = orderResult.payment?.paymentId;
       if (paymentId) {
         setPendingPaymentId(paymentId);
@@ -119,9 +300,9 @@ export default function Checkout() {
           orderResult.payment?.customerMessage ||
             'M-PESA prompt sent! Enter your PIN on your phone.'
         );
-        startPolling(paymentId);
+        startPolling(paymentId, books);
       } else {
-        // No payment ID but no error — treat as success (sandbox fallback)
+        setPurchasedBooks(books);
         setOrderComplete(true);
         clearCart();
         success('Order created! Books are available in your dashboard.');
@@ -142,308 +323,454 @@ export default function Checkout() {
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
   };
 
-  // ── Empty cart state ──────────────────────────────────────────────────────
+  // ── Shared page wrapper ──────────────────────────────────────────────────────
+  const PageWrap = ({ children }) => (
+    <div className="min-h-[80vh] bg-white flex items-center justify-center p-4 py-12">
+      <style>{styles}</style>
+      {children}
+    </div>
+  );
+
+  // ── Empty cart ───────────────────────────────────────────────────────────────
   if (cart.length === 0 && !orderComplete && !pendingPaymentId) {
     return (
-      <div className="min-h-[75vh] bg-white py-12 flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center">
-          <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mx-auto mb-4">
-            <FiShoppingCart className="w-7 h-7" />
+      <PageWrap>
+        <div className="max-w-sm w-full text-center co-slide-up">
+          <div
+            className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg,#e0efff,#f0f7ff)' }}
+          >
+            <FiShoppingCart className="w-7 h-7 text-primary" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">
-            Your cart is empty
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mb-6">
-            Add books to your cart before proceeding to checkout.
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Your cart is empty</h2>
+          <p className="text-sm text-slate-500 mb-6">
+            Add books to your cart before checking out.
           </p>
           <Link to="/library">
-            <Button size="md" className="px-6 text-xs sm:text-sm">Browse Library</Button>
+            <button className="co-pay-btn w-full py-3 rounded-lg text-sm">Browse Library</button>
           </Link>
         </div>
-      </div>
+      </PageWrap>
     );
   }
 
-  // ── Payment success state ─────────────────────────────────────────────────
+  // ── Payment success ──────────────────────────────────────────────────────────
   if (orderComplete) {
     return (
-      <div className="min-h-[75vh] bg-white py-12 flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center bg-white p-8 rounded-2xl border border-slate-200/80 shadow-sm">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mb-5">
-            <FiCheckCircle className="w-9 h-9" />
+      <PageWrap>
+        <div className="max-w-sm w-full co-slide-up">
+          {/* Success icon */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="relative inline-flex items-center justify-center w-20 h-20">
+              <div className="co-pulse-ring" style={{ animationDelay: '0s' }} />
+              <div className="co-pulse-ring" style={{ animationDelay: '0.4s' }} />
+              <div
+                className="co-success w-20 h-20 rounded-full flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg,#00c853,#00e676)' }}
+              >
+                <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                  <path
+                    className="co-svg-tick"
+                    d="M8 18l7 7 13-13"
+                    stroke="#fff"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h1 className="text-2xl font-extrabold text-slate-900 mt-5 mb-1 tracking-tight text-center">
+              Payment Confirmed! 🎉
+            </h1>
+            <p className="text-sm text-slate-500 text-center">
+              Tap below to download your book{purchasedBooks.length !== 1 ? 's' : ''}.
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">
-            Payment Confirmed! 🎉
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-600 mb-2">
-            Your digital books are now unlocked and available in your library.
-          </p>
-          <p className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2 mb-6">
-            📱 Check your M-PESA messages for the payment confirmation SMS.
-          </p>
-          <div className="space-y-2.5">
-            <Link to="/dashboard">
-              <Button size="md" className="w-full text-xs sm:text-sm font-semibold">
-                Go to My Library
-              </Button>
-            </Link>
-            <Link to="/library">
-              <Button variant="outline" size="md" className="w-full text-xs sm:text-sm">
-                Continue Browsing
-              </Button>
-            </Link>
+
+          {/* Per-book download buttons */}
+          <div className="space-y-3 mb-5">
+            {purchasedBooks.length > 0 ? (
+              purchasedBooks.map((book, i) => (
+                <a
+                  key={book.id || i}
+                  href={book.pdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
+                  className={`co-pay-btn w-full py-3.5 rounded-lg text-sm flex items-center gap-3 px-4 ${
+                    !book.pdfUrl ? 'pointer-events-none opacity-60' : ''
+                  }`}
+                >
+                  {book.coverImage && (
+                    <img
+                      src={book.coverImage}
+                      alt=""
+                      className="w-8 h-10 object-cover rounded flex-shrink-0"
+                      style={{ opacity: 0.9 }}
+                    />
+                  )}
+                  <span className="flex-1 text-left truncate">{book.title}</span>
+                  <FiDownload className="w-4 h-4 flex-shrink-0" />
+                </a>
+              ))
+            ) : (
+              /* Fallback: no book metadata captured — send to dashboard */
+              <Link to="/dashboard">
+                <button className="co-pay-btn w-full py-3.5 rounded-lg text-sm flex items-center justify-center gap-2">
+                  <FiBookOpen className="w-4 h-4" /> Go to My Library
+                </button>
+              </Link>
+            )}
+          </div>
+
+          {/* M-PESA SMS reminder */}
+          <div className="co-card p-3.5 flex items-start gap-3">
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+              <FiSmartphone className="w-3.5 h-3.5 text-emerald-600" />
+            </div>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              📱 Check your <strong className="text-slate-700">M-PESA SMS</strong> for the
+              payment confirmation from Safaricom.
+            </p>
           </div>
         </div>
-      </div>
+      </PageWrap>
     );
   }
 
-  // ── Payment failed state ──────────────────────────────────────────────────
+  // ── Payment failed ───────────────────────────────────────────────────────────
   if (paymentFailed) {
     return (
-      <div className="min-h-[75vh] bg-white py-12 flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center bg-white p-8 rounded-2xl border border-red-100 shadow-sm">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-500 mb-5">
-            <FiXCircle className="w-9 h-9" />
+      <PageWrap>
+        <div className="max-w-sm w-full text-center co-slide-up">
+          <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center bg-red-50 border border-red-100">
+            <FiXCircle className="w-10 h-10 text-red-500" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">Payment Cancelled</h1>
-          <p className="text-xs sm:text-sm text-slate-600 mb-6">
-            The M-PESA payment was not completed. You can try again or go back to your cart.
+          <p className="text-sm text-slate-500 mb-6">
+            The M-PESA payment was not completed. No money was deducted.
           </p>
           <div className="space-y-2.5">
-            <Button
-              size="md"
-              className="w-full text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 border-emerald-600"
+            <button
+              className="co-pay-btn w-full py-3 rounded-lg text-sm"
               onClick={handleRetry}
             >
               Try Again
-            </Button>
+            </button>
             <Link to="/cart">
-              <Button variant="outline" size="md" className="w-full text-xs sm:text-sm">
+              <button className="w-full py-3 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
                 Back to Cart
-              </Button>
+              </button>
             </Link>
           </div>
         </div>
-      </div>
+      </PageWrap>
     );
   }
 
-  // ── Pending / Awaiting PIN state ──────────────────────────────────────────
+  // ── Awaiting PIN ─────────────────────────────────────────────────────────────
   if (pendingPaymentId && isPolling) {
+    const elapsed = pollCount * 5;
+    const progressPct = Math.min((elapsed / 60) * 100, 100);
     return (
-      <div className="min-h-[75vh] bg-white py-12 flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center bg-white p-8 rounded-2xl border border-emerald-100 shadow-sm">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 mb-5 animate-pulse">
-            <FiSmartphone className="w-9 h-9" />
+      <PageWrap>
+        <div className="max-w-sm w-full co-slide-up">
+          <div className="flex flex-col items-center mb-6">
+            <div className="relative">
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg,#e8f5e9,#f1f8e9)' }}
+              >
+                <FiSmartphone className="w-9 h-9 text-emerald-600" />
+              </div>
+              <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center">
+                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+              </span>
+            </div>
+            <div className="flex gap-1.5 mt-4">
+              <span className="co-dot" />
+              <span className="co-dot" />
+              <span className="co-dot" />
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 mb-2">Waiting for M-PESA PIN</h1>
-          <p className="text-xs sm:text-sm text-slate-600 mb-1">
-            {pendingMessage || 'A payment prompt has been sent to your phone.'}
-          </p>
-          <p className="text-xs text-slate-500 mb-5">
-            Please enter your M-PESA PIN on your Safaricom phone to confirm{' '}
-            <strong className="text-slate-700">{formatPrice(cartTotal)}</strong>.
+
+          <h1 className="text-xl font-bold text-slate-900 text-center mb-2">
+            Waiting for Your PIN
+          </h1>
+          <p className="text-sm text-slate-500 text-center mb-5">
+            {pendingMessage || 'A payment prompt has been sent to your phone.'}{' '}
+            Enter your M-PESA PIN to confirm{' '}
+            <strong className="text-slate-800">{formatPrice(cartTotal)}</strong>.
           </p>
 
-          <div className="flex items-center justify-center gap-2 text-xs text-slate-400 mb-6">
-            <FiRefreshCw className="w-3.5 h-3.5 animate-spin" />
-            <span>Checking payment status… ({pollCount * 5}s)</span>
+          <div className="co-card p-4 mb-4">
+            <div className="flex justify-between text-xs text-slate-500 mb-2">
+              <span className="flex items-center gap-1.5">
+                <FiRefreshCw className="w-3 h-3 animate-spin" /> Checking status…
+              </span>
+              <span>{elapsed}s / 60s</span>
+            </div>
+            <div className="w-full bg-slate-100 rounded-full" style={{ height: 4 }}>
+              <div className="co-progress-bar rounded-full" style={{ width: `${progressPct}%` }} />
+            </div>
           </div>
 
-          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-5 text-[11px] text-amber-800">
+          <div
+            className="rounded-xl p-3.5 mb-4 text-xs text-amber-800 border border-amber-100"
+            style={{ background: '#fffbeb' }}
+          >
             <FiClock className="inline w-3.5 h-3.5 mr-1" />
-            The prompt expires in about 60 seconds. If you missed it,{' '}
+            The prompt expires in ~60 seconds. Missed it?{' '}
             <button
               type="button"
               onClick={handleRetry}
               className="underline font-semibold cursor-pointer hover:text-amber-900"
             >
-              click here to try again
+              Tap to retry
             </button>
-            .
           </div>
 
           <button
             type="button"
             onClick={handleRetry}
-            className="text-xs text-slate-400 hover:text-red-500 underline transition-colors cursor-pointer"
+            className="w-full text-xs text-slate-400 hover:text-red-500 transition-colors cursor-pointer py-2"
           >
             Cancel payment
           </button>
         </div>
-      </div>
+      </PageWrap>
     );
   }
 
-  // ── Pending but polling stopped (timeout) ─────────────────────────────────
+  // ── Timeout / Still pending ──────────────────────────────────────────────────
   if (pendingPaymentId && !isPolling && !orderComplete && !paymentFailed) {
     return (
-      <div className="min-h-[75vh] bg-white py-12 flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-500 mb-5">
-            <FiClock className="w-9 h-9" />
+      <PageWrap>
+        <div className="max-w-sm w-full text-center co-slide-up">
+          <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center bg-slate-50 border border-slate-200">
+            <FiClock className="w-10 h-10 text-slate-400" />
           </div>
           <h1 className="text-xl font-bold text-slate-900 mb-2">Still waiting…</h1>
-          <p className="text-xs sm:text-sm text-slate-600 mb-5">
-            We haven't received payment confirmation yet. If you entered your PIN, please allow a moment and check your library.
+          <p className="text-sm text-slate-500 mb-6">
+            We haven't received confirmation yet. If you entered your PIN, please check your
+            library — it may already be there.
           </p>
           <div className="space-y-2.5">
             <Link to="/dashboard">
-              <Button size="md" className="w-full text-xs sm:text-sm font-semibold">
+              <button className="co-pay-btn w-full py-3 rounded-lg text-sm">
                 Check My Library
-              </Button>
+              </button>
             </Link>
-            <Button
-              variant="outline"
-              size="md"
-              className="w-full text-xs sm:text-sm"
+            <button
+              className="w-full py-3 rounded-lg text-sm font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
               onClick={handleRetry}
             >
               Try Again
-            </Button>
+            </button>
           </div>
         </div>
-      </div>
+      </PageWrap>
     );
   }
 
-  // ── Main checkout form ────────────────────────────────────────────────────
+  // ── Main checkout form ────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-white py-8 sm:py-12">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-6 sm:mb-8">
-          <Link to="/cart" className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-primary transition-colors mb-3">
-            <FiArrowLeft className="mr-1.5 h-4 w-4" />
-            Back to Cart
-          </Link>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Secure Checkout
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Instant digital delivery to your account upon M-PESA confirmation
-          </p>
-        </div>
+      <style>{styles}</style>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* M-PESA Payment Form */}
-          <div className="lg:col-span-7">
-            <div className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+        {/* Back link */}
+        <Link
+          to="/cart"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-primary transition-colors mb-6"
+        >
+          <FiArrowLeft className="w-4 h-4" /> Back to Cart
+        </Link>
 
-              {/* M-Pesa Header */}
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                  <FiSmartphone className="w-5 h-5 text-white" />
+        {/* Step indicator */}
+        <StepIndicator step={2} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+          {/* ── LEFT: Payment form ─────────────────────────────────────────── */}
+          <div className="lg:col-span-7 co-slide-up">
+            <div className="co-card overflow-hidden">
+
+              {/* Green header strip */}
+              <div className="co-mpesa-gradient px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
+                    <FiSmartphone className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-sm leading-none">M-PESA Express</p>
+                    <p className="text-white/70 text-[10px] mt-0.5">STK Push — Lipa Na M-PESA</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-sm font-bold text-slate-900">M-PESA Express</h2>
-                  <p className="text-[11px] text-slate-500">STK Push — Lipa Na M-PESA</p>
-                </div>
-                <span className="ml-auto text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
-                  Safaricom Secured
+                <span
+                  className="co-badge text-white/90 border border-white/30"
+                  style={{ background: 'rgba(255,255,255,0.12)' }}
+                >
+                  <FiShield className="w-2.5 h-2.5" /> SECURED
                 </span>
               </div>
 
-              {/* How It Works */}
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-5">
-                <p className="text-xs font-bold text-slate-700 mb-2.5">How it works:</p>
-                <ol className="space-y-1.5 text-xs text-slate-600">
-                  <li className="flex gap-2"><span className="font-bold text-emerald-600 flex-shrink-0">1.</span> Enter your Safaricom M-PESA number below</li>
-                  <li className="flex gap-2"><span className="font-bold text-emerald-600 flex-shrink-0">2.</span> Click "Pay Now" — a prompt appears on your phone</li>
-                  <li className="flex gap-2"><span className="font-bold text-emerald-600 flex-shrink-0">3.</span> Enter your M-PESA PIN to confirm payment</li>
-                  <li className="flex gap-2"><span className="font-bold text-emerald-600 flex-shrink-0">4.</span> Your books unlock instantly in your dashboard</li>
-                </ol>
-              </div>
+              <div className="p-6">
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    M-PESA Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="0712 345 678  or  254712345678"
-                    required
-                    className="w-full px-3.5 py-3 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                  />
-                  <p className="text-[11px] text-slate-500 mt-1.5">
-                    Must be a registered Safaricom number. You will receive a prompt for{' '}
-                    <span className="font-bold text-slate-700">{formatPrice(cartTotal)}</span>.
+                {/* How it works */}
+                <div
+                  className="rounded-xl p-4 mb-6 border border-slate-100"
+                  style={{ background: '#f8fafc' }}
+                >
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
+                    How it works
                   </p>
+                  <div className="space-y-2.5">
+                    {[
+                      'Enter your Safaricom M-PESA phone number below',
+                      'Tap "Pay Now" — a prompt appears instantly on your phone',
+                      'Enter your M-PESA PIN to confirm the payment',
+                      'Your books unlock immediately in your library',
+                    ].map((step, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <span
+                          className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
+                          style={{ background: 'linear-gradient(135deg,#00c853,#1E90FF)' }}
+                        >
+                          {i + 1}
+                        </span>
+                        <p className="text-xs text-slate-600 leading-relaxed">{step}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="pt-2">
-                  <Button
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">
+                      M-PESA Phone Number
+                    </label>
+
+                    <div
+                      className={`co-phone-wrap flex items-center border rounded-lg overflow-hidden transition-all ${
+                        phoneError ? 'border-red-400' : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 px-3 py-3 bg-slate-50 border-r border-slate-200 flex-shrink-0">
+                        <span className="text-base">🇰🇪</span>
+                        <span className="text-xs font-semibold text-slate-600">+254</span>
+                      </div>
+                      <input
+                        id="mpesa-phone"
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={handlePhoneChange}
+                        placeholder="0712 345 678"
+                        required
+                        className="flex-1 px-3 py-3 text-sm bg-white text-slate-900 placeholder-slate-400"
+                        style={{ border: 'none', outline: 'none' }}
+                      />
+                    </div>
+
+                    {phoneError ? (
+                      <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1">
+                        <FiXCircle className="w-3 h-3" /> {phoneError}
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-slate-400 mt-1.5">
+                        Registered Safaricom number. You will receive a prompt for{' '}
+                        <strong className="text-slate-700">{formatPrice(cartTotal)}</strong>.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Pay button */}
+                  <button
+                    id="pay-now-btn"
                     type="submit"
-                    size="md"
                     disabled={isProcessing}
-                    className="w-full py-3.5 text-sm font-bold shadow-sm bg-emerald-600 hover:bg-emerald-700 border-emerald-600"
+                    className="co-pay-btn w-full py-4 rounded-lg text-sm flex items-center justify-center gap-2.5"
                   >
                     {isProcessing ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <>
+                        <span
+                          className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full"
+                          style={{ animation: 'co-spin-slow 0.8s linear infinite' }}
+                        />
                         Sending M-PESA Prompt…
-                      </span>
+                      </>
                     ) : (
-                      `Pay ${formatPrice(cartTotal)} via M-PESA`
+                      <>
+                        <FiSmartphone className="w-4 h-4" />
+                        Pay {formatPrice(cartTotal)} via M-PESA
+                      </>
                     )}
-                  </Button>
-                </div>
-              </form>
+                  </button>
+                </form>
 
-              <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400">
-                <div className="flex items-center gap-1.5">
-                  <FiLock className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>256-bit encrypted checkout</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <FiShield className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Safaricom M-PESA Certified</span>
-                </div>
+                <TrustRow />
               </div>
             </div>
           </div>
 
-          {/* Order Summary */}
+          {/* ── RIGHT: Order summary ───────────────────────────────────────── */}
           <div className="lg:col-span-5">
-            <div className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
-              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 pb-2 border-b border-slate-100">
-                Order Summary ({cart.length} {cart.length === 1 ? 'item' : 'items'})
-              </h2>
+            <div className="co-card p-5 sticky top-24">
 
-              <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto pr-1 mb-4">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Order Summary
+                </h2>
+                <span className="co-badge text-slate-500 bg-slate-100">
+                  {cart.length} {cart.length === 1 ? 'item' : 'items'}
+                </span>
+              </div>
+
+              {/* Items */}
+              <div className="divide-y divide-slate-50 max-h-64 overflow-y-auto -mx-1 px-1 mb-4">
                 {cart.map((item) => (
-                  <div key={item.id} className="py-2.5 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2.5 min-w-0">
+                  <div key={item.id} className="py-3 flex items-center gap-3">
+                    <div className="relative flex-shrink-0">
                       <img
                         src={item.coverImage}
                         alt={item.title}
-                        className="w-8 h-10 object-cover rounded-lg bg-slate-100 flex-shrink-0"
+                        className="w-10 h-14 object-cover rounded-md bg-slate-100"
+                        onError={(e) => { e.target.style.display = 'none'; }}
                       />
-                      <div className="min-w-0">
-                        <p className="font-semibold text-slate-800 truncate">{item.title}</p>
-                        <span className="text-[11px] text-slate-400">Qty: {item.quantity}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-slate-800 truncate">{item.title}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <FiStar className="w-2.5 h-2.5 text-amber-400 fill-amber-400" />
+                        <span className="text-[10px] text-slate-400">Digital Book</span>
+                        {item.quantity > 1 && (
+                          <span className="text-[10px] text-slate-400">× {item.quantity}</span>
+                        )}
                       </div>
                     </div>
-                    <span className="font-bold text-slate-900 ml-2 flex-shrink-0">
-                      {formatPrice(item.price * item.quantity)}
+                    <span className="text-xs font-bold text-slate-800 flex-shrink-0">
+                      {formatPrice(item.price * (item.quantity || 1))}
                     </span>
                   </div>
                 ))}
               </div>
 
+              {/* Totals */}
               <div className="border-t border-slate-100 pt-3 space-y-2 text-xs">
-                <div className="flex justify-between text-slate-600">
+                <div className="flex justify-between text-slate-500">
                   <span>Subtotal</span>
-                  <span className="font-semibold text-slate-800">{formatPrice(cartTotal)}</span>
+                  <span className="font-semibold text-slate-700">{formatPrice(cartTotal)}</span>
                 </div>
-                <div className="flex justify-between text-slate-600">
+                <div className="flex justify-between text-slate-500">
                   <span>Digital Delivery</span>
-                  <span className="font-semibold text-emerald-600">Free</span>
+                  <span className="font-bold text-emerald-600">Free</span>
                 </div>
-                <div className="border-t border-slate-100 pt-3 flex justify-between items-baseline">
+                <div
+                  className="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center rounded-lg px-3 py-3"
+                  style={{ background: 'linear-gradient(135deg,#f0fff4,#f0f7ff)' }}
+                >
                   <span className="text-sm font-bold text-slate-900">Total Due</span>
                   <span className="text-xl font-extrabold text-slate-900">
                     {formatPrice(cartTotal)}
@@ -451,23 +778,22 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {/* Trust Badges */}
-              <div className="mt-5 pt-4 border-t border-slate-100 space-y-2">
-                <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                  <FiCheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                  <span>Instant PDF/EPUB access after payment</span>
-                </div>
-                <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                  <FiCheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                  <span>Lifetime access — download anytime</span>
-                </div>
-                <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                  <FiCheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                  <span>24/7 WhatsApp support: 0112478220</span>
-                </div>
+              {/* Perks */}
+              <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
+                {[
+                  'Instant PDF/EPUB access after payment',
+                  'Lifetime access — download anytime',
+                  '24/7 WhatsApp support: 0112478220',
+                ].map((perk) => (
+                  <div key={perk} className="flex items-start gap-2">
+                    <FiCheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-[11px] text-slate-500">{perk}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>

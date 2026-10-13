@@ -25,6 +25,8 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { recordSiteVisit } from './services/api';
 
+import { ProtectedRoute, AdminRoute, PublicOnlyRoute } from './components/auth';
+
 function PageVisitTracker() {
   const location = useLocation();
   const { user } = useAuth();
@@ -65,11 +67,46 @@ export default function App() {
                       <Route path="/library" element={<Library />} />
                       <Route path="/book/:id" element={<BookDetails />} />
                       <Route path="/cart" element={<Cart />} />
-                      <Route path="/checkout" element={<Checkout />} />
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/register" element={<Register />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/admin" element={<AdminDashboard />} />
+                      <Route
+                        path="/checkout"
+                        element={
+                          <ProtectedRoute>
+                            <Checkout />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/login"
+                        element={
+                          <PublicOnlyRoute>
+                            <Login />
+                          </PublicOnlyRoute>
+                        }
+                      />
+                      <Route
+                        path="/register"
+                        element={
+                          <PublicOnlyRoute>
+                            <Register />
+                          </PublicOnlyRoute>
+                        }
+                      />
+                      <Route
+                        path="/dashboard"
+                        element={
+                          <ProtectedRoute>
+                            <Dashboard />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/admin"
+                        element={
+                          <AdminRoute>
+                            <AdminDashboard />
+                          </AdminRoute>
+                        }
+                      />
                       <Route path="/about" element={<About />} />
                       <Route path="/contact" element={<Contact />} />
                       <Route path="/legal" element={<Legal />} />

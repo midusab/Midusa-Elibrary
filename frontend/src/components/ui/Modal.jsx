@@ -35,7 +35,7 @@ const Modal = ({
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className={`relative ${sizes[size]} w-full bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden`}
+          className={`relative ${sizes[size]} w-full bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-hidden`}
         >
           {/* Header */}
           {title && (
@@ -43,7 +43,7 @@ const Modal = ({
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{title}</h2>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md transition-colors"
               >
                 <IoClose className="w-6 h-6 text-slate-500" />
               </button>

@@ -11,14 +11,14 @@ export default function AdminCategoriesTab({
 }) {
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+      <div className="flex items-center justify-between bg-white p-4 rounded-lg border border-slate-200/90">
         <div>
           <h3 className="text-sm font-bold text-slate-900">Manage Categories</h3>
           <p className="text-xs text-slate-500">Organize books into browseable topics</p>
         </div>
         <button
           onClick={handleOpenAddCategory}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1E90FF] hover:bg-[#1873cc] text-white text-xs font-semibold cursor-pointer shadow-sm transition-all"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#1E90FF] hover:bg-[#1873cc] text-white text-xs font-semibold cursor-pointer transition-all"
         >
           <FiPlus className="w-4 h-4" />
           <span>Add Catalogue</span>
@@ -31,24 +31,24 @@ export default function AdminCategoriesTab({
           return (
             <Card
               key={cat.id || cat.name}
-              className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow transition-shadow flex flex-col justify-between"
+              className="p-5 bg-white border border-slate-200/90 rounded-lg flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center font-bold text-sm">
+                  <div className="w-10 h-10 rounded-md bg-blue-50 text-[#1E90FF] flex items-center justify-center font-bold text-sm">
                     {cat.name.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleOpenEditCategory(cat)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-[#1E90FF] hover:bg-slate-100 transition-colors cursor-pointer"
+                      className="p-1 rounded-md text-slate-400 hover:text-[#1E90FF] hover:bg-slate-100 transition-colors cursor-pointer"
                       title="Edit"
                     >
                       <FiEdit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => handleDeleteCategory(cat.id)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                      className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-slate-100 transition-colors cursor-pointer"
                       title="Delete"
                     >
                       <FiTrash2 className="w-3.5 h-3.5" />

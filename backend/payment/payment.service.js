@@ -298,7 +298,7 @@ async function checkPaymentStatus(identifier, user = null) {
       });
 
       if (queryResult.resultCode === 0) {
-        // Successful
+        // ✅ Confirmed success via STK query — mark completed and grant access
         await prisma.payments.update({
           where: { id: payment.id },
           data: {
@@ -314,7 +314,6 @@ async function checkPaymentStatus(identifier, user = null) {
             data: { status: 'completed' },
           });
 
-          // Add to purchases
           const orderItems = await prisma.order_items.findMany({
             where: { order_id: payment.order_id },
           });
@@ -341,24 +340,20 @@ async function checkPaymentStatus(identifier, user = null) {
                 },
               });
 
-              // Auto-mark book as bestseller after purchase
               await updateBookBestsellerStatus(item.book_id);
             } catch (err) {}
           }
         }
         payment.status = 'completed';
-      } else if (queryResult.resultCode && queryResult.resultCode !== 1032) {
-        // Any error code other than 1032 (cancelled) or 0 indicates failure
-        await prisma.payments.update({
-          where: { id: payment.id },
-          data: {
-            status: 'failed',
-            result_code: queryResult.resultCode,
-            result_desc: queryResult.resultDesc,
-          },
-        });
-        payment.status = 'failed';
       }
+      // ⚠️  DO NOT mark as 'failed' here based on query result codes.
+      // Non-zero query codes (e.g. 1032, 2001, 1) can fire while the
+      // transaction is still being processed on Safaricom's side —
+      // particularly in the window between PIN entry and callback delivery.
+      // The Safaricom webhook callback (handleMpesaCallback) is the ONLY
+      // authoritative source for a 'failed' status. Marking here causes a
+      // race condition where a valid paid transaction gets shown as
+      // "Payment Cancelled" on the frontend while the book is already granted.
     } catch (queryErr) {
       // In sandbox or during pending phase, queries may return error while user hasn't entered PIN yet
       console.log('STK Query status check info:', queryErr.message);

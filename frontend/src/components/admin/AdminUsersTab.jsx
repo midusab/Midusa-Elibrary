@@ -20,21 +20,21 @@ export default function AdminUsersTab({
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Customer KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg">
           <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">
             Total Registered Members
           </span>
           <div className="flex items-center justify-between">
             <h3 className="text-2xl font-bold text-slate-900">{usersList.length}</h3>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-md bg-blue-50 text-[#1E90FF] flex items-center justify-center">
               <FiUsers className="w-4 h-4" />
             </div>
           </div>
           <p className="text-xs text-slate-400 mt-2">Active platform accounts</p>
         </Card>
 
-        <Card className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg">
           <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">
             Active Buyers
           </span>
@@ -42,14 +42,14 @@ export default function AdminUsersTab({
             <h3 className="text-2xl font-bold text-slate-900">
               {usersList.filter((u) => (u.orders || []).some((o) => o.status === 'completed')).length}
             </h3>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <FiShoppingBag className="w-4 h-4" />
             </div>
           </div>
           <p className="text-xs text-slate-400 mt-2">Placed at least 1 completed purchase</p>
         </Card>
 
-        <Card className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg">
           <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">
             New Signups (7 Days)
           </span>
@@ -62,14 +62,14 @@ export default function AdminUsersTab({
                 }).length
               }
             </h3>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
               <FiTrendingUp className="w-4 h-4" />
             </div>
           </div>
           <p className="text-xs text-slate-400 mt-2">Recent member acquisition</p>
         </Card>
 
-        <Card className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg">
           <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">
             Total Member Spend
           </span>
@@ -79,7 +79,7 @@ export default function AdminUsersTab({
                 usersList.reduce((sum, u) => sum + (Number(u.totalSpent) || 0), 0)
               )}
             </h3>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center">
               <FiDollarSign className="w-4 h-4" />
             </div>
           </div>
@@ -88,21 +88,21 @@ export default function AdminUsersTab({
       </div>
 
       {/* Search and Role Filter Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
-        <div className="relative w-full sm:w-80">
+      <div className="flex flex-col gap-3 bg-white p-4 rounded-lg border border-slate-200/90">
+        <div className="relative w-full">
           <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
           <input
             type="text"
             placeholder="Search registered members by name or email..."
             value={userSearch}
             onChange={(e) => setUserSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
+            className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
           />
         </div>
 
         {/* Role Filter Tabs */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+        <div className="w-full overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-md text-xs font-semibold w-fit min-w-full sm:min-w-0">
             {[
               { id: 'all', label: `All (${usersList.length})` },
               { id: 'user', label: `Readers (${usersList.filter((u) => u.role !== 'admin').length})` },
@@ -111,9 +111,9 @@ export default function AdminUsersTab({
               <button
                 key={rf.id}
                 onClick={() => setUserRoleFilter(rf.id)}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded transition-all cursor-pointer whitespace-nowrap ${
                   userRoleFilter === rf.id
-                    ? 'bg-white text-slate-900 shadow-sm font-bold'
+                    ? 'bg-white text-slate-900 font-bold border border-slate-200/70'
                     : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
@@ -128,7 +128,7 @@ export default function AdminUsersTab({
       </div>
 
       {/* Registered Customers Table */}
-      <Card className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+      <Card className="bg-white border border-slate-200/90 rounded-lg overflow-hidden">
         {filteredUsers.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs sm:text-sm">
@@ -176,10 +176,10 @@ export default function AdminUsersTab({
                             <img
                               src={u.avatar}
                               alt={u.fullname}
-                              className="w-9 h-9 rounded-full object-cover ring-1 ring-slate-200 shadow-sm"
+                              className="w-9 h-9 rounded-md object-cover ring-1 ring-slate-200"
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-full bg-blue-50 text-[#1E90FF] flex items-center justify-center font-bold text-xs ring-1 ring-blue-100">
+                            <div className="w-9 h-9 rounded-md bg-blue-50 text-[#1E90FF] flex items-center justify-center font-bold text-xs ring-1 ring-blue-100">
                               {u.fullname?.[0] || 'U'}
                             </div>
                           )}
@@ -191,7 +191,7 @@ export default function AdminUsersTab({
                       </td>
                       <td className="py-3.5 px-4">
                         <span
-                          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${
+                          className={`px-2 py-0.5 rounded-md text-xs font-semibold capitalize ${
                             u.role === 'admin'
                               ? 'bg-purple-50 text-purple-700 border border-purple-200/60'
                               : 'bg-slate-100 text-slate-700'

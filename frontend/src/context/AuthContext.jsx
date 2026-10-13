@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
   signInWithPopup,
   signInWithRedirect,
@@ -8,8 +8,41 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { ADMIN_EMAIL, checkIsAdmin } from '../constants/auth';
+import {
+  refreshTokenApi,
+  checkSessionApi,
+  requestPasswordReset as apiRequestPasswordReset,
+  resetPasswordWithToken as apiResetPasswordWithToken
+} from '../services/api';
 
-/** Returns true if the string looks like a real signed JWT (three base64 parts). */
+/** Safely decode JWT payload without external libraries */
+function getJwtPayload(token) {
+  if (!token || typeof token !== 'string') return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
+/** Check if JWT is expired */
+function isTokenExpired(token) {
+  const payload = getJwtPayload(token);
+  if (!payload || !payload.exp) return false;
+  return payload.exp * 1000 <= Date.now();
+}
+
+/** Returns true if string looks like a signed JWT */
 function isRealJwt(token) {
   if (!token || typeof token !== 'string') return false;
   const parts = token.split('.');
@@ -28,30 +61,110 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser]       = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const expiryTimerRef = useRef(null);
 
-  // Helper to normalize user object and ensure admin role
-  const processUser = (rawUser, token) => {
+  // Normalizes user object and ensures admin status consistency
+  const processUser = useCallback((rawUser, token) => {
     const isAdmin = checkIsAdmin(rawUser.email);
-    const processed = {
+    return {
       ...rawUser,
       token: token || rawUser.token || 'jwt-token-' + Date.now(),
       role: isAdmin ? 'admin' : (rawUser.role || 'user'),
       isAdmin: isAdmin,
     };
-    return processed;
-  };
+  }, []);
 
-  const saveUserSession = (sessionUser) => {
+  const saveUserSession = useCallback((sessionUser) => {
     const processed = processUser(sessionUser, sessionUser.token);
     setUser(processed);
     localStorage.setItem('user', JSON.stringify(processed));
     return processed;
-  };
+  }, [processUser]);
+
+  /** Sign out and clear stored session */
+  const logout = useCallback(async (reasonMessage) => {
+    if (expiryTimerRef.current) {
+      clearTimeout(expiryTimerRef.current);
+      expiryTimerRef.current = null;
+    }
+
+    try { await firebaseSignOut(auth); } catch { /* ignore */ }
+    setUser(null);
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('pending_login_toast');
+
+    if (reasonMessage) {
+      sessionStorage.setItem('session_logout_reason', reasonMessage);
+    }
+  }, []);
 
   /**
-   * Exchange a Firebase credential result for our backend JWT.
+   * Schedule automatic logout when the current token expires
+   */
+  const scheduleTokenExpiration = useCallback((token) => {
+    if (expiryTimerRef.current) {
+      clearTimeout(expiryTimerRef.current);
+      expiryTimerRef.current = null;
+    }
+
+    const payload = getJwtPayload(token);
+    if (!payload || !payload.exp) return;
+
+    const expiresInMs = payload.exp * 1000 - Date.now();
+    if (expiresInMs <= 0) {
+      // Already expired
+      logout('Your session has expired. Please sign in again.');
+      return;
+    }
+
+    // Schedule auto-logout right at token expiry
+    expiryTimerRef.current = setTimeout(() => {
+      logout('Your session has expired. Please sign in again.');
+    }, expiresInMs);
+  }, [logout]);
+
+  /**
+   * Refresh the active session token
+   */
+  const refreshSessionToken = useCallback(async () => {
+    if (!user?.token) return null;
+    try {
+      const data = await refreshTokenApi(user.token);
+      if (data?.token) {
+        const refreshed = processUser(data.user || user, data.token);
+        saveUserSession(refreshed);
+        scheduleTokenExpiration(data.token);
+        return refreshed;
+      }
+    } catch (err) {
+      if (err.code === 'TOKEN_EXPIRED') {
+        logout('Session expired. Please log in again.');
+      }
+      throw err;
+    }
+  }, [user, processUser, saveUserSession, scheduleTokenExpiration, logout]);
+
+  /**
+   * Check if current session is still valid on backend
+   */
+  const checkSessionValidity = useCallback(async () => {
+    if (!user?.token) return false;
+    try {
+      const res = await checkSessionApi(user.token);
+      if (res?.active === false) {
+        logout('Your session is no longer active. Please sign in.');
+        return false;
+      }
+      return true;
+    } catch {
+      return true; // Keep optimistic on transient network error
+    }
+  }, [user?.token, logout]);
+
+  /**
+   * Exchange Firebase credential for backend JWT
    */
   async function exchangeFirebaseToken(result) {
     const idToken = await result.user.getIdToken();
@@ -70,13 +183,13 @@ export const AuthProvider = ({ children }) => {
       if (res.ok) {
         const data = await res.json();
         const sessionUser = processUser(data.user, data.token);
+        scheduleTokenExpiration(data.token);
         return saveUserSession(sessionUser);
       }
     } catch (apiErr) {
       console.warn('Backend /auth/google not reachable, falling back to Firebase profile:', apiErr.message);
     }
 
-    // Direct fallback if backend is offline or unseeded
     const sessionUser = {
       id: result.user.uid,
       email: email,
@@ -88,25 +201,38 @@ export const AuthProvider = ({ children }) => {
     return saveUserSession(sessionUser);
   }
 
-  // ─── On mount: rehydrate session + pick up any redirect result ────────────
+  // ─── 1. Rehydrate session on mount & set up expiry timer ─────────────────
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
-      // 1. Restore saved session from localStorage
       const saved = localStorage.getItem('user');
       let restoredUser = null;
+
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
+          if (parsed && parsed.token && isTokenExpired(parsed.token)) {
+            // Stored token is already expired
+            localStorage.removeItem('user');
+            if (!cancelled) {
+              setUser(null);
+              setLoading(false);
+            }
+            return;
+          }
+
           restoredUser = processUser(parsed, parsed.token);
-          if (!cancelled) setUser(restoredUser);
+          if (!cancelled) {
+            setUser(restoredUser);
+            scheduleTokenExpiration(parsed.token);
+          }
         } catch {
           localStorage.removeItem('user');
         }
       }
 
-      // 2. Check for a pending Google redirect result
+      // Check for pending Google OAuth redirect result
       try {
         const result = await getRedirectResult(auth);
         if (result && !cancelled) {
@@ -125,12 +251,12 @@ export const AuthProvider = ({ children }) => {
         if (!cancelled) setLoading(false);
       }
 
-      // 3. If the stored token is stale/fake, silently refresh it via Firebase
+      // Silent Firebase refresh if token is placeholder
       if (restoredUser && !isRealJwt(restoredUser.token) && !cancelled) {
         const firebaseUser = auth.currentUser;
         if (firebaseUser) {
           try {
-            const freshIdToken = await getIdToken(firebaseUser, /* forceRefresh */ true);
+            const freshIdToken = await getIdToken(firebaseUser, true);
             const res = await fetch(`${API_BASE}/auth/google`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -142,6 +268,7 @@ export const AuthProvider = ({ children }) => {
               if (!cancelled) {
                 setUser(refreshed);
                 localStorage.setItem('user', JSON.stringify(refreshed));
+                scheduleTokenExpiration(data.token);
               }
             }
           } catch (refreshErr) {
@@ -152,13 +279,55 @@ export const AuthProvider = ({ children }) => {
     }
 
     init();
-    return () => { cancelled = true; };
-  }, []);
+    return () => {
+      cancelled = true;
+      if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
+    };
+  }, [processUser, scheduleTokenExpiration]);
+
+  // ─── 2. Multi-tab Session Synchronization ────────────────────────────────
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'user') {
+        if (!e.newValue) {
+          // Logged out in another tab
+          setUser(null);
+          if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
+        } else {
+          // Logged in or updated in another tab
+          try {
+            const newUser = JSON.parse(e.newValue);
+            setUser(newUser);
+            scheduleTokenExpiration(newUser.token);
+          } catch {
+            // Ignore parse error
+          }
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [scheduleTokenExpiration]);
+
+  // ─── 3. Session Heartbeat on Window Focus ────────────────────────────────
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user?.token) {
+        if (isTokenExpired(user.token)) {
+          logout('Your session has expired. Please sign in again.');
+        } else {
+          checkSessionValidity();
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user?.token, logout, checkSessionValidity]);
 
   /**
-   * Sign in with Google:
-   * First attempts popup for immediate feedback without page reloads.
-   * Falls back to redirect if popup is blocked or fails.
+   * Sign in with Google
    */
   const signInWithGoogle = async () => {
     try {
@@ -197,10 +366,11 @@ export const AuthProvider = ({ children }) => {
 
       const sessionUser = processUser(data.user, data.token);
       saveUserSession(sessionUser);
+      scheduleTokenExpiration(data.token);
       return { success: true, user: sessionUser };
     } catch (err) {
       if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
-        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.', { cause: err });
+        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.');
       }
       throw err;
     }
@@ -226,10 +396,11 @@ export const AuthProvider = ({ children }) => {
 
       const sessionUser = processUser(data.user, data.token);
       saveUserSession(sessionUser);
+      scheduleTokenExpiration(data.token);
       return { success: true, user: sessionUser };
     } catch (err) {
       if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
-        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.', { cause: err });
+        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.');
       }
       throw err;
     }
@@ -265,17 +436,20 @@ export const AuthProvider = ({ children }) => {
     return newUserData;
   };
 
-  /** Sign out from Firebase AND clear our session */
-  const logout = async () => {
-    try { await firebaseSignOut(auth); } catch { /* ignore */ }
-    setUser(null);
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('pending_login_toast');
+  /**
+   * Password Reset Flow
+   */
+  const requestPasswordReset = async (email) => {
+    return await apiRequestPasswordReset(email);
   };
 
-  // Backwards-compat helper
+  const resetPasswordWithToken = async (token, newPassword, confirmPassword) => {
+    return await apiResetPasswordWithToken(token, newPassword, confirmPassword);
+  };
+
   const login = (userData) => {
     saveUserSession(userData);
+    if (userData?.token) scheduleTokenExpiration(userData.token);
   };
 
   return (
@@ -288,6 +462,10 @@ export const AuthProvider = ({ children }) => {
       registerWithEmail,
       updateProfile,
       signInWithGoogle,
+      refreshSessionToken,
+      checkSessionValidity,
+      requestPasswordReset,
+      resetPasswordWithToken,
       isAuthenticated: !!user,
       isAdmin: Boolean(user?.role === 'admin' || checkIsAdmin(user?.email)),
       adminEmail: ADMIN_EMAIL
@@ -296,4 +474,3 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-

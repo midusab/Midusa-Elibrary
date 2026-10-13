@@ -12,24 +12,26 @@ export default function AdminOrdersTab({
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm w-fit">
-        {['all', 'completed', 'pending', 'cancelled'].map((st) => (
-          <button
-            key={st}
-            onClick={() => setOrderStatusFilter(st)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all cursor-pointer ${
-              orderStatusFilter === st
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            {st === 'all' ? `All Orders (${orders.length})` : st}
-          </button>
-        ))}
+      <div className="w-full overflow-x-auto scrollbar-none pb-1">
+        <div className="flex items-center gap-2 bg-white p-1.5 rounded-lg border border-slate-200/90 w-fit min-w-full sm:min-w-0">
+          {['all', 'completed', 'pending', 'cancelled'].map((st) => (
+            <button
+              key={st}
+              onClick={() => setOrderStatusFilter(st)}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold capitalize transition-all cursor-pointer whitespace-nowrap ${
+                orderStatusFilter === st
+                  ? 'bg-slate-900 text-white font-bold'
+                  : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              {st === 'all' ? `All Orders (${orders.length})` : st}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Orders Table */}
-      <Card className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+      <Card className="bg-white border border-slate-200/90 rounded-lg overflow-hidden">
         {filteredOrders.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs sm:text-sm">
@@ -80,7 +82,7 @@ export default function AdminOrdersTab({
                     </td>
                     <td className="py-3.5 px-4">
                       <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${
+                        className={`px-2.5 py-1 rounded-md text-xs font-semibold capitalize ${
                           ord.status === 'completed'
                             ? 'bg-emerald-50 text-emerald-700'
                             : ord.status === 'pending'
@@ -95,7 +97,7 @@ export default function AdminOrdersTab({
                       <select
                         value={ord.status}
                         onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value)}
-                        className="px-2.5 py-1 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#1E90FF] bg-white cursor-pointer"
+                        className="px-2.5 py-1 border border-slate-200 rounded-md text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#1E90FF] bg-white cursor-pointer"
                       >
                         <option value="completed">Completed (Paid)</option>
                         <option value="pending">Pending</option>
