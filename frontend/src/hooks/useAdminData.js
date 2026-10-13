@@ -42,7 +42,6 @@ export function useAdminData(token) {
       setSevenDaysAgo(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
     } catch (err) {
       console.error('Failed to load admin dashboard data:', err);
-      toastError('Could not refresh dashboard data. Please try again.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);

@@ -14,6 +14,7 @@ model books {
   category_id  String?       @db.Uuid
   description  String?
   price        Int           @default(60)
+  discount     Int?          @default(0)
   rating       Decimal?      @default(0) @db.Decimal(2, 1)
   cover_url    String
   pdf_url      String

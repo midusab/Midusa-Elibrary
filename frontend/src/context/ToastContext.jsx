@@ -15,11 +15,13 @@ export const useToast = () => {
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
-  const addToast = (message, type = 'success', duration = 3000) => {
-    const id = Date.now();
+  const addToast = (message, type = 'success', duration = 2400) => {
+    if (!message) return null;
+    const id = Date.now() + Math.random();
     const toast = { id, message, type, duration };
     
-    setToasts(prev => [...prev, toast]);
+    // Keep max 3 toasts to prevent screen clutter
+    setToasts(prev => [...prev.slice(-2), toast]);
     
     if (duration > 0) {
       setTimeout(() => {
@@ -42,17 +44,19 @@ export const ToastProvider = ({ children }) => {
   return (
     <ToastContext.Provider value={{ addToast, removeToast, success, error, info, warning }}>
       {children}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
-        <AnimatePresence>
-          {toasts.map(toast => (
-            <Toast
-              key={toast.id}
-              type={toast.type}
-              message={toast.message}
-              onClose={() => removeToast(toast.id)}
-            />
-          ))}
-        </AnimatePresence>
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-1.5 pointer-events-none">
+        <div className="flex flex-col gap-1.5 pointer-events-auto items-end">
+          <AnimatePresence>
+            {toasts.map(toast => (
+              <Toast
+                key={toast.id}
+                type={toast.type}
+                message={toast.message}
+                onClose={() => removeToast(toast.id)}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
     </ToastContext.Provider>
   );

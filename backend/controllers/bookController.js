@@ -6,10 +6,10 @@ const { prisma } = require('../config/database');
  */
 function formatBook(book) {
   const currentPrice = book.price || 0;
-  const originalPrice = book.original_price || Math.round(currentPrice * 1.35);
-  const discountPercent = originalPrice > currentPrice
-    ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
-    : 0;
+  const discountPercent = Number(book.discount) || 0;
+  const originalPrice = discountPercent > 0
+    ? Math.round(currentPrice / (1 - discountPercent / 100))
+    : currentPrice;
 
   return {
     id:          book.id,
@@ -22,6 +22,7 @@ function formatBook(book) {
     price:       currentPrice,
     originalPrice,
     discountPercent,
+    discount:    discountPercent,
     rating:      book.rating ? parseFloat(book.rating) : 0,
     featured:    book.featured || false,
     bestseller:  book.bestseller || false,
@@ -132,6 +133,7 @@ const createBook = async (req, res) => {
       coverImage  = '',
       pdfUrl      = '',
       price,
+      discount    = 0,
       rating      = 0,
       featured    = false,
       bestseller  = false,
@@ -161,6 +163,7 @@ const createBook = async (req, res) => {
         cover_url:   coverImage,
         pdf_url:     pdfUrl,
         price:       parseInt(price),
+        discount:    parseInt(discount) || 0,
         rating:      parseFloat(rating),
         featured:    Boolean(featured),
         bestseller:  Boolean(bestseller),
@@ -187,6 +190,7 @@ const updateBook = async (req, res) => {
       coverImage,
       pdfUrl,
       price,
+      discount,
       rating,
       featured,
       bestseller,
@@ -199,6 +203,7 @@ const updateBook = async (req, res) => {
     if (coverImage  !== undefined) data.cover_url   = coverImage;
     if (pdfUrl      !== undefined) data.pdf_url     = pdfUrl;
     if (price       !== undefined) data.price       = parseInt(price);
+    if (discount    !== undefined) data.discount    = parseInt(discount) || 0;
     if (rating      !== undefined) data.rating      = parseFloat(rating);
     if (featured    !== undefined) data.featured    = Boolean(featured);
     if (bestseller  !== undefined) data.bestseller  = Boolean(bestseller);

@@ -90,7 +90,7 @@ export default function BookModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
                     Price (KSH) *
@@ -103,6 +103,21 @@ export default function BookModal({
                     placeholder="19.99"
                     value={bookForm.price}
                     onChange={(e) => setBookForm({ ...bookForm, price: e.target.value })}
+                    className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Discount Offer (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="90"
+                    placeholder="0"
+                    value={bookForm.discount ?? 0}
+                    onChange={(e) => setBookForm({ ...bookForm, discount: e.target.value })}
                     className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
                   />
                 </div>

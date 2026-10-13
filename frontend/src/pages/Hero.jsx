@@ -17,7 +17,8 @@ import CategoryIcon from '../components/ui/CategoryIcon';
 import { getBooks } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import { useCategories } from '../context/CategoryContext';
-import HeroImg from '../assets/hero13.jpg'
+import FAQSection from '../components/layout/FAQSection';
+import HeroImg from '../assets/hero13.jpg';
 export default function Hero() {
   const { categories } = useCategories();
   const [featuredBooks, setFeaturedBooks] = useState([]);
@@ -273,12 +274,16 @@ export default function Hero() {
                           <span className="text-sm font-extrabold text-slate-900">
                             {formatPrice(bookOne.price)}
                           </span>
-                          <span className="text-[11px] text-slate-400 line-through">
-                            {formatPrice(bookOne.originalPrice || Math.round(bookOne.price * 1.35))}
-                          </span>
-                          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
-                            {bookOne.discountPercent || 25}% OFF
-                          </span>
+                          {bookOne.discountPercent > 0 && bookOne.originalPrice > bookOne.price && (
+                            <>
+                              <span className="text-[11px] text-slate-400 line-through">
+                                {formatPrice(bookOne.originalPrice)}
+                              </span>
+                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
+                                {bookOne.discountPercent}% OFF
+                              </span>
+                            </>
+                          )}
                         </div>
                         <span className="text-xs font-semibold text-primary group-hover:underline flex items-center gap-1">
                           View details <FiArrowRight className="w-3 h-3" />
@@ -336,12 +341,16 @@ export default function Hero() {
                           <span className="text-sm sm:text-base font-extrabold text-slate-900">
                             {formatPrice(bookTwo.price)}
                           </span>
-                          <span className="text-xs text-slate-400 line-through">
-                            {formatPrice(bookTwo.originalPrice || Math.round(bookTwo.price * 1.35))}
-                          </span>
-                          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
-                            {bookTwo.discountPercent || 25}% OFF
-                          </span>
+                          {bookTwo.discountPercent > 0 && bookTwo.originalPrice > bookTwo.price && (
+                            <>
+                              <span className="text-xs text-slate-400 line-through">
+                                {formatPrice(bookTwo.originalPrice)}
+                              </span>
+                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
+                                {bookTwo.discountPercent}% OFF
+                              </span>
+                            </>
+                          )}
                         </div>
 
                         <div className="px-3 py-1 bg-primary text-white rounded text-xs font-semibold flex items-center gap-1 group-hover:bg-primary-600 transition-colors">
@@ -424,9 +433,11 @@ export default function Hero() {
                       <span className="absolute top-2.5 left-2.5 bg-white/95 text-slate-700 text-xs font-semibold px-2 py-0.5 rounded-md border border-slate-200/60">
                         {book.category}
                       </span>
-                      <span className="absolute top-2.5 right-2.5 bg-rose-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-wide">
-                        {book.discountPercent || 25}% OFF
-                      </span>
+                      {book.discountPercent > 0 && (
+                        <span className="absolute top-2.5 right-2.5 bg-rose-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-wide">
+                          {book.discountPercent}% OFF
+                        </span>
+                      )}
                     </div>
 
                     <div className="p-5 flex-1 flex flex-col justify-between">
@@ -444,9 +455,11 @@ export default function Hero() {
                         <div>
                           <div className="flex items-baseline gap-2">
                             <span className="text-base font-bold text-slate-900">{formatPrice(book.price)}</span>
-                            <span className="text-xs text-slate-400 line-through">
-                              {formatPrice(book.originalPrice || Math.round(book.price * 1.35))}
-                            </span>
+                            {book.discountPercent > 0 && book.originalPrice > book.price && (
+                              <span className="text-xs text-slate-400 line-through">
+                                {formatPrice(book.originalPrice)}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center text-amber-500 text-sm mt-0.5 font-semibold">
                             <FiStar className="w-3.5 h-3.5 fill-current mr-1" />
@@ -545,13 +558,17 @@ export default function Hero() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-baseline gap-2">
                             <span className="text-base font-bold text-slate-900">{formatPrice(book.price)}</span>
-                            <span className="text-xs text-slate-400 line-through">
-                              {formatPrice(book.originalPrice || Math.round(book.price * 1.35))}
-                            </span>
+                            {book.discountPercent > 0 && book.originalPrice > book.price && (
+                              <span className="text-xs text-slate-400 line-through">
+                                {formatPrice(book.originalPrice)}
+                              </span>
+                            )}
                           </div>
-                          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
-                            {book.discountPercent || 25}% OFF
-                          </span>
+                          {book.discountPercent > 0 && (
+                            <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
+                              {book.discountPercent}% OFF
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -620,6 +637,9 @@ export default function Hero() {
           )}
         </div>
       </section>
+
+      {/* FAQ Section: Homepage Only */}
+      <FAQSection />
     </div>
   );
 }

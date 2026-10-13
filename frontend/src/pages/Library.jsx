@@ -299,11 +299,13 @@ export default function Library() {
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                           loading="lazy"
                         />
-                        <span className="absolute top-2 left-2 bg-rose-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow tracking-wide">
-                          {book.discountPercent || 25}% OFF
-                        </span>
+                        {book.discountPercent > 0 && (
+                          <span className="absolute top-2 left-2 bg-rose-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-wide">
+                            {book.discountPercent}% OFF
+                          </span>
+                        )}
                         {book.bestseller && (
-                          <span className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-semibold px-2 py-0.5 rounded shadow">
+                          <span className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-semibold px-2 py-0.5 rounded">
                             Top
                           </span>
                         )}
@@ -324,9 +326,11 @@ export default function Library() {
                             <span className="text-base font-bold text-slate-900">
                               {formatPrice(book.price)}
                             </span>
-                            <span className="text-xs text-slate-400 line-through">
-                              {formatPrice(book.originalPrice || Math.round(book.price * 1.35))}
-                            </span>
+                            {book.discountPercent > 0 && book.originalPrice > book.price && (
+                              <span className="text-xs text-slate-400 line-through">
+                                {formatPrice(book.originalPrice)}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center text-amber-500 text-sm font-semibold">
                             <FiStar className="w-3.5 h-3.5 fill-current mr-1" />

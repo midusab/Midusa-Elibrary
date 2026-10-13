@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   FiLogOut, FiLayers, FiLock, FiUser, 
-  FiShield, FiMail, FiCheckCircle, FiBookOpen, FiHeart, FiCreditCard
+  FiShield, FiMail, FiCheckCircle, FiBookOpen, FiHeart, FiFileText
 } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -15,7 +15,7 @@ import { useCategories } from '../context/CategoryContext';
 import UserProfileTab from '../components/dashboard/UserProfileTab';
 import UserLibraryTab from '../components/dashboard/UserLibraryTab';
 import UserFavoritesTab from '../components/dashboard/UserFavoritesTab';
-import UserPaymentsTab from '../components/dashboard/UserPaymentsTab';
+import UserOrdersTab from '../components/dashboard/UserOrdersTab';
 import UserAdminTab from '../components/dashboard/UserAdminTab';
 
 export default function Dashboard() {
@@ -363,14 +363,14 @@ export default function Dashboard() {
           </button>
 
           <button
-            onClick={() => setActiveTab('payments')}
+            onClick={() => setActiveTab('orders')}
             className={`pb-2.5 px-4 text-xs sm:text-sm font-semibold transition-colors relative cursor-pointer whitespace-nowrap flex items-center gap-2 ${
-              activeTab === 'payments' ? 'text-[#1E90FF]' : 'text-slate-500 hover:text-slate-800'
+              activeTab === 'orders' ? 'text-[#1E90FF]' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <FiCreditCard className="w-4 h-4" />
-            Payment History ({userOrders.length})
-            {activeTab === 'payments' && (
+            <FiFileText className="w-4 h-4" />
+            Order History & Invoices ({userOrders.length})
+            {activeTab === 'orders' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1E90FF] rounded-full" />
             )}
           </button>
@@ -415,7 +415,9 @@ export default function Dashboard() {
           <UserLibraryTab
             isLoadingOrders={isLoadingOrders}
             purchasedBooks={purchasedBooks}
-            onReadNow={(book) => success(`Opening reader for ${book.title}`)}
+            onReadNow={(book) => {
+              if (book.pdfUrl) window.open(book.pdfUrl, '_blank');
+            }}
           />
         )}
 
@@ -427,11 +429,12 @@ export default function Dashboard() {
           />
         )}
 
-        {/* Tab 4: Payment History */}
-        {activeTab === 'payments' && (
-          <UserPaymentsTab
+        {/* Tab 4: Order History with Invoices */}
+        {activeTab === 'orders' && (
+          <UserOrdersTab
             orders={userOrders}
             isLoading={isLoadingOrders}
+            user={user}
           />
         )}
 

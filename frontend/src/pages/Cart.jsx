@@ -11,14 +11,12 @@ export default function Cart() {
   const { cart, removeFromCart, updateQuantity, clearCart, cartTotal, cartCount } = useCart();
   const { success } = useToast();
 
-  const handleRemoveFromCart = (bookId, bookTitle) => {
+  const handleRemoveFromCart = (bookId) => {
     removeFromCart(bookId);
-    success(`"${bookTitle}" removed from cart`);
   };
 
   const handleClearCart = () => {
     clearCart();
-    success('Cart cleared');
   };
 
   if (cart.length === 0) {

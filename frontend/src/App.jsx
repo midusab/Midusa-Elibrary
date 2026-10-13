@@ -6,7 +6,6 @@ import { ToastProvider } from './context/ToastContext';
 import { CategoryProvider } from './context/CategoryContext';
 import Navigation from './components/Navigation';
 import Footer from './components/layout/Footer';
-import FAQSection from './components/layout/FAQSection';
 import ScrollProgressBar from './components/common/ScrollProgressBar';
 import WhatsAppButton from './components/common/WhatsAppButton';
 import Hero from './pages/Hero';
@@ -121,8 +120,6 @@ export default function App() {
                       <Route path="/terms" element={<Legal />} />
                     </Routes>
                   </main>
-                  {/* FAQ before footer on all pages */}
-                  <FAQSection />
                   <Footer />
                 </div>
               </CategoryProvider>

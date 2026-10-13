@@ -260,12 +260,16 @@ export default function BookDetails() {
                       <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                         {formatPrice(book.price)}
                       </span>
-                      <span className="text-lg sm:text-xl text-slate-400 line-through">
-                        {formatPrice(book.originalPrice || Math.round(book.price * 1.35))}
-                      </span>
-                      <span className="text-xs font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                        {book.discountPercent || 25}% OFF
-                      </span>
+                      {book.discountPercent > 0 && book.originalPrice > book.price && (
+                        <>
+                          <span className="text-lg sm:text-xl text-slate-400 line-through">
+                            {formatPrice(book.originalPrice)}
+                          </span>
+                          <span className="text-xs font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                            {book.discountPercent}% OFF
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
@@ -431,12 +435,16 @@ export default function BookDetails() {
                             <span className="text-xs sm:text-sm font-bold text-slate-900">
                               {formatPrice(item.price)}
                             </span>
-                            <span className="text-[10px] text-slate-400 line-through">
-                              {formatPrice(item.originalPrice || Math.round(item.price * 1.35))}
-                            </span>
-                            <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded">
-                              {item.discountPercent || 25}% OFF
-                            </span>
+                            {item.discountPercent > 0 && item.originalPrice > item.price && (
+                              <>
+                                <span className="text-[10px] text-slate-400 line-through">
+                                  {formatPrice(item.originalPrice)}
+                                </span>
+                                <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded">
+                                  {item.discountPercent}% OFF
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>

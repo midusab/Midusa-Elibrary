@@ -113,6 +113,7 @@ export default function AdminDashboard() {
       coverImage: '',
       pdfUrl: '',
       price: '',
+      discount: 0,
       rating: 5,
       featured: false,
       bestseller: false
@@ -131,6 +132,7 @@ export default function AdminDashboard() {
       coverImage: book.coverImage || '',
       pdfUrl: book.pdfUrl || '',
       price: book.price ?? '',
+      discount: book.discount ?? book.discountPercent ?? 0,
       rating: book.rating ?? 5,
       featured: Boolean(book.featured),
       bestseller: Boolean(book.bestseller)
@@ -165,6 +167,7 @@ export default function AdminDashboard() {
         ...bookForm,
         pdfUrl,
         price: parseFloat(bookForm.price),
+        discount: parseInt(bookForm.discount) || 0,
         rating: parseFloat(bookForm.rating || 5)
       };
 
