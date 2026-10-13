@@ -70,24 +70,41 @@ export default function Categories() {
                 transition={{ duration: 0.3, delay: idx * 0.08 }}
               >
                 <Link to={`/library?category=${encodeURIComponent(cat.name)}`}>
-                  <Card className="h-full p-6 border border-slate-200/80 hover:border-primary/50 hover:shadow-md rounded-2xl bg-white transition-all cursor-pointer group flex flex-col justify-between">
-                    <div>
-                      <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-                        <CategoryIcon slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')} className="w-7 h-7" />
+                  <Card className="h-full border border-slate-200/80 hover:border-primary/50 hover:shadow-md rounded-2xl bg-white transition-all cursor-pointer group flex flex-col overflow-hidden">
+                    {/* Image banner */}
+                    {cat.image_url ? (
+                      <div className="relative w-full h-36 overflow-hidden">
+                        <img
+                          src={cat.image_url}
+                          alt={cat.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent" />
                       </div>
-                      <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-primary transition-colors mb-2">
-                        {cat.name}
-                      </h3>
-                      <p className="text-xs text-slate-600 leading-relaxed mb-6">
-                        {cat.description}
-                      </p>
-                    </div>
+                    ) : (
+                      <div className="w-full h-24 bg-primary-50 flex items-center justify-center">
+                        <div className="w-14 h-14 rounded-2xl bg-white text-primary flex items-center justify-center group-hover:scale-105 transition-transform">
+                          <CategoryIcon slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')} className="w-7 h-7" />
+                        </div>
+                      </div>
+                    )}
 
-                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
-                      <span className="text-slate-400 font-medium">Curated collection</span>
-                      <span className="text-primary font-semibold flex items-center group-hover:translate-x-1 transition-transform">
-                        Explore <FiArrowRight className="ml-1" />
-                      </span>
+                    <div className="p-5 flex flex-col flex-1 justify-between">
+                      <div>
+                        <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-primary transition-colors mb-1.5">
+                          {cat.name}
+                        </h3>
+                        <p className="text-xs text-slate-600 leading-relaxed mb-4">
+                          {cat.description}
+                        </p>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span className="text-slate-400 font-medium">Curated collection</span>
+                        <span className="text-primary font-semibold flex items-center group-hover:translate-x-1 transition-transform">
+                          Explore <FiArrowRight className="ml-1" />
+                        </span>
+                      </div>
                     </div>
                   </Card>
                 </Link>

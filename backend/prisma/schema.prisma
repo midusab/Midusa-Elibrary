@@ -37,6 +37,7 @@ model books {
 model categories {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name       String    @unique
+  image_url  String?
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   books      books[]
 }

@@ -1,133 +1,203 @@
-import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FiBookOpen, FiTarget, FiUsers, FiAward, FiShield, FiArrowRight, FiCheck } from 'react-icons/fi';
-import Card from '../components/ui/Card';
-import Cardimg from '../assets/hero2.jpg'
+import { FiTarget, FiShield, FiUsers, FiAward, FiCheck, FiArrowRight, FiMail } from 'react-icons/fi';
 import Button from '../components/ui/Button';
-import { CATEGORIES } from '../constants/categories';
-import CategoryIcon from '../components/ui/CategoryIcon';
+import Card from '../components/ui/Card';
+import Cardimg from '../assets/hero2.jpg';
+
+const PILLARS = [
+  {
+    title: 'Self-Development',
+    desc: 'Proven frameworks for building habits, mental discipline, and high-performance mindsets that create lasting personal transformation.',
+    color: '#1E90FF',
+    bg: '#EFF6FF',
+  },
+  {
+    title: 'Psychology',
+    desc: 'Understand human behaviour, cognitive patterns, and emotional intelligence to improve relationships and decision-making.',
+    color: '#7C3AED',
+    bg: '#F5F3FF',
+  },
+  {
+    title: 'Business & Finance',
+    desc: 'Practical playbooks on entrepreneurship, investing, and building financial independence — tailored for the African context.',
+    color: '#059669',
+    bg: '#ECFDF5',
+  },
+  {
+    title: 'Christian Growth',
+    desc: 'Faith-based literature for spiritual grounding, biblical wisdom, and purposeful living in the modern world.',
+    color: '#D97706',
+    bg: '#FFFBEB',
+  },
+];
+
+const VALUES = [
+  { icon: FiTarget, title: 'Curated Quality', desc: 'Every title is personally reviewed for practical depth and reader impact before it enters our catalogue.' },
+  { icon: FiShield, title: 'Fair & Transparent', desc: 'KSh-priced titles with M-PESA checkout. No hidden fees, no subscriptions — you buy once and own forever.' },
+  { icon: FiUsers, title: 'Reader-First', desc: 'We listen to our community. New categories, requests, and features are driven by what readers actually need.' },
+  { icon: FiAward, title: 'Lifetime Access', desc: 'Your purchased books are always available in your dashboard. No expiry, no re-purchase.' },
+];
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-white py-10 sm:py-16 bg-cover bg-fixed bg-center bg-no-repeat overflow-hidden"  style={{
-          backgroundImage: `url(${Cardimg})`,
-        }} >
-         
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-          <span className="text-xs font-bold text-primary uppercase tracking-wider bg-primary-50 px-3 py-1 rounded-full">
-            Our Purpose & Vision
+    <div className="min-h-screen bg-white">
+
+      {/* Hero Section */}
+      <div
+        className="relative py-20 sm:py-28 bg-cover bg-center bg-fixed overflow-hidden"
+        style={{ backgroundImage: `url(${Cardimg})` }}
+      >
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-slate-900/65" />
+        <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="inline-block text-xs font-bold text-[#1E90FF] uppercase tracking-widest bg-blue-900/40 border border-blue-500/30 px-3 py-1 rounded-full mb-4">
+            Our Purpose
           </span>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mt-3 mb-3 tracking-tight">
-            Curating Knowledge That Matters
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-4 leading-tight">
+            Curating Knowledge<br />That Actually Matters
           </h1>
-          <p className="text-xs sm:text-sm md:text-base text-slate-600 leading-relaxed">
-            MidusaElibrary is built to cut through digital noise. We provide high-impact eBooks in four essential disciplines that shape character, intellect, wealth, and faith.
+          <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-xl mx-auto">
+            MidusaElibrary is Kenya's premier digital bookstore for high-impact literature. We cut through the noise and deliver books that shape character, intellect, wealth, and faith.
           </p>
-        </div>
-
-        {/* Mission & Vision Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16 " 
-         
-        >
-          <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col justify-between"
-          >
-            <div >
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mb-5"
-             >
-                <FiTarget className="w-6 h-6" />
-              </div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">
-                Our Mission
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                To equip readers with transformative, practical literature that inspires self-mastery, mental fortitude, financial sovereignty, and spiritual grounding. Every title on our platform is carefully verified for clarity and depth.
-              </p>
-            </div>
-            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-semibold text-primary">
-              <FiCheck className="mr-1.5 text-emerald-500" />
-              Verified Digital Formats (PDF/EPUB)
-            </div>
-          </Card>
-
-          <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col justify-between">
-            <div>
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mb-5">
-                <FiShield className="w-6 h-6" />
-              </div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900 mb-2">
-                Accessible & Fair
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                We bridge international quality with local accessibility in Kenya and beyond. Transparent pricing in Kenyan Shillings (KSh) with seamless M-PESA (Lipa Na M-PESA) checkout ensures everyone can access life-changing books without hurdles.
-              </p>
-            </div>
-            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs font-semibold text-primary">
-              <FiCheck className="mr-1.5 text-emerald-500" />
-              Lifetime Ownership & Instant Download
-            </div>
-          </Card>
-        </div>
-
-        {/* 4 Pillars Section */}
-        <div className="mb-16">
-          <div className="text-center max-w-xl mx-auto mb-8">
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              The Four Foundations
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Why we strictly focus on these four categories
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/** {CATEGORIES.map((cat) => (
-              <Card key={cat.id} className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col justify-between">
-                <div>
-                  <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary flex items-center justify-center mb-4">
-                    <CategoryIcon slug={cat.slug} className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-bold text-sm text-slate-900 mb-1.5">
-                    {cat.name}
-                  </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    {cat.description}
-                  </p>
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-100">
-                  <Link
-                    to={`/library?category=${encodeURIComponent(cat.name)}`}
-                    className="text-xs font-semibold text-primary hover:text-primary-700 flex items-center gap-1"
-                  >
-                    <span>Browse {cat.name}</span>
-                    <FiArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </Card>
-            ))}*/}
-          </div>
-        </div>
-
-        {/* Values Section */}
-        <div className="p-8 sm:p-10 rounded-2xl liquid-glass border border-white/80 shadow-sm text-center">
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">
-            Built for Readers Who Demand Excellence
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-600 max-w-xl mx-auto mb-6">
-            Join a growing network of focused minds across Africa elevating their potential daily.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-3">
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/library">
-              <Button size="md" className="px-6 text-xs sm:text-sm font-semibold">
-                Explore Full Library
+              <Button size="md" className="px-7 text-sm font-semibold">
+                Browse the Shop
               </Button>
             </Link>
             <Link to="/contact">
-              <Button variant="outline" size="md" className="px-6 text-xs sm:text-sm font-semibold">
-                Contact Our Team
+              <Button variant="outline" size="md" className="px-7 text-sm font-semibold border-white/30 text-white hover:bg-white/10">
+                Get in Touch
               </Button>
             </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Mission & Values */}
+      <div className="py-16 sm:py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Mission + Accessibility cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+          <Card className="p-7 sm:p-8 bg-white border border-slate-200 rounded-2xl flex flex-col justify-between">
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#1E90FF] flex items-center justify-center mb-5">
+                <FiTarget className="w-6 h-6" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 mb-2">Our Mission</h2>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                To equip readers across Africa with transformative, practical literature that inspires self-mastery, mental clarity, financial independence, and spiritual grounding. Every title on our platform is carefully verified for depth and real-world applicability.
+              </p>
+            </div>
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-semibold text-[#1E90FF]">
+              <FiCheck className="text-emerald-500 w-4 h-4" />
+              Verified, High-Impact PDF Titles
+            </div>
+          </Card>
+
+          <Card className="p-7 sm:p-8 bg-white border border-slate-200 rounded-2xl flex flex-col justify-between">
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-5">
+                <FiShield className="w-6 h-6" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 mb-2">Accessible & Fair</h2>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                We bridge international quality with local accessibility. Transparent KSh pricing with seamless M-PESA (Lipa Na M-PESA) checkout ensures that every motivated reader in Kenya and beyond can access life-changing books without financial hurdles.
+              </p>
+            </div>
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-semibold text-emerald-600">
+              <FiCheck className="text-emerald-500 w-4 h-4" />
+              Lifetime Ownership · Instant Download
+            </div>
+          </Card>
+        </div>
+
+        {/* Four Pillars */}
+        <div className="mb-16">
+          <div className="text-center max-w-xl mx-auto mb-10">
+            <span className="text-xs font-bold text-[#1E90FF] uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full">
+              Our Catalogue
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 tracking-tight">
+              Four Foundations of Growth
+            </h2>
+            <p className="text-sm text-slate-500 mt-2">
+              We focus exclusively on these four pillars because they cover everything that truly matters for a life well-lived.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {PILLARS.map((p) => (
+              <Card key={p.title} className="p-6 bg-white border border-slate-200 rounded-2xl flex flex-col justify-between">
+                <div>
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 font-extrabold text-sm"
+                    style={{ backgroundColor: p.bg, color: p.color }}
+                  >
+                    {p.title.slice(0, 2).toUpperCase()}
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 mb-2">{p.title}</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">{p.desc}</p>
+                </div>
+                <div className="mt-5 pt-4 border-t border-slate-100">
+                  <Link
+                    to={`/library?category=${encodeURIComponent(p.title)}`}
+                    className="text-xs font-semibold flex items-center gap-1 hover:gap-2 transition-all"
+                    style={{ color: p.color }}
+                  >
+                    Browse {p.title} <FiArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Core Values */}
+        <div className="mb-16">
+          <div className="text-center max-w-xl mx-auto mb-10">
+            <span className="text-xs font-bold text-[#1E90FF] uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full">
+              What We Stand For
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 tracking-tight">
+              Our Core Values
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {VALUES.map((v) => (
+              <div key={v.title} className="flex items-start gap-4 p-5 bg-slate-50 border border-slate-100 rounded-2xl">
+                <div className="w-10 h-10 rounded-xl bg-[#1E90FF]/10 text-[#1E90FF] flex items-center justify-center flex-shrink-0">
+                  <v.icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 mb-1">{v.title}</h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">{v.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA Banner */}
+        <div className="p-8 sm:p-10 rounded-2xl bg-gradient-to-br from-[#1E90FF]/10 via-white to-blue-50 border border-[#1E90FF]/20 text-center">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">
+            Built for Readers Who Demand Excellence
+          </h2>
+          <p className="text-sm text-slate-600 max-w-lg mx-auto mb-6">
+            Join a growing community of focused minds across Africa elevating their potential every day.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-3">
+            <Link to="/library">
+              <Button size="md" className="px-7 text-sm font-semibold">
+                Explore the Shop
+              </Button>
+            </Link>
+            <a href="mailto:midusab@gmail.com">
+              <Button variant="outline" size="md" className="px-7 text-sm font-semibold gap-2">
+                <FiMail className="w-4 h-4" />
+                Email Our Team
+              </Button>
+            </a>
           </div>
         </div>
       </div>

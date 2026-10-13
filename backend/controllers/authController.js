@@ -42,191 +42,26 @@ function signToken(user) {
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role },
     process.env.JWT_SECRET || 'midusa-elibrary-jwt-secret-key-2026',
-    { expiresIn: process.env.JWT_EXPIRE || '7d' }
+    { expiresIn: process.env.JWT_EXPIRE || '2h' }
   );
 }
 
 // ============================================================
-// POST /api/auth/login
-// Body: { email, password }
+// POST /api/auth/login (Disabled - Google Sign-In Only)
 // ============================================================
 exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Please provide both email and password' });
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-    const isAdmin = (normalizedEmail === ADMIN_EMAIL);
-
-    try {
-      const userModel = prisma.users || prisma.user;
-      // Look up user in database
-      let user = await userModel.findUnique({
-        where: { email: normalizedEmail }
-      });
-
-      if (!user) {
-        // If it's the admin signing in for the first time, auto-create the account
-        if (isAdmin) {
-          const hashedPassword = await bcrypt.hash(password, 10);
-          user = await userModel.create({
-            data: {
-              email: normalizedEmail,
-              fullname: 'Brian Midusa (Admin)',
-              password: hashedPassword,
-              role: 'admin',
-              avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop'
-            }
-          });
-        } else {
-          return res.status(401).json({ error: 'Invalid email or password. Please verify your credentials or register.' });
-        }
-      } else {
-        // User exists: verify password if user has password set
-        if (user.password) {
-          const isMatch = await bcrypt.compare(password, user.password);
-          if (!isMatch) {
-            return res.status(401).json({ error: 'Invalid password. Please try again.' });
-          }
-        }
-        
-        // Ensure role is admin if matches admin email
-        if (isAdmin && user.role !== 'admin') {
-          user = await userModel.update({
-            where: { id: user.id },
-            data: { role: 'admin' }
-          });
-        }
-      }
-
-      const token = signToken(user);
-      return res.json({
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          fullname: user.fullname,
-          avatar: user.avatar,
-          role: user.role
-        },
-        message: isAdmin ? 'Welcome back, Administrator!' : 'Signed in successfully'
-      });
-    } catch (dbError) {
-      console.warn('Prisma DB lookup error in login (using memory fallback):', dbError.message);
-      // Graceful fallback for offline / unseeded database
-      const fallbackUser = {
-        id: isAdmin ? 'admin-1' : 'user-' + Date.now(),
-        email: normalizedEmail,
-        fullname: isAdmin ? 'Brian Midusa (Admin)' : normalizedEmail.split('@')[0],
-        avatar: isAdmin ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop' : '',
-        role: isAdmin ? 'admin' : 'user'
-      };
-      const token = signToken(fallbackUser);
-      return res.json({
-        token,
-        user: fallbackUser,
-        message: isAdmin ? 'Signed in as Administrator (Local)' : 'Signed in successfully'
-      });
-    }
-  } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ error: 'An error occurred during sign-in. Please try again.' });
-  }
+  return res.status(403).json({
+    error: 'Password sign-in has been disabled. Please authenticate using Google Sign-In.'
+  });
 };
 
 // ============================================================
-// POST /api/auth/register
-// Body: { fullname, email, password }
+// POST /api/auth/register (Disabled - Google Sign-In Only)
 // ============================================================
 exports.register = async (req, res) => {
-  try {
-    const { fullname, email, password, confirmPassword } = req.body;
-
-    if (!fullname || !email || !password) {
-      return res.status(400).json({ error: 'Please provide name, email, and password' });
-    }
-
-    if (confirmPassword !== undefined && password !== confirmPassword) {
-      return res.status(400).json({ error: 'Passwords do not match' });
-    }
-
-    if (password.length < 8) {
-      return res.status(400).json({ error: 'Password must be at least 8 characters long' });
-    }
-
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
-    if (!passwordRegex.test(password)) {
-      return res.status(400).json({
-        error: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
-      });
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-
-    // ⛔ Block registration with the admin email — admin account is created only via first login.
-    if (normalizedEmail === ADMIN_EMAIL) {
-      return res.status(403).json({
-        error: 'This email address cannot be used to register. Please use a different email.'
-      });
-    }
-
-    try {
-      const userModel = prisma.users || prisma.user;
-      const existingUser = await userModel.findUnique({
-        where: { email: normalizedEmail }
-      });
-
-      if (existingUser) {
-        return res.status(400).json({ error: 'An account with this email already exists. Please sign in.' });
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await userModel.create({
-        data: {
-          fullname: fullname.trim(),
-          email: normalizedEmail,
-          password: hashedPassword,
-          role: 'user', // Always 'user' — admin role is set only via login for ADMIN_EMAIL
-          avatar: ''
-        }
-      });
-
-      const token = signToken(user);
-      return res.status(201).json({
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          fullname: user.fullname,
-          avatar: user.avatar,
-          role: user.role
-        },
-        message: 'Account created successfully!'
-      });
-    } catch (dbErr) {
-      console.warn('Prisma DB error in register (using fallback):', dbErr.message);
-      // Fallback users are always 'user' role — admin email is already blocked above.
-      const fallbackUser = {
-        id: 'usr-' + Date.now(),
-        email: normalizedEmail,
-        fullname: fullname.trim(),
-        avatar: '',
-        role: 'user'
-      };
-      const token = signToken(fallbackUser);
-      return res.status(201).json({
-        token,
-        user: fallbackUser,
-        message: 'Account created successfully!'
-      });
-    }
-  } catch (err) {
-    console.error('Register error:', err);
-    res.status(500).json({ error: 'Registration failed. Please try again.' });
-  }
+  return res.status(403).json({
+    error: 'Password registration has been disabled. Please authenticate using Google Sign-In.'
+  });
 };
 
 // ============================================================

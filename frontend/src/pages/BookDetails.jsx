@@ -245,7 +245,7 @@ export default function BookDetails() {
                 </span>
                 <span className="text-slate-300">|</span>
                 <span className="text-xs text-emerald-600 font-semibold flex items-center">
-                  <FiCheck className="mr-1" /> Instant Digital Delivery (PDF/EPUB)
+                  <FiCheck className="mr-1" /> Instant Digital Delivery
                 </span>
               </div>
 
@@ -253,12 +253,20 @@ export default function BookDetails() {
               <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm mb-6">
                 <div className="flex items-baseline justify-between mb-4">
                   <div>
-                    <span className="text-xs font-semibold text-slate-500 block uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-slate-500 block uppercase tracking-wider mb-1">
                       Price
                     </span>
-                    <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                      {formatPrice(book.price)}
-                    </span>
+                    <div className="flex flex-wrap items-baseline gap-3">
+                      <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                        {formatPrice(book.price)}
+                      </span>
+                      <span className="text-lg sm:text-xl text-slate-400 line-through">
+                        {formatPrice(book.originalPrice || Math.round(book.price * 1.35))}
+                      </span>
+                      <span className="text-xs font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                        {book.discountPercent || 25}% OFF
+                      </span>
+                    </div>
                   </div>
                   <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
                     Digital Edition Unlocked
@@ -419,9 +427,17 @@ export default function BookDetails() {
                             {item.title}
                           </h4>
                           <p className="text-[11px] text-slate-500 mb-2 truncate">{item.author}</p>
-                          <span className="text-xs sm:text-sm font-bold text-slate-900">
-                            {formatPrice(item.price)}
-                          </span>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-xs sm:text-sm font-bold text-slate-900">
+                              {formatPrice(item.price)}
+                            </span>
+                            <span className="text-[10px] text-slate-400 line-through">
+                              {formatPrice(item.originalPrice || Math.round(item.price * 1.35))}
+                            </span>
+                            <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded">
+                              {item.discountPercent || 25}% OFF
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </Card>

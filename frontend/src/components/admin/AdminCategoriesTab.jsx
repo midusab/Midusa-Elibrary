@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiImage } from 'react-icons/fi';
 import Card from '../ui/Card';
 
 export default function AdminCategoriesTab({
@@ -21,7 +21,7 @@ export default function AdminCategoriesTab({
           className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#1E90FF] hover:bg-[#1873cc] text-white text-xs font-semibold cursor-pointer transition-all"
         >
           <FiPlus className="w-4 h-4" />
-          <span>Add Catalogue</span>
+          <span>Add Category</span>
         </button>
       </div>
 
@@ -31,45 +31,56 @@ export default function AdminCategoriesTab({
           return (
             <Card
               key={cat.id || cat.name}
-              className="p-5 bg-white border border-slate-200/90 rounded-lg flex flex-col justify-between"
+              className="overflow-hidden bg-white border border-slate-200/90 rounded-lg flex flex-col"
             >
-              <div>
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-md bg-blue-50 text-[#1E90FF] flex items-center justify-center font-bold text-sm">
-                    {cat.name.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleOpenEditCategory(cat)}
-                      className="p-1 rounded-md text-slate-400 hover:text-[#1E90FF] hover:bg-slate-100 transition-colors cursor-pointer"
-                      title="Edit"
-                    >
-                      <FiEdit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteCategory(cat.id)}
-                      className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                      title="Delete"
-                    >
-                      <FiTrash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+              {/* Category image banner */}
+              <div className="relative w-full h-28 bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center">
+                {cat.image_url ? (
+                  <img
+                    src={cat.image_url}
+                    alt={cat.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <FiImage className="w-8 h-8 text-slate-300" />
+                )}
+                {/* Action buttons overlay */}
+                <div className="absolute top-2 right-2 flex items-center gap-1">
+                  <button
+                    onClick={() => handleOpenEditCategory(cat)}
+                    className="p-1.5 rounded-md bg-white/90 text-slate-500 hover:text-[#1E90FF] shadow-sm transition-colors cursor-pointer"
+                    title="Edit category"
+                  >
+                    <FiEdit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCategory(cat.id)}
+                    className="p-1.5 rounded-md bg-white/90 text-slate-500 hover:text-rose-600 shadow-sm transition-colors cursor-pointer"
+                    title="Delete category"
+                  >
+                    <FiTrash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-
-                <h4 className="text-base font-bold text-slate-900 mb-1">{cat.name}</h4>
-                <p className="text-xs text-slate-500 line-clamp-2 mb-4">
-                  {cat.description || 'No description provided for this category.'}
-                </p>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-700">{bookCount} eBook(s)</span>
-                <Link
-                  to={`/library?category=${encodeURIComponent(cat.name)}`}
-                  className="text-[#1E90FF] hover:underline font-semibold"
-                >
-                  Browse →
-                </Link>
+              {/* Card body */}
+              <div className="p-4 flex flex-col flex-1 justify-between">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 mb-1">{cat.name}</h4>
+                  <p className="text-xs text-slate-500 line-clamp-2">
+                    {cat.description || 'No description provided for this category.'}
+                  </p>
+                </div>
+
+                <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-700">{bookCount} Book(s)</span>
+                  <Link
+                    to={`/library?category=${encodeURIComponent(cat.name)}`}
+                    className="text-[#1E90FF] hover:underline font-semibold"
+                  >
+                    Browse →
+                  </Link>
+                </div>
               </div>
             </Card>
           );
@@ -77,7 +88,7 @@ export default function AdminCategoriesTab({
 
         {categories.length === 0 && (
           <div className="col-span-full py-12 text-center text-slate-400 text-xs">
-            No categories in the catalogue yet. Click "Add Catalogue" to create your first one.
+            No categories yet. Click "Add Category" to create your first one.
           </div>
         )}
       </div>

@@ -113,7 +113,7 @@ const Footer = () => {
             <ul className="space-y-2.5 text-xs sm:text-sm">
               <li>
                 <Link to="/library" className="text-slate-400 hover:text-[#1E90FF] transition-colors">
-                  All eBooks Catalog
+                  Shop
                 </Link>
               </li>
               <li>

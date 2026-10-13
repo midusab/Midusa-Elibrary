@@ -5,6 +5,12 @@ const { prisma } = require('../config/database');
  * DB uses snake_case & category_id FK; frontend expects camelCase & category name string.
  */
 function formatBook(book) {
+  const currentPrice = book.price || 0;
+  const originalPrice = book.original_price || Math.round(currentPrice * 1.35);
+  const discountPercent = originalPrice > currentPrice
+    ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
+    : 0;
+
   return {
     id:          book.id,
     title:       book.title,
@@ -13,7 +19,9 @@ function formatBook(book) {
     category:    book.categories?.name || '',
     coverImage:  book.cover_url || '',
     pdfUrl:      book.pdf_url || '',
-    price:       book.price,
+    price:       currentPrice,
+    originalPrice,
+    discountPercent,
     rating:      book.rating ? parseFloat(book.rating) : 0,
     featured:    book.featured || false,
     bestseller:  book.bestseller || false,

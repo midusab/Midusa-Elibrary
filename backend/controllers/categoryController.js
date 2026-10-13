@@ -59,7 +59,7 @@ const getCategoryById = async (req, res) => {
 // Create category
 const createCategory = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, image_url } = req.body;
 
     if (!name || name.trim() === '') {
       return res.status(400).json({
@@ -81,7 +81,8 @@ const createCategory = async (req, res) => {
 
     const category = await prisma.categories.create({
       data: {
-        name: name.trim()
+        name: name.trim(),
+        ...(image_url ? { image_url } : {})
       }
     });
 
@@ -98,7 +99,7 @@ const createCategory = async (req, res) => {
 const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name } = req.body;
+    const { name, image_url } = req.body;
 
     if (!name || name.trim() === '') {
       return res.status(400).json({
@@ -124,7 +125,8 @@ const updateCategory = async (req, res) => {
     const category = await prisma.categories.update({
       where: { id },
       data: {
-        name: name.trim()
+        name: name.trim(),
+        image_url: image_url ?? undefined
       }
     });
 

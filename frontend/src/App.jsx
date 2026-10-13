@@ -6,6 +6,9 @@ import { ToastProvider } from './context/ToastContext';
 import { CategoryProvider } from './context/CategoryContext';
 import Navigation from './components/Navigation';
 import Footer from './components/layout/Footer';
+import FAQSection from './components/layout/FAQSection';
+import ScrollProgressBar from './components/common/ScrollProgressBar';
+import WhatsAppButton from './components/common/WhatsAppButton';
 import Hero from './pages/Hero';
 import Categories from './pages/Categories';
 import Library from './pages/Library';
@@ -58,6 +61,9 @@ export default function App() {
             <ToastProvider>
               <CategoryProvider>
                 <PageVisitTracker />
+                {/* Global UI overlays */}
+                <ScrollProgressBar />
+                <WhatsAppButton />
                 <div className="min-h-screen flex flex-col bg-white text-slate-900 overflow-x-hidden w-full">
                   <Navigation />
                   <main className="flex-1 pt-20 bg-white">
@@ -115,6 +121,8 @@ export default function App() {
                       <Route path="/terms" element={<Legal />} />
                     </Routes>
                   </main>
+                  {/* FAQ before footer on all pages */}
+                  <FAQSection />
                   <Footer />
                 </div>
               </CategoryProvider>

@@ -175,9 +175,9 @@ export default function Navigation() {
               </span>
             </Link>
 
-            {/* Streamlined Desktop Navigation Links (eBooks, Categories, Bestsellers) */}
+            {/* Streamlined Desktop Navigation Links (Shop, Categories, Bestsellers) */}
             <div className="hidden lg:flex items-center gap-1">
-              {/* eBooks Store */}
+              {/* Shop */}
               <Link
                 to="/library"
                 className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
@@ -186,7 +186,7 @@ export default function Navigation() {
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
                 }`}
               >
-                eBooks
+                Shop
               </Link>
 
               {/* Categories with Dropdown */}
@@ -350,8 +350,10 @@ export default function Navigation() {
                           <p className="text-xs font-bold text-slate-900 group-hover:text-[#1E90FF] truncate">
                             {book.title}
                           </p>
-                          <p className="text-[11px] text-slate-500 truncate">
-                            by {book.author} · <span className="font-semibold text-slate-700">{formatPrice(book.price)}</span>
+                          <p className="text-[11px] text-slate-500 truncate flex items-center gap-1.5">
+                            <span>by {book.author}</span> · 
+                            <span className="font-bold text-slate-900">{formatPrice(book.price)}</span>
+                            <span className="text-[10px] text-slate-400 line-through">{formatPrice(book.originalPrice || Math.round(book.price * 1.35))}</span>
                           </p>
                         </div>
                       </button>
@@ -565,7 +567,7 @@ export default function Navigation() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors flex items-center justify-between"
                 >
-                  <span>eBooks Catalog</span>
+                  <span>Shop</span>
                   <FiArrowRight className="w-4 h-4 text-slate-400" />
                 </Link>
                 
