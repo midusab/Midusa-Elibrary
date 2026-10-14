@@ -185,7 +185,7 @@ export default function BookDetails() {
                 {book.category}
               </span>
               {book.bestseller && (
-                <span className="absolute top-3.5 right-3.5 bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-sm">
+                <span className="absolute top-3.5 right-3.5 bg-[#F40009] text-white text-xs font-bold px-3 py-1 rounded-lg">
                   Bestseller
                 </span>
               )}
@@ -265,7 +265,7 @@ export default function BookDetails() {
                           <span className="text-lg sm:text-xl text-slate-400 line-through">
                             {formatPrice(book.originalPrice)}
                           </span>
-                          <span className="text-xs font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                          <span className="text-xs font-extrabold text-[#F40009] bg-red-50 px-2 py-0.5 rounded border border-red-200">
                             {book.discountPercent}% OFF
                           </span>
                         </>

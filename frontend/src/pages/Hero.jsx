@@ -279,7 +279,7 @@ export default function Hero() {
                               <span className="text-[11px] text-slate-400 line-through">
                                 {formatPrice(bookOne.originalPrice)}
                               </span>
-                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
+                              <span className="text-[10px] font-bold text-[#F40009] bg-red-50 px-1 py-0.2 rounded border border-red-200">
                                 {bookOne.discountPercent}% OFF
                               </span>
                             </>
@@ -346,7 +346,7 @@ export default function Hero() {
                               <span className="text-xs text-slate-400 line-through">
                                 {formatPrice(bookTwo.originalPrice)}
                               </span>
-                              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
+                              <span className="text-[10px] font-bold text-[#F40009] bg-red-50 px-1 py-0.2 rounded border border-red-200">
                                 {bookTwo.discountPercent}% OFF
                               </span>
                             </>
@@ -434,7 +434,7 @@ export default function Hero() {
                         {book.category}
                       </span>
                       {book.discountPercent > 0 && (
-                        <span className="absolute top-2.5 right-2.5 bg-rose-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-wide">
+                        <span className="absolute top-2.5 right-2.5 bg-[#F40009] text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-wide">
                           {book.discountPercent}% OFF
                         </span>
                       )}
@@ -565,7 +565,7 @@ export default function Hero() {
                             )}
                           </div>
                           {book.discountPercent > 0 && (
-                            <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded border border-rose-200">
+                            <span className="text-[10px] font-bold text-[#F40009] bg-red-50 px-1 py-0.2 rounded border border-red-200">
                               {book.discountPercent}% OFF
                             </span>
                           )}

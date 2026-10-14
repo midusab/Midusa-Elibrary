@@ -300,7 +300,7 @@ export default function Library() {
                           loading="lazy"
                         />
                         {book.discountPercent > 0 && (
-                          <span className="absolute top-2 left-2 bg-rose-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-wide">
+                          <span className="absolute top-2 left-2 bg-[#F40009] text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-wide">
                             {book.discountPercent}% OFF
                           </span>
                         )}
@@ -344,7 +344,7 @@ export default function Library() {
                     <div className="p-4 pt-0">
                       <button
                         onClick={(e) => handleAddToCart(e, book)}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-slate-200 hover:border-primary hover:bg-primary-50 text-slate-700 hover:text-primary text-sm font-semibold transition-all active:scale-[0.98] cursor-pointer"
+                        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-slate-200 hover:border-[#F40009] hover:bg-red-50 text-slate-700 hover:text-[#F40009] text-sm font-semibold transition-all active:scale-[0.98] cursor-pointer"
                       >
                         <FiShoppingCart className="w-4 h-4" />
                         <span>Add to Cart</span>

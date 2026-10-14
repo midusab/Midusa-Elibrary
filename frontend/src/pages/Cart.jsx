@@ -57,7 +57,7 @@ export default function Cart() {
             </h1>
             <button
               onClick={handleClearCart}
-              className="text-xs font-semibold text-slate-400 hover:text-rose-600 transition-colors"
+              className="text-xs font-semibold text-slate-400 hover:text-[#F40009] transition-colors"
             >
               Clear Cart
             </button>
@@ -123,7 +123,7 @@ export default function Cart() {
 
                   <button
                     onClick={() => handleRemoveFromCart(item.id, item.title)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors rounded-lg hover:bg-rose-50"
+                    className="p-1.5 text-slate-400 hover:text-[#F40009] transition-colors rounded-lg hover:bg-red-50"
                     title="Remove item"
                   >
                     <FiTrash2 className="w-4 h-4" />

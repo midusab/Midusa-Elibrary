@@ -51,7 +51,7 @@ const styles = `
   .co-pay-btn {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, #00c853 0%, #1E90FF 100%);
+    background: linear-gradient(135deg, #F40009 0%, #CC0007 100%);
     border: none !important;
     color: #fff !important;
     font-weight: 700;

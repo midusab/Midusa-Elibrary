@@ -14,6 +14,13 @@
   --color-primary-800: #0C4D8A;
   --color-primary-900: #0A3D6E;
 
+  /* Brand Accent: Coca-Cola Red — CTAs, Sale Badges, Urgency */
+  --color-cta: #F40009;
+  --color-cta-hover: #CC0007;
+  --color-cta-50: #FFF0F0;
+  --color-cta-100: #FFD6D7;
+  --color-cta-200: #FFA8AA;
+
   /* Typography: Apple SF Pro System Font Stack */
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", -apple-system-subheadline, "Helvetica Neue", Helvetica, Arial, sans-serif;
 
