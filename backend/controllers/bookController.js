@@ -332,9 +332,78 @@ const recordBookClick = async (req, res) => {
   }
 };
 
+// ─── Verify user access to book (Backend Access Control) ──────────────────────
+const verifyBookAccess = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const isUuid = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
+    if (!id || !isUuid(id)) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+
+    const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'midusabrian@gmail.com').trim().toLowerCase();
+    const isAdmin = req.user?.role === 'admin' || (req.user?.email && req.user.email.trim().toLowerCase() === ADMIN_EMAIL);
+
+    const book = await prisma.books.findUnique({
+      where: { id },
+      include: bookInclude
+    });
+
+    if (!book) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+
+    if (isAdmin) {
+      return res.json({
+        hasAccess: true,
+        reason: 'admin',
+        book: formatBook(book)
+      });
+    }
+
+    // Resolve user's db id
+    let dbUserId = null;
+    if (isUuid(req.user?.id)) {
+      dbUserId = req.user.id;
+    } else if (req.user?.email) {
+      const u = await prisma.users.findUnique({ where: { email: req.user.email.toLowerCase().trim() } });
+      if (u) dbUserId = u.id;
+    }
+
+    if (!dbUserId) {
+      return res.status(403).json({ hasAccess: false, error: 'User account not verified' });
+    }
+
+    const purchase = await prisma.purchases.findFirst({
+      where: {
+        user_id: dbUserId,
+        book_id: id
+      }
+    });
+
+    if (purchase) {
+      return res.json({
+        hasAccess: true,
+        reason: 'purchased',
+        purchasedAt: purchase.created_at,
+        book: formatBook(book)
+      });
+    }
+
+    return res.status(403).json({
+      hasAccess: false,
+      error: 'Access denied. Purchase required to unlock this book.'
+    });
+  } catch (error) {
+    console.error('Error verifying book access:', error);
+    res.status(500).json({ error: 'Failed to verify book access' });
+  }
+};
+
 module.exports = {
   getBooks,
   getBookById,
+  verifyBookAccess,
   createBook,
   updateBook,
   deleteBook,

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiArrowLeft, FiShield } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import Breadcrumb from '../components/common/Breadcrumb';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { formatPrice } from '../utils/currency';
@@ -47,10 +48,18 @@ export default function Cart() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
-          <Link to="/library" className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-primary transition-colors mb-3">
-            <FiArrowLeft className="mr-1.5 h-4 w-4" />
-            Continue Browsing
-          </Link>
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+            <Breadcrumb
+              items={[
+                { label: 'Library', to: '/library' },
+                { label: 'Shopping Cart' }
+              ]}
+            />
+            <Link to="/library" className="inline-flex items-center text-xs font-semibold text-slate-400 hover:text-[#1E90FF] transition-colors group">
+              <FiArrowLeft className="mr-1 h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+              <span>Continue Browsing</span>
+            </Link>
+          </div>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Shopping Cart ({cartCount} {cartCount === 1 ? 'book' : 'books'})

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
@@ -12,11 +12,18 @@ export const useCart = () => {
   return context;
 };
 
+/**
+ * Derives a deterministic, tamper-resistant account key for cart isolation
+ */
+function getAccountCartKey(user) {
+  if (!user) return 'cart_session_guest';
+  const accountIdentifier = (user.email || user.id || '').trim().toLowerCase();
+  return `cart_account_${accountIdentifier}`;
+}
+
 export const CartProvider = ({ children }) => {
   const { user } = useAuth();
-
-  const userKey = user?.email ? user.email.trim().toLowerCase() : (user?.id || 'guest');
-  const currentKey = `cart_user_${userKey}`;
+  const currentKey = getAccountCartKey(user);
 
   const [prevKey, setPrevKey] = useState(currentKey);
   const [cart, setCart] = useState(() => {
@@ -28,7 +35,8 @@ export const CartProvider = ({ children }) => {
     }
   });
 
-  // When active user identity changes, adjust state during render (React recommended pattern)
+  // When active user identity changes (login, logout, switch user):
+  // Strictly isolate cart products to the active account
   if (prevKey !== currentKey) {
     setPrevKey(currentKey);
     try {
@@ -39,16 +47,52 @@ export const CartProvider = ({ children }) => {
     }
   }
 
-  // Persist cart changes strictly to the active account key
+  // Persist cart changes strictly under the current active account key
   useEffect(() => {
     try {
-      localStorage.setItem(currentKey, JSON.stringify(cart));
+      if (cart.length > 0) {
+        localStorage.setItem(currentKey, JSON.stringify(cart));
+      } else {
+        localStorage.removeItem(currentKey);
+      }
     } catch (e) {
-      console.warn('Failed to save cart to localStorage:', e);
+      console.warn('Failed to securely persist account cart:', e);
     }
   }, [currentKey, cart]);
 
-  const addToCart = (book) => {
+  // Clean up guest cart data when user authenticates
+  useEffect(() => {
+    if (user) {
+      try {
+        const guestCart = localStorage.getItem('cart_session_guest');
+        if (guestCart) {
+          const guestItems = JSON.parse(guestCart);
+          if (Array.isArray(guestItems) && guestItems.length > 0) {
+            // Merge guest items securely into the user's account cart
+            setCart(prev => {
+              const merged = [...prev];
+              guestItems.forEach(gItem => {
+                const existing = merged.find(m => m.id === gItem.id);
+                if (existing) {
+                  existing.quantity = (existing.quantity || 1) + (gItem.quantity || 1);
+                } else {
+                  merged.push(gItem);
+                }
+              });
+              return merged;
+            });
+          }
+          // Remove guest cart so it doesn't linger
+          localStorage.removeItem('cart_session_guest');
+        }
+      } catch (err) {
+        console.warn('Cart account transfer notice:', err);
+      }
+    }
+  }, [user]);
+
+  const addToCart = useCallback((book) => {
+    if (!book || !book.id) return;
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.id === book.id);
       if (existingItem) {
@@ -60,13 +104,13 @@ export const CartProvider = ({ children }) => {
       }
       return [...prevCart, { ...book, quantity: 1 }];
     });
-  };
+  }, []);
 
-  const removeFromCart = (bookId) => {
+  const removeFromCart = useCallback((bookId) => {
     setCart(prevCart => prevCart.filter(item => item.id !== bookId));
-  };
+  }, []);
 
-  const updateQuantity = (bookId, quantity) => {
+  const updateQuantity = useCallback((bookId, quantity) => {
     if (quantity <= 0) {
       removeFromCart(bookId);
       return;
@@ -76,11 +120,16 @@ export const CartProvider = ({ children }) => {
         item.id === bookId ? { ...item, quantity } : item
       )
     );
-  };
+  }, [removeFromCart]);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCart([]);
-  };
+    try {
+      localStorage.removeItem(currentKey);
+    } catch {
+      // Ignore
+    }
+  }, [currentKey]);
 
   const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
   const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
@@ -93,7 +142,9 @@ export const CartProvider = ({ children }) => {
       updateQuantity,
       clearCart,
       cartTotal,
-      cartCount
+      cartCount,
+      accountKey: currentKey,
+      isAccountTied: Boolean(user)
     }}>
       {children}
     </CartContext.Provider>

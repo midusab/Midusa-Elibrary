@@ -1,14 +1,16 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useSearchParams } from 'react-router-dom';
-import { FiSearch, FiStar, FiShoppingCart, FiX } from 'react-icons/fi';
+import { FiSearch, FiStar, FiShoppingCart, FiX, FiHeart } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import CategoryIcon from '../components/ui/CategoryIcon';
+import Breadcrumb from '../components/common/Breadcrumb';
 import { getBooks, recordBookClick } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import { PRICE_RANGES, SORT_OPTIONS } from '../constants/categories';
 import { useCategories } from '../context/CategoryContext';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
 
 export default function Library() {
@@ -16,6 +18,7 @@ export default function Library() {
   const [isLoading, setIsLoading] = useState(true);
   const { categories } = useCategories();
   const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
   const { success } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -153,6 +156,13 @@ export default function Library() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
+          <Breadcrumb
+            items={[
+              { label: 'Library', to: selectedCategory !== 'all' ? '/library' : undefined },
+              ...(selectedCategory !== 'all' ? [{ label: selectedCategory }] : [])
+            ]}
+            className="mb-2"
+          />
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Library Catalog
           </h1>
@@ -299,13 +309,31 @@ export default function Library() {
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                           loading="lazy"
                         />
+                        {/* Wishlist Heart Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleWishlist(book);
+                          }}
+                          aria-label={isInWishlist(book.id) ? "Remove from wishlist" : "Add to wishlist"}
+                          className={`absolute top-2 right-2 p-1.5 rounded-full backdrop-blur-md transition-all cursor-pointer z-10 ${
+                            isInWishlist(book.id)
+                              ? 'bg-white text-rose-500 shadow-sm'
+                              : 'bg-slate-900/40 text-white hover:bg-white hover:text-rose-500'
+                          }`}
+                        >
+                          <FiHeart className={`w-4 h-4 ${isInWishlist(book.id) ? 'fill-current' : ''}`} />
+                        </button>
+
                         {book.discountPercent > 0 && (
                           <span className="absolute top-2 left-2 bg-[#F40009] text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-wide">
                             {book.discountPercent}% OFF
                           </span>
                         )}
                         {book.bestseller && (
-                          <span className="absolute top-2 right-2 bg-emerald-600 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                          <span className={`absolute ${book.discountPercent > 0 ? 'top-8' : 'top-2'} left-2 bg-emerald-600 text-white text-xs font-semibold px-2 py-0.5 rounded`}>
                             Top
                           </span>
                         )}
@@ -340,11 +368,12 @@ export default function Library() {
                       </div>
                     </div>
 
-                    {/* Action Bar: 14px Button */}
+                    {/* Action Bar: Solid Coca-Cola Red Add to Cart Button */}
                     <div className="p-4 pt-0">
                       <button
+                        type="button"
                         onClick={(e) => handleAddToCart(e, book)}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-slate-200 hover:border-[#F40009] hover:bg-red-50 text-slate-700 hover:text-[#F40009] text-sm font-semibold transition-all active:scale-[0.98] cursor-pointer"
+                        className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#F40009] hover:bg-[#CC0007] text-white text-sm font-bold transition-all active:scale-[0.98] cursor-pointer shadow-xs"
                       >
                         <FiShoppingCart className="w-4 h-4" />
                         <span>Add to Cart</span>

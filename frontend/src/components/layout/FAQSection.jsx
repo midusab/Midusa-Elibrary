@@ -45,9 +45,6 @@ export default function FAQSection() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-10">
-          <span className="text-xs font-bold text-[#1E90FF] uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full">
-            FAQ
-          </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 mb-2 tracking-tight">
             Frequently Asked Questions
           </h2>

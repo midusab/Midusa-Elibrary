@@ -1,4 +1,4 @@
-const { prisma } = require('../config/database');
+const { prisma, supabase } = require('../config/database');
 
 const isUuid = (str) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
@@ -429,14 +429,18 @@ const autoMarkBestsellers = async (req, res) => {
  */
 const resetRevenue = async (req, res) => {
   try {
-    // 1. Delete payments (foreign key to orders)
-    await prisma.payments.deleteMany({});
-    // 2. Delete order_items
-    await prisma.order_items.deleteMany({});
-    // 3. Delete orders
-    await prisma.orders.deleteMany({});
-    // 4. Delete purchases
-    await prisma.purchases.deleteMany({});
+    try {
+      await prisma.payments.deleteMany({});
+      await prisma.order_items.deleteMany({});
+      await prisma.purchases.deleteMany({});
+      await prisma.orders.deleteMany({});
+    } catch (prismaErr) {
+      console.warn('Prisma resetRevenue timed out, using Supabase REST fallback:', prismaErr.message);
+      await supabase.from('payments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('purchases').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    }
 
     res.json({
       success: true,
@@ -450,10 +454,41 @@ const resetRevenue = async (req, res) => {
   }
 };
 
+/**
+ * Reset all orders (Admin only) — clears pending/failed/stale orders
+ * so real auto-confirmed orders can populate fresh.
+ */
+const resetOrders = async (req, res) => {
+  try {
+    try {
+      // Delete in FK-safe order: payments → order_items → purchases → orders
+      await prisma.payments.deleteMany({});
+      await prisma.order_items.deleteMany({});
+      await prisma.purchases.deleteMany({});
+      await prisma.orders.deleteMany({});
+    } catch (prismaErr) {
+      console.warn('Prisma resetOrders timed out, using Supabase REST fallback:', prismaErr.message);
+      await supabase.from('payments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('purchases').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    }
+
+    res.json({
+      success: true,
+      message: 'All orders, payments, and purchase records have been cleared. Order statuses will now be set automatically by M-Pesa payment confirmation.',
+    });
+  } catch (error) {
+    console.error('Error resetting orders:', error);
+    res.status(500).json({ error: 'Failed to reset orders', details: error.message });
+  }
+};
+
 module.exports = {
   recordSiteVisit,
   getUsers,
   getAnalytics,
   autoMarkBestsellers,
   resetRevenue,
+  resetOrders,
 };

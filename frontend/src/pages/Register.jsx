@@ -12,6 +12,7 @@ import Card from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
 import { ADMIN_EMAIL } from '../constants/auth';
 import { useToast } from '../context/ToastContext';
+import { sanitizeRedirect, storeOAuthRedirect, popOAuthRedirect } from '../utils/redirectProtection';
 import Logo from '../assets/logo.jpg';
 
 export default function Register() {
@@ -21,16 +22,22 @@ export default function Register() {
   const { user, signInWithGoogle } = useAuth();
   const { success, error } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const queryParams = new URLSearchParams(location.search);
+  const rawTarget = queryParams.get('redirect') || location.state?.from?.pathname || popOAuthRedirect('/dashboard');
+  const redirectTarget = sanitizeRedirect(rawTarget, '/dashboard');
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard', { replace: true });
+      navigate(redirectTarget, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, redirectTarget]);
 
   const handleGoogleSignUp = async () => {
     setFormError('');
     setIsGoogleLoading(true);
+    storeOAuthRedirect(redirectTarget);
     try {
       const result = await signInWithGoogle();
       if (result?.success) {
@@ -41,7 +48,7 @@ export default function Register() {
         } else {
           success(`Welcome to Midusa Elibrary, ${loggedInUser.fullname || 'Reader'}!`);
         }
-        navigate('/dashboard', { replace: true });
+        navigate(redirectTarget, { replace: true });
       }
     } catch (err) {
       console.error('Google sign-up error:', err);

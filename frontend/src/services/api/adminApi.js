@@ -80,3 +80,22 @@ export async function recordSiteVisit(visitData = {}) {
     return null;
   }
 }
+
+/**
+ * Reset all orders, payments, and purchase records (Admin only)
+ * Allows a clean slate so M-Pesa auto-confirmation populates fresh data.
+ */
+export async function resetOrders(token) {
+  const res = await fetch(`${API_BASE_URL}/admin/reset-orders`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeader(token)
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to reset orders');
+  }
+  return res.json();
+}

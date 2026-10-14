@@ -11,9 +11,11 @@ import {
   FiShield,
   FiArrowRight,
   FiCreditCard,
-  FiFileText
+  FiFileText,
+  FiHeart
 } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useCategories } from '../context/CategoryContext';
@@ -40,6 +42,7 @@ export default function Navigation() {
   const navigate = useNavigate();
 
   const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
   const { categories } = useCategories();
   const { user, logout, isAdmin } = useAuth();
   const { success } = useToast();
@@ -419,6 +422,21 @@ export default function Navigation() {
           {/* 3. RIGHT SECTION: CART + USER ACCOUNT / SIGN IN           */}
           {/* ========================================================= */}
           <div className="flex items-center gap-2.5 sm:gap-3.5 flex-shrink-0">
+            {/* Wishlist Heart Icon with Notification Badge */}
+            <Link
+              to="/wishlist"
+              className="relative p-2.5 rounded-full text-slate-700 hover:text-rose-500 hover:bg-rose-50 border border-slate-200/80 transition-all focus:outline-none focus:ring-2 focus:ring-rose-500/30 cursor-pointer"
+              aria-label={`Wishlist with ${wishlistCount} items`}
+              title="Your Wishlist"
+            >
+              <FiHeart className={`w-5 h-5 ${wishlistCount > 0 ? 'text-rose-500 fill-rose-50' : ''}`} />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center shadow-xs">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+
             {/* Cart Icon with Notification Badge */}
             <Link
               to="/cart"
@@ -502,6 +520,22 @@ export default function Navigation() {
                       >
                         <FiFileText className="w-4 h-4 text-slate-400" />
                         <span>Order History</span>
+                      </Link>
+
+                      <Link
+                        to="/wishlist"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-rose-600 rounded-xl transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <FiHeart className="w-4 h-4 text-slate-400" />
+                          <span>My Wishlist</span>
+                        </div>
+                        {wishlistCount > 0 && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-600">
+                            {wishlistCount}
+                          </span>
+                        )}
                       </Link>
 
                       {isAdmin && (
@@ -670,6 +704,22 @@ export default function Navigation() {
                     >
                       <FiFileText className="w-4 h-4 text-slate-400" />
                       <span>Order History</span>
+                    </Link>
+
+                    <Link
+                      to="/wishlist"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-rose-600 transition-colors flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FiHeart className="w-4 h-4 text-slate-400" />
+                        <span>My Wishlist</span>
+                      </div>
+                      {wishlistCount > 0 && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-600">
+                          {wishlistCount}
+                        </span>
+                      )}
                     </Link>
 
                     {isAdmin && (

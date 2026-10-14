@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { CookieProvider } from './context/CookieContext';
 import { CategoryProvider } from './context/CategoryContext';
+import { WishlistProvider } from './context/WishlistContext';
 import Navigation from './components/Navigation';
 import Footer from './components/layout/Footer';
 import ScrollProgressBar from './components/common/ScrollProgressBar';
@@ -61,69 +62,79 @@ export default function App() {
             <ToastProvider>
               <CookieProvider>
                 <CategoryProvider>
-                  <PageVisitTracker />
-                  {/* Global UI overlays */}
-                  <ScrollProgressBar />
-                  <WhatsAppButton />
-                  <div className="min-h-screen flex flex-col bg-white text-slate-900 overflow-x-hidden w-full">
-                    <Navigation />
-                    <main className="flex-1 pt-20 bg-white">
-                      <Routes>
-                        <Route path="/" element={<Hero />} />
-                        <Route path="/categories" element={<Categories />} />
-                        <Route path="/library" element={<Library />} />
-                        <Route path="/book/:id" element={<BookDetails />} />
-                        <Route path="/cart" element={<Cart />} />
-                        <Route
-                          path="/checkout"
-                          element={
-                            <ProtectedRoute>
-                              <Checkout />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/login"
-                          element={
-                            <PublicOnlyRoute>
-                              <Login />
-                            </PublicOnlyRoute>
-                          }
-                        />
-                        <Route
-                          path="/register"
-                          element={
-                            <PublicOnlyRoute>
-                              <Register />
-                            </PublicOnlyRoute>
-                          }
-                        />
-                        <Route
-                          path="/dashboard"
-                          element={
-                            <ProtectedRoute>
-                              <Dashboard />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/admin"
-                          element={
-                            <AdminRoute>
-                              <AdminDashboard />
-                            </AdminRoute>
-                          }
-                        />
-                        <Route path="/about" element={<About />} />
-                        <Route path="/contact" element={<Contact />} />
-                        <Route path="/legal" element={<Legal />} />
-                        <Route path="/refund-policy" element={<Legal />} />
-                        <Route path="/privacy" element={<Legal />} />
-                        <Route path="/terms" element={<Legal />} />
-                      </Routes>
-                    </main>
-                    <Footer />
-                  </div>
+                  <WishlistProvider>
+                    <PageVisitTracker />
+                    {/* Global UI overlays */}
+                    <ScrollProgressBar />
+                    <WhatsAppButton />
+                    <div className="min-h-screen flex flex-col bg-white text-slate-900 overflow-x-hidden w-full">
+                      <Navigation />
+                      <main className="flex-1 pt-20 bg-white">
+                        <Routes>
+                          <Route path="/" element={<Hero />} />
+                          <Route path="/categories" element={<Categories />} />
+                          <Route path="/library" element={<Library />} />
+                          <Route path="/book/:id" element={<BookDetails />} />
+                          <Route path="/cart" element={<Cart />} />
+                          <Route
+                            path="/checkout"
+                            element={
+                              <ProtectedRoute>
+                                <Checkout />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/login"
+                            element={
+                              <PublicOnlyRoute>
+                                <Login />
+                              </PublicOnlyRoute>
+                            }
+                          />
+                          <Route
+                            path="/register"
+                            element={
+                              <PublicOnlyRoute>
+                                <Register />
+                              </PublicOnlyRoute>
+                            }
+                          />
+                          <Route
+                            path="/dashboard"
+                            element={
+                              <ProtectedRoute>
+                                <Dashboard />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/wishlist"
+                            element={
+                              <ProtectedRoute>
+                                <Dashboard initialTab="favorites" />
+                              </ProtectedRoute>
+                            }
+                          />
+                          <Route
+                            path="/admin"
+                            element={
+                              <AdminRoute>
+                                <AdminDashboard />
+                              </AdminRoute>
+                            }
+                          />
+                          <Route path="/about" element={<About />} />
+                          <Route path="/contact" element={<Contact />} />
+                          <Route path="/legal" element={<Legal />} />
+                          <Route path="/refund-policy" element={<Legal />} />
+                          <Route path="/privacy" element={<Legal />} />
+                          <Route path="/terms" element={<Legal />} />
+                        </Routes>
+                      </main>
+                      <Footer />
+                    </div>
+                  </WishlistProvider>
                 </CategoryProvider>
               </CookieProvider>
             </ToastProvider>

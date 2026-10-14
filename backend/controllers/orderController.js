@@ -4,6 +4,8 @@ const paymentService = require('../payment/payment.service');
 const isUuid = (str) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
 
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'midusabrian@gmail.com').trim().toLowerCase();
+
 // Helper to resolve an authenticated user to a valid PostgreSQL UUID
 async function resolveDbUserId(user) {
   if (!user) return null;
@@ -228,7 +230,13 @@ const getOrderById = async (req, res) => {
     }
 
     const dbUserId = await resolveDbUserId(req.user);
-    const where = dbUserId ? { id, user_id: dbUserId } : { id };
+    const isAdmin = req.user?.role === 'admin' || (req.user?.email && req.user.email.trim().toLowerCase() === ADMIN_EMAIL);
+
+    if (!isAdmin && !dbUserId) {
+      return res.status(403).json({ error: 'Access denied. You do not have permission to view this order.' });
+    }
+
+    const where = isAdmin ? { id } : { id, user_id: dbUserId };
 
     const order = await prisma.orders.findFirst({
       where,
@@ -351,9 +359,53 @@ const getAllOrders = async (req, res) => {
   }
 };
 
+// Get all purchased books for the authenticated user (Backend Access Controlled)
+const getUserPurchases = async (req, res) => {
+  try {
+    const dbUserId = await resolveDbUserId(req.user);
+    if (!dbUserId) {
+      return res.json([]);
+    }
+
+    const purchases = await prisma.purchases.findMany({
+      where: { user_id: dbUserId },
+      include: {
+        books: {
+          include: {
+            categories: true
+          }
+        }
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    const books = purchases
+      .filter(p => Boolean(p.books))
+      .map(p => ({
+        id: p.books.id,
+        title: p.books.title,
+        author: p.books.author,
+        description: p.books.description || '',
+        category: p.books.categories?.name || '',
+        coverImage: p.books.cover_url || '',
+        pdfUrl: p.books.pdf_url || '',
+        price: p.books.price,
+        rating: p.books.rating ? parseFloat(p.books.rating) : 0,
+        purchasedAt: p.created_at,
+        purchaseId: p.id
+      }));
+
+    res.json(books);
+  } catch (error) {
+    console.error('Error fetching user purchases:', error);
+    res.status(500).json({ error: 'Failed to fetch user purchases' });
+  }
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
+  getUserPurchases,
   getOrderById,
   updateOrderStatus,
   getAllOrders

@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fi';
 
 import Button from '../components/ui/Button';
+import Breadcrumb from '../components/common/Breadcrumb';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -36,10 +37,6 @@ const styles = `
     60%  { transform: scale(1.12); }
     100% { transform: scale(1); opacity: 1; }
   }
-  @keyframes co-shimmer {
-    0%   { background-position: -400px 0; }
-    100% { background-position: 400px 0; }
-  }
   @keyframes co-tick {
     from { stroke-dashoffset: 50; }
     to   { stroke-dashoffset: 0; }
@@ -48,59 +45,48 @@ const styles = `
   .co-slide-up  { animation: co-slide-up 0.38s cubic-bezier(0.16,1,0.3,1) forwards; }
   .co-success   { animation: co-success-pop 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards; }
 
+  /* M-Pesa green pay button — solid, no gradient */
   .co-pay-btn {
     position: relative;
-    overflow: hidden;
-    background: linear-gradient(135deg, #F40009 0%, #CC0007 100%);
+    background: #00A651;
     border: none !important;
     color: #fff !important;
     font-weight: 700;
     letter-spacing: 0.02em;
-    transition: filter 0.2s, transform 0.15s;
+    transition: background 0.18s, transform 0.15s;
     cursor: pointer;
   }
-  .co-pay-btn:not(:disabled):hover {
-    filter: brightness(1.08);
-    transform: translateY(-1px);
-  }
+  .co-pay-btn:not(:disabled):hover  { background: #008f44; transform: translateY(-1px); }
   .co-pay-btn:not(:disabled):active { transform: translateY(0); }
-  .co-pay-btn::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.18) 50%,transparent 100%);
-    background-size: 400px 100%;
-    animation: co-shimmer 2.4s infinite linear;
-    pointer-events: none;
-  }
-  .co-pay-btn:disabled { opacity: 0.7; filter: none; transform: none; cursor: not-allowed; }
+  .co-pay-btn:disabled { opacity: 0.65; cursor: not-allowed; }
 
   .co-phone-wrap:focus-within {
-    border-color: #1E90FF !important;
-    box-shadow: 0 0 0 3px rgba(30,144,255,0.12) !important;
+    border-color: #00A651 !important;
+    box-shadow: 0 0 0 3px rgba(0,166,81,0.14) !important;
   }
 
   .co-pulse-ring {
     position: absolute; inset: -8px; border-radius: 50%;
-    border: 2px solid #00c853;
+    border: 2px solid #00A651;
     animation: co-pulse-ring 1.6s ease-out infinite;
   }
   .co-dot {
-    display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #1E90FF;
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #00A651;
     animation: co-bounce-dot 1.2s ease-in-out infinite;
   }
-  .co-dot:nth-child(2) { animation-delay: 0.15s; }
-  .co-dot:nth-child(3) { animation-delay: 0.3s; }
+  .co-dot:nth-child(2) { animation-delay: 0.18s; }
+  .co-dot:nth-child(3) { animation-delay: 0.36s; }
 
+  /* Solid M-Pesa green progress bar */
   .co-progress-bar {
     height: 4px;
-    background: linear-gradient(90deg, #00c853, #1E90FF);
+    background: #00A651;
     border-radius: 9999px;
     transition: width 1s linear;
   }
 
-  .co-step-active  { background: linear-gradient(135deg,#00c853,#1E90FF); color:#fff; }
-  .co-step-done    { background: #00c853; color:#fff; }
+  .co-step-active  { background: #00A651; color:#fff; }
+  .co-step-done    { background: #00A651; color:#fff; }
   .co-step-pending { background: #f1f5f9; color: #94a3b8; }
 
   .co-card {
@@ -151,12 +137,14 @@ function StepIndicator({ step }) {
               >
                 {done ? <FiCheckCircle className="w-3.5 h-3.5" /> : idx}
               </div>
-              <span className={`text-[10px] font-semibold ${active ? 'text-primary' : done ? 'text-emerald-600' : 'text-slate-400'}`}>
+              <span className={`text-[10px] font-semibold ${
+                active ? 'text-[#00A651]' : done ? 'text-[#00A651]' : 'text-slate-400'
+              }`}>
                 {label}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={`w-14 h-px mx-1 mb-4 ${done ? 'bg-emerald-400' : 'bg-slate-200'}`} />
+              <div className={`w-14 h-px mx-1 mb-4 ${done ? 'bg-[#00A651]' : 'bg-slate-200'}`} />
             )}
           </div>
         );
@@ -473,19 +461,24 @@ export default function Checkout() {
   if (pendingPaymentId && isPolling) {
     const elapsed = pollCount * 5;
     const progressPct = Math.min((elapsed / 60) * 100, 100);
+    // Which step is the user likely on based on elapsed time
+    const userStep = elapsed < 8 ? 1 : elapsed < 25 ? 2 : 3;
+    const paymentSteps = [
+      { label: 'STK Push Sent', desc: 'M-PESA prompt delivered to your phone', done: elapsed >= 1 },
+      { label: 'Enter Your PIN', desc: 'Open your phone and enter M-PESA PIN', done: elapsed >= 25 },
+      { label: 'Confirming Payment', desc: 'Safaricom is processing your transaction', done: false },
+    ];
     return (
       <PageWrap>
         <div className="max-w-sm w-full co-slide-up">
-          <div className="flex flex-col items-center mb-6">
+          {/* Header */}
+          <div className="flex flex-col items-center mb-5">
             <div className="relative">
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg,#e8f5e9,#f1f8e9)' }}
-              >
-                <FiSmartphone className="w-9 h-9 text-emerald-600" />
+              <div className="w-20 h-20 rounded-full flex items-center justify-center bg-emerald-50 border-2 border-[#00A651]/30">
+                <FiSmartphone className="w-9 h-9 text-[#00A651]" />
               </div>
               <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center">
-                <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="w-3 h-3 rounded-full bg-[#00A651] animate-pulse" />
               </span>
             </div>
             <div className="flex gap-1.5 mt-4">
@@ -493,48 +486,59 @@ export default function Checkout() {
               <span className="co-dot" />
               <span className="co-dot" />
             </div>
+            <h1 className="text-xl font-bold text-slate-900 mt-3 mb-1">Action Required on Your Phone</h1>
+            <p className="text-xs text-slate-500 text-center">
+              {pendingMessage || 'Check your phone — a prompt has been sent.'}
+            </p>
           </div>
 
-          <h1 className="text-xl font-bold text-slate-900 text-center mb-2">
-            Waiting for Your PIN
-          </h1>
-          <p className="text-sm text-slate-500 text-center mb-5">
-            {pendingMessage || 'A payment prompt has been sent to your phone.'}{' '}
-            Enter your M-PESA PIN to confirm{' '}
-            <strong className="text-slate-800">{formatPrice(cartTotal)}</strong>.
-          </p>
+          {/* Live step-by-step process */}
+          <div className="co-card p-4 mb-4 space-y-3">
+            {paymentSteps.map((s, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold mt-0.5 transition-all ${
+                  s.done ? 'bg-[#00A651] text-white' :
+                  i + 1 === userStep ? 'border-2 border-[#00A651] text-[#00A651] bg-emerald-50' :
+                  'bg-slate-100 text-slate-400'
+                }`}>
+                  {s.done ? <FiCheckCircle className="w-3 h-3" /> : i + 1}
+                </div>
+                <div className="flex-1">
+                  <p className={`text-xs font-bold ${
+                    s.done ? 'text-[#00A651]' : i + 1 === userStep ? 'text-slate-900' : 'text-slate-400'
+                  }`}>{s.label}</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">{s.desc}</p>
+                </div>
+                {i + 1 === userStep && !s.done && (
+                  <span className="text-[10px] font-bold text-[#00A651] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex-shrink-0 mt-0.5">NOW</span>
+                )}
+              </div>
+            ))}
+          </div>
 
-          <div className="co-card p-4 mb-4">
-            <div className="flex justify-between text-xs text-slate-500 mb-2">
+          {/* Progress bar */}
+          <div className="co-card p-3 mb-3">
+            <div className="flex justify-between text-[11px] text-slate-400 mb-2">
               <span className="flex items-center gap-1.5">
-                <FiRefreshCw className="w-3 h-3 animate-spin" /> Checking status…
+                <FiRefreshCw className="w-3 h-3 animate-spin text-[#00A651]" /> Checking every 5 seconds…
               </span>
-              <span>{elapsed}s / 60s</span>
+              <span className="font-mono">{elapsed}s</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full" style={{ height: 4 }}>
               <div className="co-progress-bar rounded-full" style={{ width: `${progressPct}%` }} />
             </div>
           </div>
 
-          <div
-            className="rounded-xl p-3.5 mb-4 text-xs text-amber-800 border border-amber-100"
-            style={{ background: '#fffbeb' }}
-          >
-            <FiClock className="inline w-3.5 h-3.5 mr-1" />
-            The prompt expires in ~60 seconds. Missed it?{' '}
-            <button
-              type="button"
-              onClick={handleRetry}
-              className="underline font-semibold cursor-pointer hover:text-amber-900"
-            >
-              Tap to retry
-            </button>
+          {/* Amount reminder */}
+          <div className="flex items-center justify-between px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl mb-4">
+            <span className="text-xs text-emerald-800 font-semibold">Amount to confirm</span>
+            <span className="text-base font-extrabold text-[#00A651]">{formatPrice(cartTotal)}</span>
           </div>
 
           <button
             type="button"
             onClick={handleRetry}
-            className="w-full text-xs text-slate-400 hover:text-red-500 transition-colors cursor-pointer py-2"
+            className="w-full text-xs text-slate-400 hover:text-[#F40009] transition-colors cursor-pointer py-2"
           >
             Cancel payment
           </button>
@@ -636,7 +640,7 @@ export default function Checkout() {
                       <div key={i} className="flex items-start gap-3">
                         <span
                           className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-white mt-0.5"
-                          style={{ background: 'linear-gradient(135deg,#00c853,#1E90FF)' }}
+                          style={{ background: '#00A651' }}
                         >
                           {i + 1}
                         </span>
@@ -766,12 +770,9 @@ export default function Checkout() {
                   <span>Digital Delivery</span>
                   <span className="font-bold text-emerald-600">Free</span>
                 </div>
-                <div
-                  className="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center rounded-lg px-3 py-3"
-                  style={{ background: 'linear-gradient(135deg,#f0fff4,#f0f7ff)' }}
-                >
+                <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center rounded-lg px-3 py-3 bg-emerald-50 border border-emerald-100">
                   <span className="text-sm font-bold text-slate-900">Total Due</span>
-                  <span className="text-xl font-extrabold text-slate-900">
+                  <span className="text-xl font-extrabold text-[#00A651]">
                     {formatPrice(cartTotal)}
                   </span>
                 </div>

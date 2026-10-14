@@ -11,5 +11,6 @@ router.get('/users', adminAuth, adminController.getUsers);
 router.get('/analytics', adminAuth, adminController.getAnalytics);
 router.post('/sync-bestsellers', adminAuth, adminController.autoMarkBestsellers);
 router.post('/reset-revenue', adminAuth, adminController.resetRevenue);
+router.post('/reset-orders', adminAuth, adminController.resetOrders);
 
 module.exports = router;

@@ -12,6 +12,7 @@ import Card from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
 import { ADMIN_EMAIL } from '../constants/auth';
 import { useToast } from '../context/ToastContext';
+import { sanitizeRedirect, storeOAuthRedirect, popOAuthRedirect } from '../utils/redirectProtection';
 import Logo from '../assets/logo.jpg';
 
 export default function Login() {
@@ -23,9 +24,10 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check query string ?redirect=... or location.state
+  // Protect and sanitize query string ?redirect=... or state
   const queryParams = new URLSearchParams(location.search);
-  const redirectTarget = queryParams.get('redirect') || location.state?.from?.pathname || '/dashboard';
+  const rawTarget = queryParams.get('redirect') || location.state?.from?.pathname || popOAuthRedirect('/dashboard');
+  const redirectTarget = sanitizeRedirect(rawTarget, '/dashboard');
 
   // Check if user was automatically logged out due to session expiration
   useEffect(() => {
@@ -45,6 +47,7 @@ export default function Login() {
   const handleGoogleSignIn = async () => {
     setFormError('');
     setIsGoogleLoading(true);
+    storeOAuthRedirect(redirectTarget);
     try {
       const result = await signInWithGoogle();
       if (result?.success) {

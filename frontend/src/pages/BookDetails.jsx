@@ -16,9 +16,11 @@ import {
 } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import Breadcrumb from '../components/common/Breadcrumb';
 import { getBookById, getBooks, recordBookClick } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
 
 export default function BookDetails() {
@@ -27,8 +29,7 @@ export default function BookDetails() {
   const [relatedBooks, setRelatedBooks] = useState([]);
   const [reviewsList, setReviewsList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false);
-  
+
   // Review form state
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewName, setReviewName] = useState('');
@@ -36,7 +37,10 @@ export default function BookDetails() {
   const [reviewComment, setReviewComment] = useState('');
 
   const { addToCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const { success, error } = useToast();
+
+  const isFavorite = book ? isInWishlist(book.id) : false;
 
   useEffect(() => {
     let isMounted = true;
@@ -110,8 +114,9 @@ export default function BookDetails() {
   };
 
   const handleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    success(isFavorite ? 'Removed from wishlist' : 'Saved to wishlist');
+    if (book) {
+      toggleWishlist(book);
+    }
   };
 
   const handleShare = () => {
@@ -159,10 +164,20 @@ export default function BookDetails() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Navigation Breadcrumb */}
-        <div className="mb-6">
-          <Link to="/library" className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-primary transition-colors">
-            <FiArrowLeft className="mr-1.5 h-4 w-4" />
-            Back to Library
+        <div className="mb-6 flex items-center justify-between flex-wrap gap-2">
+          <Breadcrumb
+            items={[
+              { label: 'Library', to: '/library' },
+              ...(book?.category ? [{ label: book.category, to: `/library?category=${encodeURIComponent(book.category)}` }] : []),
+              { label: book?.title || 'Book Details' }
+            ]}
+          />
+          <Link
+            to="/library"
+            className="inline-flex items-center text-xs font-semibold text-slate-400 hover:text-[#1E90FF] transition-colors group"
+          >
+            <FiArrowLeft className="mr-1 h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+            <span>All Books</span>
           </Link>
         </div>
 
@@ -277,15 +292,16 @@ export default function BookDetails() {
                   </span>
                 </div>
 
-                {/* Purchase Button */}
+                {/* Purchase Button - Only Add to Cart is Coca-Cola Red */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
+                    variant="cart"
                     size="lg"
-                    className="flex-1 py-3.5 text-sm sm:text-base font-bold shadow-md cursor-pointer"
+                    className="flex-1 py-3.5 text-sm sm:text-base font-bold shadow-sm cursor-pointer"
                     onClick={handleAddToCart}
                   >
                     <FiShoppingCart className="mr-2 w-5 h-5" />
-                    Buy Now / Add to Cart
+                    Add to Cart ({formatPrice(book.price)})
                   </Button>
                 </div>
 

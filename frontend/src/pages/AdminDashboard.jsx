@@ -18,8 +18,8 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
-  updateOrderStatus,
   syncBestsellers,
+  resetOrders,
   uploadPdf
 } from '../services/api';
 
@@ -326,18 +326,19 @@ export default function AdminDashboard() {
     }
   };
 
-  // -------------------------------------------------------------
-  // Order Actions
-  // -------------------------------------------------------------
-  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+  // Order statuses are auto-managed by M-Pesa payment callbacks.
+  // No manual override handler needed.
+
+  const handleResetOrders = async () => {
+    if (!window.confirm(
+      'Reset ALL orders, payments, and purchase records?\n\nThis clears stale/test data so M-Pesa auto-confirmation runs on a clean slate.\n\nThis cannot be undone.'
+    )) return;
     try {
-      await updateOrderStatus(orderId, newStatus, token);
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-      );
-      success(`Order status updated to ${newStatus}.`);
+      await resetOrders(token);
+      success('All orders cleared. New orders will be auto-confirmed by M-Pesa.');
+      loadDashboardData(true);
     } catch (err) {
-      toastError(err.message || 'Failed to update order status.');
+      toastError(err.message || 'Failed to reset orders.');
     }
   };
 
@@ -504,7 +505,7 @@ export default function AdminDashboard() {
             filteredOrders={filteredOrders}
             orderStatusFilter={orderStatusFilter}
             setOrderStatusFilter={setOrderStatusFilter}
-            handleUpdateOrderStatus={handleUpdateOrderStatus}
+            handleResetOrders={handleResetOrders}
           />
         )}
 

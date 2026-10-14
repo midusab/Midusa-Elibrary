@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { supabase } = require('../config/database');
 const { adminAuth } = require('../middleware/auth');
+const { scanBufferForMalware } = require('../utils/malwareScanner');
 
 // Local storage directories
 const PDF_DIR = path.join(__dirname, '../uploads/pdfs');
@@ -83,6 +84,17 @@ router.post('/pdf', adminAuth, (req, res, next) => {
 
     const { originalname, buffer, mimetype } = req.file;
 
+    // Scan file for malware / exploit signatures before saving or posting
+    const scanResult = scanBufferForMalware(buffer, mimetype, originalname);
+    if (!scanResult.isSafe) {
+      console.warn(`[SECURITY AUDIT] Malicious PDF upload rejected (${req.user?.email || 'admin'}): ${scanResult.reason}`);
+      return res.status(422).json({
+        error: 'Security Scan Failed',
+        message: scanResult.reason,
+        details: scanResult.signature || scanResult.pattern || 'Malicious content rejected.'
+      });
+    }
+
     // Sanitized, collision-safe filename
     const safeName = originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
     const uniqueFileName = `${Date.now()}_${safeName}`;
@@ -153,6 +165,18 @@ router.post('/image', adminAuth, (req, res, next) => {
     }
 
     const { originalname, buffer, mimetype } = req.file;
+
+    // Scan file for malware / polyglots / webshell signatures before saving or posting
+    const scanResult = scanBufferForMalware(buffer, mimetype, originalname);
+    if (!scanResult.isSafe) {
+      console.warn(`[SECURITY AUDIT] Malicious image upload rejected (${req.user?.email || 'admin'}): ${scanResult.reason}`);
+      return res.status(422).json({
+        error: 'Security Scan Failed',
+        message: scanResult.reason,
+        details: scanResult.signature || scanResult.pattern || 'Malicious image content rejected.'
+      });
+    }
+
     const safeName = originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
     const uniqueFileName = `${Date.now()}_${safeName}`;
     const storagePath = `covers/${uniqueFileName}`;

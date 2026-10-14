@@ -5,9 +5,9 @@ import {
   FiShield, FiMail, FiCheckCircle, FiBookOpen, FiHeart, FiFileText
 } from 'react-icons/fi';
 import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useWishlist } from '../context/WishlistContext';
 import { getBooks, createBook, getUserOrders, uploadPdf } from '../services/api';
 import { useCategories } from '../context/CategoryContext';
 
@@ -18,13 +18,15 @@ import UserFavoritesTab from '../components/dashboard/UserFavoritesTab';
 import UserOrdersTab from '../components/dashboard/UserOrdersTab';
 import UserAdminTab from '../components/dashboard/UserAdminTab';
 
-export default function Dashboard() {
+export default function Dashboard({ initialTab }) {
   const { user, logout, updateProfile, isAdmin } = useAuth();
   const { categories } = useCategories();
+  const { wishlist } = useWishlist();
   const { success, error } = useToast();
   const location = useLocation();
 
-  const [activeTab, setActiveTab] = useState(location.state?.tab || 'profile');
+  const queryTab = new URLSearchParams(location.search).get('tab');
+  const [activeTab, setActiveTab] = useState(initialTab || queryTab || location.state?.tab || 'profile');
   const [books, setBooks] = useState([]);
   const [userOrders, setUserOrders] = useState([]);
   const [isLoadingBooks, setIsLoadingBooks] = useState(true);
@@ -239,7 +241,7 @@ export default function Dashboard() {
     });
   }
   const purchasedBooks = Array.from(purchasedBooksMap.values());
-  const favoriteBooks = [];
+  const favoriteBooks = wishlist || [];
 
   return (
     <div className="min-h-screen bg-slate-50/60 py-8 sm:py-12">

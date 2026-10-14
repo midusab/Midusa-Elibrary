@@ -118,7 +118,7 @@ export default function Hero() {
       {/* 1. HERO SECTION (Left: Headline & Buttons, Right: 2 Overlapping Cards)    */}
       {/* ========================================================================= */}
       <section className="relative pt-24 pb-16 sm:pt-28 sm:pb-20 lg:pt-32 lg:pb-24
-       bg-[url('./assets/hero15.png')] bg-cover bg-center bg-fixed
+       bg-[url('./assets/hero13.jpg')] bg-cover bg-center bg-fixed
       border-b border-slate-800/40 overflow-hidden"
       >
         {/* Dark Overlay for rich contrast & readability */}
