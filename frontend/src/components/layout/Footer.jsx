@@ -4,20 +4,14 @@ import {
   FiMail,
   FiPhone,
   FiMapPin,
-  FiShield,
-  FiSmartphone,
-  FiDownload,
-  FiTablet,
-  FiLock,
+  FiClock,
+  FiArrowRight,
   FiCheck,
-  FiClock
+  FiShield
 } from 'react-icons/fi';
-import { useCategories } from '../../context/CategoryContext';
 import { useCookie } from '../../context/CookieContext';
-import CategoryIcon from '../ui/CategoryIcon';
 
-const Footer = () => {
-  const { categories } = useCategories();
+export default function Footer() {
   const { openCookieSettings } = useCookie();
   const currentYear = new Date().getFullYear();
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -28,246 +22,180 @@ const Footer = () => {
     if (newsletterEmail.trim()) {
       setIsSubscribed(true);
       setNewsletterEmail('');
-      setTimeout(() => setIsSubscribed(false), 5000);
+      setTimeout(() => setIsSubscribed(false), 4000);
     }
   };
 
   return (
-    <footer className="bg-slate-950 text-white border-t border-slate-800/80">
-      {/* ========================================================= */}
-      {/* INTERNATIONAL TRUST & ASSURANCE STRIP */}
-      {/* ========================================================= */}
-      <div className="border-b border-slate-800/80 bg-slate-900/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-            {/* Feature 1 */}
-            {/* Feature 2 */}
-            {/* Feature 3 */}
-
-            {/* Feature 4 */}
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================= */}
-      {/* MAIN FOOTER COLUMNS */}
-      {/* ========================================================= */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-10">
+    <footer className="bg-[#1E90FF] text-white">
+      {/* ── Main Footer Content ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
           
-          {/* Brand & Newsletter Column (2 Cols on lg) */}
-          <div className="lg:col-span-2 space-y-4">
-            <Link to="/" className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#1E90FF] to-blue-400 flex items-center justify-center text-white font-black text-lg shadow-md shadow-[#1E90FF]/20">
+          {/* Column 1: Brand & Overview */}
+          <div className="space-y-3.5">
+            <Link to="/" className="inline-flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-md bg-white text-[#1E90FF] font-black text-lg flex items-center justify-center">
                 M
               </div>
-              <span className="text-2xl font-black text-white tracking-tight">
-                Midusa<span className="text-[#1E90FF]">Elibrary</span>
+              <span className="text-xl font-black text-white tracking-tight">
+                Midusa<span className="text-white/80">eLibrary</span>
               </span>
             </Link>
-            
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-sm">
-              Kenya’s premier digital eBookstore for transformative literature. Empowering readers in Self-Development, Psychology, Business, Finance, and Christian Growth.
+            <p className="text-xs sm:text-sm text-white/85 leading-relaxed">
+              Kenya’s premier digital eBookstore for curated personal growth, finance, psychology, and faith literature. Instant delivery via automated M-PESA.
             </p>
-
-            {/* Newsletter Subscription Box */}
-            <div className="pt-2">
-              <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-2">
-                Join the Readers Club
-              </h4>
-              <p className="text-xs text-slate-400 mb-3">
-                Receive weekly curated book recommendations, free chapter extracts &amp; reader discounts.
-              </p>
-
-              {isSubscribed ? (
-                <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-950 border border-emerald-700/60 text-emerald-300 text-xs font-semibold">
-                  <FiCheck className="w-4 h-4 text-emerald-400" />
-                  <span>Welcome aboard! You're subscribed to weekly picks.</span>
-                </div>
-              ) : (
-                <form onSubmit={handleSubscribe} className="flex gap-2 max-w-sm">
-                  <input
-                    type="email"
-                    required
-                    placeholder="Enter your email address..."
-                    value={newsletterEmail}
-                    onChange={(e) => setNewsletterEmail(e.target.value)}
-                    className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#1E90FF] focus:ring-1 focus:ring-[#1E90FF]"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2.5 rounded-xl bg-[#1E90FF] hover:bg-[#1873cc] text-white text-xs font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap"
-                  >
-                    Subscribe
-                  </button>
-                </form>
-              )}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/10 text-white text-xs border border-white/20">
+              <FiShield className="w-3.5 h-3.5 text-white" />
+              <span>Instant M-PESA Access • Lifetime Downloads</span>
             </div>
           </div>
 
-          {/* Quick Links Column */}
+          {/* Column 2: Quick Links (with About & Contact prominently visible) */}
           <div>
-            <h3 className="text-xs font-bold text-slate-200 mb-4 tracking-wider uppercase">
-              Discover &amp; Explore
-            </h3>
-            <ul className="space-y-2.5 text-xs sm:text-sm">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3.5 pb-1 border-b border-white/20">
+              Quick Navigation
+            </h4>
+            <ul className="space-y-2 text-xs sm:text-sm">
               <li>
-                <Link to="/library" className="text-slate-400 hover:text-[#1E90FF] transition-colors">
-                  Shop
+                <Link to="/" className="text-white/85 hover:text-white transition-colors flex items-center gap-1.5">
+                  <FiArrowRight className="w-3 h-3 text-white/60" />
+                  <span>Home</span>
                 </Link>
               </li>
               <li>
-                <Link to="/library?bestseller=true" className="text-slate-400 hover:text-amber-400 transition-colors flex items-center gap-1.5">
-                  <span>★ Bestselling Titles</span>
+                <Link to="/library" className="text-white/85 hover:text-white transition-colors flex items-center gap-1.5">
+                  <FiArrowRight className="w-3 h-3 text-white/60" />
+                  <span>Shop</span>
                 </Link>
               </li>
               <li>
-                <Link to="/categories" className="text-slate-400 hover:text-[#1E90FF] transition-colors">
-                  Browse by Category
+                <Link to="/categories" className="text-white/85 hover:text-white transition-colors flex items-center gap-1.5">
+                  <FiArrowRight className="w-3 h-3 text-white/60" />
+                  <span>Categories</span>
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-slate-400 hover:text-white transition-colors">
-                  About Our Mission
+                <Link to="/about" className="text-white font-semibold hover:text-white/80 transition-colors flex items-center gap-1.5 underline decoration-white/40 underline-offset-4">
+                  <FiArrowRight className="w-3 h-3 text-white" />
+                  <span>About Us</span>
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-slate-400 hover:text-white transition-colors">
-                  Contact &amp; Help Desk
+                <Link to="/contact" className="text-white font-semibold hover:text-white/80 transition-colors flex items-center gap-1.5 underline decoration-white/40 underline-offset-4">
+                  <FiArrowRight className="w-3 h-3 text-white" />
+                  <span>Contact Us</span>
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Categories Column */}
+          {/* Column 3: Contact & Desk */}
           <div>
-            <h3 className="text-xs font-bold text-slate-200 mb-4 tracking-wider uppercase">
-              Catalogue Topics
-            </h3>
-            <ul className="space-y-2.5 text-xs sm:text-sm">
-              {categories.length === 0 ? (
-                <li className="text-slate-500 text-xs">Catalogue loading...</li>
-              ) : (
-                categories.slice(0, 5).map((cat) => (
-                  <li key={cat.id || cat.name}>
-                    <Link
-                      to={`/library?category=${encodeURIComponent(cat.name)}`}
-                      className="text-slate-400 hover:text-white transition-colors flex items-center gap-2 group"
-                    >
-                      <CategoryIcon
-                        slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
-                        className="w-3.5 h-3.5 text-[#1E90FF] group-hover:scale-110 transition-transform"
-                      />
-                      <span className="truncate">{cat.name}</span>
-                    </Link>
-                  </li>
-                ))
-              )}
-              {categories.length > 5 && (
-                <li>
-                  <Link to="/categories" className="text-xs text-[#1E90FF] hover:underline font-semibold block pt-1">
-                    View all {categories.length} categories →
-                  </Link>
-                </li>
-              )}
-            </ul>
-          </div>
-
-          {/* Support & Desk Column */}
-          <div>
-            <h3 className="text-xs font-bold text-slate-200 mb-4 tracking-wider uppercase">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3.5 pb-1 border-b border-white/20">
               Customer Support
-            </h3>
-            <ul className="space-y-3 text-xs sm:text-sm text-slate-400">
+            </h4>
+            <ul className="space-y-2.5 text-xs sm:text-sm text-white/90">
               <li className="flex items-start gap-2.5">
-                <FiClock className="text-[#1E90FF] flex-shrink-0 w-4 h-4 mt-0.5" />
+                <FiPhone className="w-4 h-4 text-white flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-slate-200">Operating Hours</p>
-                  <p className="text-[11px] text-slate-400">Mon–Sat: 8:00 AM – 9:00 PM EAT</p>
-                </div>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <FiPhone className="text-green-500 flex-shrink-0 w-4 h-4 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-green-400">WhatsApp Fast Desk</p>
+                  <p className="font-semibold text-white">WhatsApp &amp; Call</p>
                   <a
                     href="https://wa.me/254112478220?text=Hi%20MidusaElibrary,%20I%20have%20an%20inquiry"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:text-white transition-colors"
+                    className="hover:underline font-mono"
                   >
                     0112 478 220
                   </a>
                 </div>
               </li>
               <li className="flex items-center gap-2.5">
-                <FiPhone className="text-[#1E90FF] flex-shrink-0 w-4 h-4" />
-                <a href="tel:+254112478220" className="hover:text-white transition-colors">
-                  +254 112 478 220
-                </a>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <FiMail className="text-[#1E90FF] flex-shrink-0 w-4 h-4" />
-                <a href="mailto:midusab@gmail.com" className="hover:text-white transition-colors">
+                <FiMail className="w-4 h-4 text-white flex-shrink-0" />
+                <a href="mailto:midusab@gmail.com" className="hover:underline">
                   midusab@gmail.com
                 </a>
               </li>
               <li className="flex items-center gap-2.5">
-                <FiMapPin className="text-[#1E90FF] flex-shrink-0 w-4 h-4" />
+                <FiMapPin className="w-4 h-4 text-white flex-shrink-0" />
                 <span>Nairobi, Kenya</span>
               </li>
+              <li className="flex items-center gap-2.5">
+                <FiClock className="w-4 h-4 text-white flex-shrink-0" />
+                <span>Mon–Sat: 8:00 AM – 9:00 PM EAT</span>
+              </li>
             </ul>
+          </div>
 
-            <div className="mt-4 flex items-center gap-1.5 text-[11px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2.5 py-1.5 rounded-lg w-fit">
-              <FiShield className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>Response guarantee within 2–4 hrs</span>
-            </div>
+          {/* Column 4: Newsletter */}
+          <div>
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3.5 pb-1 border-b border-white/20">
+              Reader Newsletter
+            </h4>
+            <p className="text-xs text-white/85 mb-3 leading-relaxed">
+              Subscribe to get curated book summaries, new arrivals, and special seasonal reading offers.
+            </p>
+            {isSubscribed ? (
+              <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-white text-[#1E90FF] text-xs font-bold">
+                <FiCheck className="w-4 h-4 text-emerald-600" />
+                <span>Thank you! You're subscribed.</span>
+              </div>
+            ) : (
+              <form onSubmit={handleSubscribe} className="space-y-2">
+                <input
+                  type="email"
+                  required
+                  placeholder="Enter email address..."
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  className="w-full px-3 py-2 rounded-md bg-white text-slate-900 placeholder:text-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-white"
+                />
+                <button
+                  type="submit"
+                  className="w-full py-2 rounded-md bg-white/20 hover:bg-white text-white hover:text-[#1E90FF] text-xs font-bold transition-colors cursor-pointer border border-white/40"
+                >
+                  Subscribe
+                </button>
+              </form>
+            )}
           </div>
         </div>
 
-        {/* ========================================================= */}
-        {/* BOTTOM LEGAL & COMPLIANCE BAR */}
-        {/* ========================================================= */}
-        <div className="border-t border-slate-800/80 mt-12 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
-            <div>
-              <p>© {currentYear} MidusaElibrary. All rights reserved.</p>
-              <p className="text-[11px] text-slate-600 mt-0.5">
-                Authorized digital eBook publishing. Billed securely in Kenyan Shillings (KSh).
-              </p>
-            </div>
+        {/* ── Bottom Legal & Copyright Bar ── */}
+        <div className="mt-10 pt-6 border-t border-white/20 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-white/80">
+          <p>© {currentYear} Midusa eLibrary. All rights reserved.</p>
 
-            {/* Dedicated International Policy Routes */}
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs">
-              <Link to="/refund-policy" className="text-slate-400 hover:text-white transition-colors">
-                Refund Policy
-              </Link>
-              <span className="text-slate-700">|</span>
-              <Link to="/privacy" className="text-slate-400 hover:text-white transition-colors">
-                Privacy Policy
-              </Link>
-              <span className="text-slate-700">|</span>
-              <Link to="/terms" className="text-slate-400 hover:text-white transition-colors">
-                Terms of Service
-              </Link>
-              <span className="text-slate-700">|</span>
-              <Link to="/legal?tab=dmca" className="text-slate-400 hover:text-white transition-colors">
-                Copyright &amp; DMCA
-              </Link>
-              <span className="text-slate-700">|</span>
-              <button
-                type="button"
-                onClick={openCookieSettings}
-                className="text-slate-400 hover:text-[#1E90FF] transition-colors cursor-pointer"
-              >
-                Cookie Settings
-              </button>
-            </div>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs">
+            <Link to="/about" className="hover:text-white font-medium hover:underline">
+              About Us
+            </Link>
+            <span className="text-white/40">•</span>
+            <Link to="/contact" className="hover:text-white font-medium hover:underline">
+              Contact
+            </Link>
+            <span className="text-white/40">•</span>
+            <Link to="/refund-policy" className="hover:text-white hover:underline">
+              Refund Policy
+            </Link>
+            <span className="text-white/40">•</span>
+            <Link to="/privacy" className="hover:text-white hover:underline">
+              Privacy Policy
+            </Link>
+            <span className="text-white/40">•</span>
+            <Link to="/terms" className="hover:text-white hover:underline">
+              Terms of Service
+            </Link>
+            <span className="text-white/40">•</span>
+            <button
+              type="button"
+              onClick={openCookieSettings}
+              className="hover:text-white hover:underline cursor-pointer"
+            >
+              Cookies
+            </button>
           </div>
         </div>
       </div>
     </footer>
   );
-};
-
-export default Footer;
+}

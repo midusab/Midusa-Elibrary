@@ -118,7 +118,7 @@ export default function Hero() {
       {/* 1. HERO SECTION (Left: Headline & Buttons, Right: 2 Overlapping Cards)    */}
       {/* ========================================================================= */}
       <section className="relative pt-24 pb-16 sm:pt-28 sm:pb-20 lg:pt-32 lg:pb-24
-       bg-[url('./assets/hero13.jpg')] bg-cover bg-center bg-fixed
+       bg-[url('./assets/hero15.png')] bg-cover bg-center bg-fixed
       border-b border-slate-800/40 overflow-hidden"
       >
         {/* Dark Overlay for rich contrast & readability */}
@@ -137,11 +137,11 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
-                className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.12] mb-6 max-w-2xl"
+                className="text-3xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.12] mb-6 max-w-2xl"
               >
-                Take Your Dreams Off the Shelf{' '}
+                Purchase, Read {' '}
                 <span className="text-primary block sm:inline mt-1 sm:mt-0">
-                  ... Elevate Your Mind
+                  ... Learn,  Apply & Grow
                 </span>
               </motion.h1>
 
@@ -152,7 +152,7 @@ export default function Hero() {
                 transition={{ duration: 0.4, delay: 0.2 }}
                 className="text-base sm:text-lg text-slate-200 mb-8 max-w-xl leading-relaxed"
               >
-                Focused exclusively on Self Development, Psychology, Finance & Business, and Christianity. Instant digital delivery with automated M-PESA checkout.
+                Focused exclusively on topics that makes you a better version of yourself
               </motion.p>
 
               {/* Action Buttons */}

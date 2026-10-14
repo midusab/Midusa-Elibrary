@@ -7,21 +7,16 @@ import {
   FiAlertCircle,
   FiDownload,
   FiBookOpen,
-  FiPrinter,
-  FiX,
   FiCheck,
   FiCopy,
-  FiSmartphone,
-  FiArrowRight,
-  FiShield
+  FiSmartphone
 } from 'react-icons/fi';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { formatPrice } from '../../utils/currency';
 
-export default function UserOrdersTab({ orders = [], isLoading = false, user = null }) {
+export default function UserOrdersTab({ orders = [], isLoading = false }) {
   const [filter, setFilter] = useState('all');
-  const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState(null);
   const [copiedReceipt, setCopiedReceipt] = useState(null);
 
   const handleCopyReceipt = (code) => {
@@ -169,7 +164,7 @@ export default function UserOrdersTab({ orders = [], isLoading = false, user = n
           <h3 className="text-sm font-bold text-slate-800">No orders found</h3>
           <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
             {filter === 'all'
-              ? 'When you order books, complete order records and official invoices will appear here.'
+              ? 'When you purchase eBooks via M-PESA, verified records will appear here.'
               : `No orders matching status filter "${filter}".`}
           </p>
           <Link to="/library" className="mt-4 inline-block">
@@ -225,13 +220,6 @@ export default function UserOrdersTab({ orders = [], isLoading = false, user = n
                     <span className="text-base font-extrabold text-slate-900">
                       {formatPrice(order.amount)}
                     </span>
-                    <button
-                      onClick={() => setSelectedInvoiceOrder(order)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
-                    >
-                      <FiFileText className="w-3.5 h-3.5 text-[#1E90FF]" />
-                      <span>Invoice</span>
-                    </button>
                   </div>
                 </div>
 
@@ -323,187 +311,6 @@ export default function UserOrdersTab({ orders = [], isLoading = false, user = n
               </Card>
             );
           })}
-        </div>
-      )}
-
-      {/* ── 4. Printable Order Invoice Modal ── */}
-      {selectedInvoiceOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-lg max-w-2xl w-full border border-slate-200 shadow-none overflow-hidden max-h-[90vh] flex flex-col">
-            {/* Modal Header Bar */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/60 print:hidden">
-              <div className="flex items-center gap-2">
-                <FiFileText className="w-4 h-4 text-[#1E90FF]" />
-                <h3 className="text-sm font-bold text-slate-900">
-                  Official Order Invoice
-                </h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => window.print()}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-[#1E90FF] hover:bg-[#1873cc] text-white transition-colors cursor-pointer"
-                >
-                  <FiPrinter className="w-3.5 h-3.5" />
-                  <span>Print Invoice</span>
-                </button>
-                <button
-                  onClick={() => setSelectedInvoiceOrder(null)}
-                  className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
-                >
-                  <FiX className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Printable Invoice Body */}
-            <div className="p-6 sm:p-8 overflow-y-auto space-y-6 text-slate-800 print:p-0">
-              {/* Header Info */}
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-slate-200">
-                <div>
-                  <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                    Midusa eLibrary
-                  </h1>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Premium Curated Digital Bookstore
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Nairobi, Kenya • support@midusaelibrary.com
-                  </p>
-                </div>
-                <div className="sm:text-right">
-                  <span className="inline-block px-2.5 py-1 rounded bg-slate-100 text-slate-800 font-mono text-xs font-bold uppercase mb-1">
-                    INVOICE
-                  </span>
-                  <p className="font-mono text-xs font-bold text-slate-900">
-                    INV-{selectedInvoiceOrder.id.slice(0, 8).toUpperCase()}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Date:{' '}
-                    {selectedInvoiceOrder.createdAt
-                      ? new Date(selectedInvoiceOrder.createdAt).toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })
-                      : 'Recent'}
-                  </p>
-                  <div className="mt-1.5">
-                    {getStatusBadge(selectedInvoiceOrder.status)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Billed To / Payment Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pb-4 border-b border-slate-100">
-                <div>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                    Billed To
-                  </p>
-                  <p className="font-bold text-slate-900 text-sm">
-                    {user?.fullname || 'Registered Reader'}
-                  </p>
-                  <p className="text-slate-600 mt-0.5">{user?.email}</p>
-                  {selectedInvoiceOrder.phoneNumber && (
-                    <p className="text-slate-600 mt-0.5">
-                      Phone: {selectedInvoiceOrder.phoneNumber}
-                    </p>
-                  )}
-                </div>
-                <div className="sm:text-right">
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                    Payment Method
-                  </p>
-                  <p className="font-semibold text-slate-800">
-                    M-PESA Express (STK Push)
-                  </p>
-                  {selectedInvoiceOrder.mpesaReceipt && (
-                    <p className="font-mono font-bold text-slate-700 mt-0.5">
-                      Receipt: {selectedInvoiceOrder.mpesaReceipt}
-                    </p>
-                  )}
-                  <p className="text-slate-500 mt-0.5">
-                    Status: Settled & Confirmed
-                  </p>
-                </div>
-              </div>
-
-              {/* Items Table */}
-              <div>
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
-                      <th className="py-2.5">Item Description</th>
-                      <th className="py-2.5 text-center">Type</th>
-                      <th className="py-2.5 text-center">Qty</th>
-                      <th className="py-2.5 text-right">Price</th>
-                      <th className="py-2.5 text-right">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {(selectedInvoiceOrder.items || []).map((item, idx) => (
-                      <tr key={idx}>
-                        <td className="py-3">
-                          <p className="font-bold text-slate-900">
-                            {item.book?.title || 'eBook Title'}
-                          </p>
-                          <p className="text-[11px] text-slate-400">
-                            by {item.book?.author || 'Author'}
-                          </p>
-                        </td>
-                        <td className="py-3 text-center text-slate-500">
-                          Digital PDF
-                        </td>
-                        <td className="py-3 text-center font-mono">
-                          {item.quantity || 1}
-                        </td>
-                        <td className="py-3 text-right font-mono text-slate-700">
-                          {formatPrice(item.price || item.book?.price || 0)}
-                        </td>
-                        <td className="py-3 text-right font-mono font-bold text-slate-900">
-                          {formatPrice((item.price || item.book?.price || 0) * (item.quantity || 1))}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Totals Summary */}
-              <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="text-xs text-slate-500 max-w-xs">
-                  <p className="font-semibold text-slate-700">Digital Access Grant:</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Lifetime digital personal license granted. Download links remain active in your reader dashboard.
-                  </p>
-                </div>
-
-                <div className="w-full sm:w-64 space-y-1.5 text-xs text-right">
-                  <div className="flex justify-between text-slate-600">
-                    <span>Subtotal:</span>
-                    <span className="font-mono">{formatPrice(selectedInvoiceOrder.amount)}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600">
-                    <span>Tax (0%):</span>
-                    <span className="font-mono">KSh 0.00</span>
-                  </div>
-                  <div className="flex justify-between text-base font-extrabold text-slate-900 pt-2 border-t border-slate-200">
-                    <span>Total Paid:</span>
-                    <span className="font-mono text-[#1E90FF]">
-                      {formatPrice(selectedInvoiceOrder.amount)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Invoice Footer Notice */}
-              <div className="pt-6 border-t border-slate-100 text-center text-[11px] text-slate-400">
-                <p>Thank you for choosing Midusa eLibrary!</p>
-                <p className="mt-0.5">
-                  Automated electronic receipt generated by Midusa eLibrary system.
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>

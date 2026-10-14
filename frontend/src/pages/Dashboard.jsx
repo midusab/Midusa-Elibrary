@@ -369,7 +369,7 @@ export default function Dashboard() {
             }`}
           >
             <FiFileText className="w-4 h-4" />
-            Order History & Invoices ({userOrders.length})
+            Order History ({userOrders.length})
             {activeTab === 'orders' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1E90FF] rounded-full" />
             )}

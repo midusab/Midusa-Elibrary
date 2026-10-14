@@ -10,7 +10,8 @@ import {
   FiUser,
   FiShield,
   FiArrowRight,
-  FiCreditCard
+  FiCreditCard,
+  FiFileText
 } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -273,6 +274,30 @@ export default function Navigation() {
                   ★
                 </span>
               </Link>
+
+              {/* About Link */}
+              <Link
+                to="/about"
+                className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                  isActive('/about')
+                    ? 'text-[#1E90FF] bg-blue-50 font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+                }`}
+              >
+                About
+              </Link>
+
+              {/* Contact Link */}
+              <Link
+                to="/contact"
+                className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                  isActive('/contact')
+                    ? 'text-[#1E90FF] bg-blue-50 font-bold'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+                }`}
+              >
+                Contact
+              </Link>
             </div>
           </div>
 
@@ -471,12 +496,12 @@ export default function Navigation() {
 
                       <Link
                         to="/dashboard"
-                        state={{ tab: 'payments' }}
+                        state={{ tab: 'orders' }}
                         onClick={() => setIsUserMenuOpen(false)}
                         className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#1E90FF] rounded-xl transition-colors"
                       >
-                        <FiCreditCard className="w-4 h-4 text-slate-400" />
-                        <span>Payment History</span>
+                        <FiFileText className="w-4 h-4 text-slate-400" />
+                        <span>Order History</span>
                       </Link>
 
                       {isAdmin && (
@@ -639,12 +664,12 @@ export default function Navigation() {
 
                     <Link
                       to="/dashboard"
-                      state={{ tab: 'payments' }}
+                      state={{ tab: 'orders' }}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors flex items-center gap-2"
                     >
-                      <FiCreditCard className="w-4 h-4 text-slate-400" />
-                      <span>Payment History</span>
+                      <FiFileText className="w-4 h-4 text-slate-400" />
+                      <span>Order History</span>
                     </Link>
 
                     {isAdmin && (

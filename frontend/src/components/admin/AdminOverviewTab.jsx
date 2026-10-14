@@ -8,28 +8,51 @@ import {
   FiTrendingDown,
   FiArrowUpRight,
   FiBarChart2,
-  FiMousePointer
+  FiMousePointer,
+  FiLayers,
+  FiFilter,
+  FiCalendar
 } from 'react-icons/fi';
 import Card from '../ui/Card';
 import { formatPrice } from '../../utils/currency';
-import DynamicTrendChart from './charts/DynamicTrendChart';
-import DynamicCategoryChart from './charts/DynamicCategoryChart';
-import DynamicConversionFunnel from './charts/DynamicConversionFunnel';
 
 export default function AdminOverviewTab({
   derivedStats,
-  categories,
-  books = [],
-  trendViewMetric = 'revenue',
-  setTrendViewMetric
+  categories = [],
+  books = []
 }) {
+  const dailyTrends = derivedStats.dailyTrends || [];
+  const categoryStats = derivedStats.categoryStats || [];
+
+  // Normalize categories breakdown
+  const categoryBreakdown = categories.map((cat) => {
+    const matchedStat = categoryStats.find((c) => c.name === cat.name);
+    const catBooks = books.filter((b) => b.category === cat.name);
+    return {
+      name: cat.name,
+      bookCount: catBooks.length,
+      salesCount: matchedStat?.totalSales || 0,
+      revenue: matchedStat?.revenue || 0
+    };
+  });
+
+  const totalCatalogBooks = books.length || 1;
+
+  // Funnel calculations
+  const visits = derivedStats.totalVisits || 0;
+  const clicks = derivedStats.totalClicks || books.reduce((sum, b) => sum + (b.clicks || 0), 0);
+  const sales = derivedStats.sales || 0;
+  const visitToClickRate = visits > 0 ? Math.min(100, Math.round((clicks / visits) * 100)) : (clicks > 0 ? 100 : 0);
+  const clickToSaleRate = clicks > 0 ? Math.min(100, Math.round((sales / clicks) * 100)) : (sales > 0 ? 100 : 0);
+  const overallConversion = derivedStats.overallConversionRate || (visits > 0 ? Number(((sales / visits) * 100).toFixed(1)) : 0);
+
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* ========================================================= */}
-      {/* 1. KPI Metrics Grid (5 cards) */}
+      {/* 1. KPI Metrics Grid (5 cards)                             */}
       {/* ========================================================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg">
+        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg shadow-none">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               Total Revenue
@@ -52,7 +75,7 @@ export default function AdminOverviewTab({
           </div>
         </Card>
 
-        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg">
+        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg shadow-none">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               Total Sales
@@ -67,7 +90,7 @@ export default function AdminOverviewTab({
           <p className="text-xs text-slate-400 mt-1.5">Completed orders</p>
         </Card>
 
-        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg">
+        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg shadow-none">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               Platform Visits
@@ -90,7 +113,7 @@ export default function AdminOverviewTab({
           </div>
         </Card>
 
-        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg">
+        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg shadow-none">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               Registered Readers
@@ -110,7 +133,7 @@ export default function AdminOverviewTab({
           </div>
         </Card>
 
-        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg">
+        <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg shadow-none">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               Catalogue Titles
@@ -127,168 +150,169 @@ export default function AdminOverviewTab({
       </div>
 
       {/* ========================================================= */}
-      {/* 2. DYNAMIC TREND TIMELINE CHART (Interactive SVG Spline / Bars) */}
-      {/* ========================================================= */}
-      <DynamicTrendChart
-        dailyTrends={derivedStats.dailyTrends || []}
-        metric={trendViewMetric}
-        setMetric={setTrendViewMetric}
-      />
-
-      {/* ========================================================= */}
-      {/* 3. DYNAMIC GROWTH & MARKET INTELLIGENCE STATUS */}
-      {/* ========================================================= */}
-      <Card className="p-5 sm:p-6 bg-white border border-slate-200/90 rounded-lg relative overflow-hidden">
-        <div className="space-y-5">
-          {/* Trend Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-100">
-            <div>
-              <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                <FiBarChart2 className="w-3.5 h-3.5 text-[#1E90FF]" />
-                Market & Growth Intelligence
-              </div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900">
-                Customer Velocity & Momentum Health
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5 max-w-2xl">
-                {derivedStats.trends?.summary ||
-                  'Platform activity evaluated live across reader acquisition, sales velocity, and site traffic.'}
-              </p>
-            </div>
-
-            {/* Trend Indicator Pill */}
-            <div className="flex items-center gap-2">
-              {derivedStats.trends?.status === 'growth' && (
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  <FiTrendingUp className="w-4 h-4 text-emerald-600" />
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider">Trend: Growth</p>
-                    <p className="text-[10px] text-emerald-600 font-medium">Customer base expanding</p>
-                  </div>
-                </div>
-              )}
-              {derivedStats.trends?.status === 'declining' && (
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-rose-50 border border-rose-200 text-rose-700">
-                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                  <FiTrendingDown className="w-4 h-4 text-rose-600" />
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider">Trend: Declining</p>
-                    <p className="text-[10px] text-rose-600 font-medium">Slowdown in recent orders</p>
-                  </div>
-                </div>
-              )}
-              {(!derivedStats.trends || derivedStats.trends?.status === 'neutral') && (
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800">
-                  <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  <FiActivity className="w-4 h-4 text-amber-600" />
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-wider">Trend: Neutral</p>
-                    <p className="text-[10px] text-amber-700 font-medium">Stable reader & visit volume</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 3 Dependent Factors Breakdown (Sales, Visits, Readers) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-            {/* Driver 1: Sales Impact */}
-            <div className="p-4 rounded-md bg-slate-50/80 border border-slate-200/70 hover:border-blue-200 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-                  <FiShoppingBag className="w-3.5 h-3.5 text-[#1E90FF]" />
-                  Sales Momentum
-                </span>
-                <span
-                  className={`text-xs font-bold px-2 py-0.5 rounded ${
-                    (derivedStats.trends?.salesGrowthRate ?? 0) >= 0
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : 'bg-rose-100 text-rose-800'
-                  }`}
-                >
-                  {(derivedStats.trends?.salesGrowthRate ?? 0) >= 0 ? '+' : ''}
-                  {derivedStats.trends?.salesGrowthRate ?? 0}%
-                </span>
-              </div>
-              <p className="text-xl font-bold text-slate-900 mb-0.5">
-                {derivedStats.trends?.comparison?.currentPeriod?.sales ?? derivedStats.sales} orders
-              </p>
-              <p className="text-xs text-slate-500">
-                vs {derivedStats.trends?.comparison?.previousPeriod?.sales ?? 0} prior period.
-              </p>
-            </div>
-
-            {/* Driver 2: Traffic / Platform Visits */}
-            <div className="p-4 rounded-md bg-slate-50/80 border border-slate-200/70 hover:border-blue-200 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-                  <FiActivity className="w-3.5 h-3.5 text-indigo-500" />
-                  Traffic & Visits
-                </span>
-                <span
-                  className={`text-xs font-bold px-2 py-0.5 rounded ${
-                    (derivedStats.trends?.visitsGrowthRate ?? 0) >= 0
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : 'bg-rose-100 text-rose-800'
-                  }`}
-                >
-                  {(derivedStats.trends?.visitsGrowthRate ?? 0) >= 0 ? '+' : ''}
-                  {derivedStats.trends?.visitsGrowthRate ?? 0}%
-                </span>
-              </div>
-              <p className="text-xl font-bold text-slate-900 mb-0.5">
-                {derivedStats.trends?.comparison?.currentPeriod?.visits ?? derivedStats.totalVisits} visits
-              </p>
-              <p className="text-xs text-slate-500">
-                vs {derivedStats.trends?.comparison?.previousPeriod?.visits ?? 0} prior period.
-              </p>
-            </div>
-
-            {/* Driver 3: Reader Acquisition */}
-            <div className="p-4 rounded-md bg-slate-50/80 border border-slate-200/70 hover:border-blue-200 transition-colors">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-                  <FiUsers className="w-3.5 h-3.5 text-amber-500" />
-                  New Readers
-                </span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">
-                  +{derivedStats.trends?.comparison?.currentPeriod?.newUsers ?? 0} joined
-                </span>
-              </div>
-              <p className="text-xl font-bold text-slate-900 mb-0.5">
-                {derivedStats.trends?.comparison?.currentPeriod?.newUsers ?? 0} signups
-              </p>
-              <p className="text-xs text-slate-500">
-                vs {derivedStats.trends?.comparison?.previousPeriod?.newUsers ?? 0} prior period.
-              </p>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* ========================================================= */}
-      {/* 4. DYNAMIC CHARTS GRID: CATEGORY DONUT & CONVERSION FUNNEL */}
+      {/* 2. STATIC PERFORMANCE & AUDIENCE CONVERSION MATRICES     */}
       {/* ========================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DynamicCategoryChart
-          categoryStats={derivedStats.categoryStats || []}
-          books={books}
-          categories={categories}
-        />
+        {/* Category Share & Inventory Overview */}
+        <Card className="p-5 sm:p-6 bg-white border border-slate-200/90 rounded-lg shadow-none">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <FiLayers className="w-3.5 h-3.5 text-[#1E90FF]" />
+                Category Inventory & Share
+              </span>
+              <h3 className="text-base font-bold text-slate-900 mt-0.5">
+                Catalog Distribution
+              </h3>
+            </div>
+            <span className="text-xs font-semibold text-slate-500 bg-slate-50 px-2.5 py-1 rounded border border-slate-200/60">
+              {categories.length} Topics
+            </span>
+          </div>
 
-        <DynamicConversionFunnel
-          derivedStats={derivedStats}
-          books={books}
-        />
+          <div className="space-y-3.5">
+            {categoryBreakdown.map((cat, idx) => {
+              const pct = Math.round((cat.bookCount / totalCatalogBooks) * 100) || 0;
+              return (
+                <div key={idx} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-800">{cat.name}</span>
+                    <span className="text-slate-500">
+                      <strong>{cat.bookCount}</strong> books ({pct}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded bg-slate-100 overflow-hidden">
+                    <div
+                      className="h-full bg-[#1E90FF] rounded"
+                      style={{ width: `${Math.max(4, pct)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        {/* Reader Conversion & Acquisition Funnel */}
+        <Card className="p-5 sm:p-6 bg-white border border-slate-200/90 rounded-lg shadow-none">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <FiFilter className="w-3.5 h-3.5 text-[#1E90FF]" />
+                Audience Conversion
+              </span>
+              <h3 className="text-base font-bold text-slate-900 mt-0.5">
+                Engagement Pipeline
+              </h3>
+            </div>
+            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
+              {overallConversion}% Overall
+            </span>
+          </div>
+
+          <div className="space-y-3 text-xs">
+            <div className="p-3 rounded-md bg-slate-50 border border-slate-200/70 flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-slate-700">1. Platform Visitors</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Total registered traffic sessions</p>
+              </div>
+              <span className="text-base font-bold text-slate-900 font-mono">
+                {visits.toLocaleString()}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-md bg-blue-50/50 border border-blue-200/60 flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-blue-900">2. Book Clicks & Details Views</p>
+                <p className="text-[11px] text-blue-600 mt-0.5">{visitToClickRate}% view-through rate</p>
+              </div>
+              <span className="text-base font-bold text-[#1E90FF] font-mono">
+                {clicks.toLocaleString()}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-md bg-emerald-50/50 border border-emerald-200/60 flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-emerald-950">3. Settled Book Purchases</p>
+                <p className="text-[11px] text-emerald-700 mt-0.5">{clickToSaleRate}% click-to-purchase</p>
+              </div>
+              <span className="text-base font-bold text-emerald-700 font-mono">
+                {sales.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* ========================================================= */}
-      {/* 5. HERO HIGHLIGHTS: WHICH BOOK IS CLICKED MOST & TOP SELLER */}
+      {/* 3. DAILY ACTIVITY LOG (Replacing dynamic SVG chart)       */}
+      {/* ========================================================= */}
+      <Card className="p-5 sm:p-6 bg-white border border-slate-200/90 rounded-lg shadow-none">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2 mb-4">
+          <div>
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <FiCalendar className="w-3.5 h-3.5 text-[#1E90FF]" />
+              Recent Daily Performance Log
+            </span>
+            <h3 className="text-base font-bold text-slate-900 mt-0.5">
+              Daily Activity & Sales Summary
+            </h3>
+          </div>
+          <span className="text-xs text-slate-500 font-medium">
+            Past 7 recording days
+          </span>
+        </div>
+
+        {dailyTrends.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th className="py-2.5 px-3">Date</th>
+                  <th className="py-2.5 px-3 text-center">Settled Orders</th>
+                  <th className="py-2.5 px-3 text-right">Revenue (KSh)</th>
+                  <th className="py-2.5 px-3 text-center">Visits</th>
+                  <th className="py-2.5 px-3 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {dailyTrends.map((d, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-2.5 px-3 font-semibold text-slate-800">
+                      {d.date || `Day ${idx + 1}`}
+                    </td>
+                    <td className="py-2.5 px-3 text-center font-bold text-slate-900">
+                      {d.sales || 0}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-600">
+                      {formatPrice(d.revenue || 0)}
+                    </td>
+                    <td className="py-2.5 px-3 text-center text-slate-500">
+                      {d.visits || 0}
+                    </td>
+                    <td className="py-2.5 px-3 text-right">
+                      <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-[#1E90FF]">
+                        Recorded
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-8 text-center text-xs text-slate-400">
+            No daily activity logs recorded yet. Records populate automatically as checkouts complete.
+          </div>
+        )}
+      </Card>
+
+      {/* ========================================================= */}
+      {/* 4. HERO HIGHLIGHTS: WHICH BOOK IS CLICKED MOST & TOP SELLER */}
       {/* ========================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Highlight 1: WHICH BOOK IS CLICKED MOST */}
-        <Card className="p-5 sm:p-6 bg-white border border-slate-200/90 rounded-lg flex flex-col justify-between">
+        <Card className="p-5 sm:p-6 bg-white border border-slate-200/90 rounded-lg shadow-none flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
@@ -348,14 +372,14 @@ export default function AdminOverviewTab({
         </Card>
 
         {/* Highlight 2: TOP REVENUE / BEST SELLING BOOK */}
-        <Card className="p-5 sm:p-6 bg-white border border-slate-200/90 rounded-lg flex flex-col justify-between">
+        <Card className="p-5 sm:p-6 bg-white border border-slate-200/90 rounded-lg shadow-none flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                 Top Selling eBook
               </span>
               <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md flex items-center gap-1.5 border border-amber-200">
-                ★ Highest Sales Volume
+                Highest Sales Volume
               </span>
             </div>
 
@@ -409,9 +433,9 @@ export default function AdminOverviewTab({
       </div>
 
       {/* ========================================================= */}
-      {/* 6. DETAILED RANKING TABLE: eBook Click & Interest Rankings */}
+      {/* 5. DETAILED RANKING TABLE: eBook Click & Interest Rankings */}
       {/* ========================================================= */}
-      <Card className="bg-white border border-slate-200/90 rounded-lg overflow-hidden">
+      <Card className="bg-white border border-slate-200/90 rounded-lg shadow-none overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h3 className="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
@@ -423,11 +447,11 @@ export default function AdminOverviewTab({
             </p>
           </div>
           <span className="text-xs font-semibold text-slate-500 bg-slate-50 px-3 py-1 rounded-md border border-slate-200/60">
-            Top {derivedStats.topClickedBooks.length} titles ranked
+            Top {derivedStats.topClickedBooks?.length || 0} titles ranked
           </span>
         </div>
 
-        {derivedStats.topClickedBooks.length > 0 ? (
+        {derivedStats.topClickedBooks && derivedStats.topClickedBooks.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs sm:text-sm">
               <thead className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[11px] tracking-wider">
@@ -443,9 +467,9 @@ export default function AdminOverviewTab({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {derivedStats.topClickedBooks.map((b, idx) => {
-                  const clicks = b.clicks || 0;
-                  const sales = b.salesCount || 0;
-                  const conv = b.conversionRate || (clicks > 0 ? Math.round((sales / clicks) * 100) : 0);
+                  const clicksCount = b.clicks || 0;
+                  const salesCount = b.salesCount || 0;
+                  const conv = b.conversionRate || (clicksCount > 0 ? Math.round((salesCount / clicksCount) * 100) : 0);
 
                   return (
                     <tr key={b.id || idx} className="hover:bg-slate-50/60 transition-colors">
@@ -492,11 +516,11 @@ export default function AdminOverviewTab({
                       <td className="py-3 px-4 text-center">
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-blue-50 text-[#1E90FF] text-xs font-bold border border-blue-100">
                           <FiMousePointer className="w-3 h-3" />
-                          {clicks} clicks
+                          {clicksCount} clicks
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center font-bold text-slate-800">
-                        {sales}
+                        {salesCount}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="inline-flex items-center gap-2">

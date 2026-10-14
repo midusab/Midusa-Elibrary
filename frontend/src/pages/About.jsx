@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { FiTarget, FiShield, FiUsers, FiAward, FiCheck, FiArrowRight, FiMail } from 'react-icons/fi';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import Cardimg from '../assets/hero2.jpg';
+import Cardimg from '../assets/hero15.png';
 
 const PILLARS = [
   {
@@ -14,19 +14,19 @@ const PILLARS = [
   {
     title: 'Psychology',
     desc: 'Understand human behaviour, cognitive patterns, and emotional intelligence to improve relationships and decision-making.',
-    color: '#7C3AED',
+    color: '#1E90FF',
     bg: '#F5F3FF',
   },
   {
     title: 'Business & Finance',
     desc: 'Practical playbooks on entrepreneurship, investing, and building financial independence — tailored for the African context.',
-    color: '#059669',
+    color: '#1E90FF',
     bg: '#ECFDF5',
   },
   {
     title: 'Christian Growth',
     desc: 'Faith-based literature for spiritual grounding, biblical wisdom, and purposeful living in the modern world.',
-    color: '#D97706',
+    color: '#1E90FF',
     bg: '#FFFBEB',
   },
 ];
@@ -50,14 +50,11 @@ export default function About() {
         {/* Dark overlay */}
         <div className="absolute inset-0 bg-slate-900/65" />
         <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-block text-xs font-bold text-[#1E90FF] uppercase tracking-widest bg-blue-900/40 border border-blue-500/30 px-3 py-1 rounded-full mb-4">
-            Our Purpose
-          </span>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-4 leading-tight">
-            Curating Knowledge<br />That Actually Matters
+          Knowledge for a better you
           </h1>
           <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-xl mx-auto">
-            MidusaElibrary is Kenya's premier digital bookstore for high-impact literature. We cut through the noise and deliver books that shape character, intellect, wealth, and faith.
+            MidusaElibrary is Kenya's digital bookstore for high-impact literature. We cut through the noise and deliver books that shape character, intellect, wealth, and faith.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/library">
@@ -66,7 +63,7 @@ export default function About() {
               </Button>
             </Link>
             <Link to="/contact">
-              <Button variant="outline" size="md" className="px-7 text-sm font-semibold border-white/30 text-white hover:bg-white/10">
+              <Button variant="outline" size="md" className="px-7 text-sm font-semibold border-white/30  hover:bg-white/10">
                 Get in Touch
               </Button>
             </Link>
@@ -115,9 +112,6 @@ export default function About() {
         {/* Four Pillars */}
         <div className="mb-16">
           <div className="text-center max-w-xl mx-auto mb-10">
-            <span className="text-xs font-bold text-[#1E90FF] uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full">
-              Our Catalogue
-            </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 tracking-tight">
               Four Foundations of Growth
             </h2>
@@ -156,9 +150,6 @@ export default function About() {
         {/* Core Values */}
         <div className="mb-16">
           <div className="text-center max-w-xl mx-auto mb-10">
-            <span className="text-xs font-bold text-[#1E90FF] uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full">
-              What We Stand For
-            </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 tracking-tight">
               Our Core Values
             </h2>
