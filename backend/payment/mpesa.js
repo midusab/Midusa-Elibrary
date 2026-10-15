@@ -105,6 +105,7 @@ async function getAccessToken() {
 
 /**
  * Trigger STK Push (Lipa Na M-Pesa Online)
+ * Supports both Buy Goods (CustomerBuyGoodsOnline) and Paybill (CustomerPayBillOnline)
  */
 async function stkPush({
   phoneNumber,
@@ -112,7 +113,10 @@ async function stkPush({
   accountReference = 'Elibrary',
   transactionDesc = 'Book Purchase',
 }) {
-  const shortcode = process.env.MPESA_SHORTCODE;
+  // Support both Paybill and Buy Goods Till numbers
+  const shortcode = process.env.MPESA_STORE_NUMBER || process.env.MPESA_SHORTCODE;
+  const tillNumber = process.env.MPESA_TILL_NUMBER || process.env.MPESA_SHORTCODE;
+  const transactionType = process.env.MPESA_TRANSACTION_TYPE || 'CustomerBuyGoodsOnline';
   const passkey = process.env.MPESA_PASSKEY;
   const callbackUrl = process.env.MPESA_CALLBACK_URL;
   const baseUrl = getBaseUrl();
@@ -132,20 +136,30 @@ async function stkPush({
 
   const token = await getAccessToken();
 
+  // For Buy Goods: PartyB is the Till Number, BusinessShortCode is the Store / ShortCode
+  // For Paybill: PartyB is the ShortCode
+  const partyB = transactionType === 'CustomerBuyGoodsOnline' ? tillNumber : shortcode;
+  // For Buy Goods STK push, AccountReference can be the Till Number or short order reference
+  const accRef = transactionType === 'CustomerBuyGoodsOnline'
+    ? String(accountReference || tillNumber).substring(0, 12)
+    : String(accountReference || 'Elibrary').substring(0, 12);
+
   try {
     const payload = {
       BusinessShortCode: shortcode,
       Password: password,
       Timestamp: timestamp,
-      TransactionType: 'CustomerPayBillOnline',
+      TransactionType: transactionType,
       Amount: parsedAmount,
       PartyA: formattedPhone,
-      PartyB: shortcode,
+      PartyB: partyB,
       PhoneNumber: formattedPhone,
       CallBackURL: callbackUrl,
-      AccountReference: String(accountReference).substring(0, 12),
+      AccountReference: accRef,
       TransactionDesc: String(transactionDesc).substring(0, 100),
     };
+
+    console.log(`[M-PESA STK PUSH] Initiating ${transactionType} to ${formattedPhone} for KES ${parsedAmount} (Shortcode: ${shortcode}, PartyB: ${partyB})`);
 
     const response = await axios.post(
       `${baseUrl}/mpesa/stkpush/v1/processrequest`,
@@ -169,6 +183,8 @@ async function stkPush({
       customerMessage: response.data.CustomerMessage,
       phoneNumber: formattedPhone,
       amount: parsedAmount,
+      transactionType,
+      tillNumber: partyB,
     };
   } catch (error) {
     const safaricomError = error.response?.data?.errorMessage || error.response?.data?.ResponseDescription || error.message;
