@@ -116,7 +116,7 @@ async function getAccessToken(retryCount = 2) {
       const errorMsg = error.response?.data?.errorMessage || error.message;
       if (isLastAttempt) {
         console.error('Error fetching M-Pesa access token:', errorMsg);
-        throw new Error(`Safaricom OAuth error: ${errorMsg}`);
+        throw new Error('Unable to connect to M-Pesa service. Please try again in a moment.');
       }
       console.warn(`[M-PESA OAuth] Attempt ${attempt + 1} failed (${errorMsg}), retrying in 1s...`);
       await new Promise(r => setTimeout(r, 1000));
@@ -233,12 +233,17 @@ async function stkPush({
       error.response?.data?.ResponseDescription ||
       error.message;
     const errorCode = error.response?.data?.errorCode || '';
-    const userMessage = errorCode === '404.001.03'
-      ? 'Invalid phone number. Use format 07XXXXXXXX.'
-      : errorCode === '400.002.02'
-      ? 'Invalid shortcode or Till number configuration. Contact support.'
-      : safaricomError;
-    throw new Error(`M-Pesa STK Push failed: ${userMessage}`);
+    let userMessage = 'Unable to send M-Pesa prompt. Please verify your phone number and try again.';
+    if (errorCode === '404.001.03') {
+      userMessage = 'Please enter a valid M-Pesa phone number (07XXXXXXXX or 01XXXXXXXX).';
+    } else if (errorCode === '400.002.02') {
+      userMessage = 'Payment service configuration error. Please contact support.';
+    } else if (/timeout|connect|network/i.test(safaricomError)) {
+      userMessage = 'Payment prompt timed out. Please try again.';
+    } else if (error.response?.data?.ResponseDescription) {
+      userMessage = String(error.response.data.ResponseDescription).replace(/safaricom/gi, 'M-Pesa');
+    }
+    throw new Error(userMessage);
   }
 }
 

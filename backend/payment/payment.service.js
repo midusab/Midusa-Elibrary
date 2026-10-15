@@ -82,7 +82,7 @@ async function initiateMpesaPayment({ userId, orderId, phoneNumber, amount }) {
       data: { status: 'failed', result_desc: 'Callback URL not configured for production' },
     });
     throw new Error(
-      'Payment service is not reachable by Safaricom. Please ensure ngrok or a public URL is running and set in MPESA_CALLBACK_URL.'
+      'Payment service is temporarily unavailable. Please try again in a moment.'
     );
   }
 

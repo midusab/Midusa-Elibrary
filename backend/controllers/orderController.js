@@ -120,9 +120,13 @@ const createOrder = async (req, res) => {
         where: { id: order.id },
         data: { status: 'failed' }
       }).catch(() => {});
-      console.error('STK Push failed:', mpesaErr.message);
+      const rawError = mpesaErr.message || '';
+      let cleanError = 'Unable to send M-Pesa prompt. Please verify your phone number and try again.';
+      if (rawError && !rawError.toLowerCase().includes('safaricom') && !rawError.toLowerCase().includes('oauth')) {
+        cleanError = rawError;
+      }
       return res.status(502).json({
-        error: mpesaErr.message || 'Failed to initiate M-Pesa payment. Please check your phone number and try again.',
+        error: cleanError,
       });
     }
 
