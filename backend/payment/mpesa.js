@@ -1,11 +1,24 @@
+const dns = require('dns');
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
+const https = require('https');
 const axios = require('axios');
+
+// Persistent HTTPS agent with keep-alive and IPv4 forcing for reliable Daraja connections
+const httpsAgent = new https.Agent({
+  keepAlive: true,
+  maxSockets: 50,
+  keepAliveMsecs: 15000,
+  family: 4,
+});
 
 /**
  * Safaricom Daraja M-Pesa Client Module
  */
 
 const getBaseUrl = () => {
-  return process.env.MPESA_ENV === 'production'
+  return (process.env.MPESA_ENV || '').trim() === 'production'
     ? 'https://api.safaricom.co.ke'
     : 'https://sandbox.safaricom.co.ke';
 };
@@ -56,11 +69,11 @@ let cachedToken = null;
 let tokenExpiresAt = 0;
 
 /**
- * Obtain Daraja OAuth 2.0 Access Token
+ * Obtain Daraja OAuth 2.0 Access Token with automatic retry
  */
-async function getAccessToken() {
-  const consumerKey = process.env.MPESA_CONSUMER_KEY;
-  const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
+async function getAccessToken(retryCount = 2) {
+  const consumerKey = (process.env.MPESA_CONSUMER_KEY || '').trim();
+  const consumerSecret = (process.env.MPESA_CONSUMER_SECRET || '').trim();
   const baseUrl = getBaseUrl();
 
   if (!consumerKey || !consumerSecret) {
@@ -74,32 +87,40 @@ async function getAccessToken() {
 
   const credentials = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
 
-  try {
-    const response = await axios.get(
-      `${baseUrl}/oauth/v1/generate?grant_type=client_credentials`,
-      {
-        headers: {
-          Authorization: `Basic ${credentials}`,
-          'Content-Type': 'application/json',
-        },
-        timeout: 15000,
+  for (let attempt = 0; attempt <= retryCount; attempt++) {
+    try {
+      const response = await axios.get(
+        `${baseUrl}/oauth/v1/generate?grant_type=client_credentials`,
+        {
+          headers: {
+            Authorization: `Basic ${credentials}`,
+            'Content-Type': 'application/json',
+          },
+          httpsAgent,
+          timeout: 35000,
+        }
+      );
+
+      if (!response.data || !response.data.access_token) {
+        throw new Error('Failed to retrieve access token from Safaricom response');
       }
-    );
 
-    if (!response.data || !response.data.access_token) {
-      throw new Error('Failed to retrieve access token from Safaricom response');
+      cachedToken = response.data.access_token;
+      // Safaricom token is typically valid for 3599 seconds (~1 hour)
+      const expiresInMs = (parseInt(response.data.expires_in, 10) || 3599) * 1000;
+      tokenExpiresAt = Date.now() + expiresInMs;
+
+      return cachedToken;
+    } catch (error) {
+      const isLastAttempt = attempt >= retryCount;
+      const errorMsg = error.response?.data?.errorMessage || error.message;
+      if (isLastAttempt) {
+        console.error('Error fetching M-Pesa access token:', errorMsg);
+        throw new Error(`Safaricom OAuth error: ${errorMsg}`);
+      }
+      console.warn(`[M-PESA OAuth] Attempt ${attempt + 1} failed (${errorMsg}), retrying in 1s...`);
+      await new Promise(r => setTimeout(r, 1000));
     }
-
-    cachedToken = response.data.access_token;
-    // Safaricom token is typically valid for 3599 seconds (~1 hour)
-    const expiresInMs = (parseInt(response.data.expires_in, 10) || 3599) * 1000;
-    tokenExpiresAt = Date.now() + expiresInMs;
-
-    return cachedToken;
-  } catch (error) {
-    const errorMsg = error.response?.data?.errorMessage || error.message;
-    console.error('Error fetching M-Pesa access token:', errorMsg);
-    throw new Error(`Safaricom OAuth error: ${errorMsg}`);
   }
 }
 
@@ -139,10 +160,9 @@ async function stkPush({
   // For Buy Goods: PartyB is the Till Number, BusinessShortCode is the Store / ShortCode
   // For Paybill: PartyB is the ShortCode
   const partyB = transactionType === 'CustomerBuyGoodsOnline' ? tillNumber : shortcode;
-  // For Buy Goods STK push, AccountReference can be the Till Number or short order reference
-  const accRef = transactionType === 'CustomerBuyGoodsOnline'
-    ? String(accountReference || tillNumber).substring(0, 12)
-    : String(accountReference || 'Elibrary').substring(0, 12);
+  // Clean AccountReference (alphanumeric, max 12 chars)
+  const cleanRef = String(accountReference || tillNumber).replace(/[^a-zA-Z0-9]/g, '').substring(0, 12) || tillNumber;
+  const cleanDesc = String(transactionDesc || 'Book Purchase').replace(/[^a-zA-Z0-9 ]/g, '').trim().substring(0, 20) || 'Books';
 
   try {
     const payload = {
@@ -155,11 +175,13 @@ async function stkPush({
       PartyB: partyB,
       PhoneNumber: formattedPhone,
       CallBackURL: callbackUrl,
-      AccountReference: accRef,
-      TransactionDesc: String(transactionDesc).substring(0, 100),
+      AccountReference: cleanRef,
+      TransactionDesc: cleanDesc,
     };
 
-    console.log(`[M-PESA STK PUSH] Initiating ${transactionType} to ${formattedPhone} for KES ${parsedAmount} (Shortcode: ${shortcode}, PartyB: ${partyB})`);
+    console.log(`[M-PESA STK PUSH] Initiating ${transactionType} to ${formattedPhone} for KES ${parsedAmount}`);
+    console.log(`[M-PESA STK PUSH] Shortcode: ${shortcode}, PartyB (Till): ${partyB}, CallbackURL: ${callbackUrl}`);
+    console.log('[M-PESA STK PUSH] Payload:', JSON.stringify(payload));
 
     const response = await axios.post(
       `${baseUrl}/mpesa/stkpush/v1/processrequest`,
@@ -169,9 +191,21 @@ async function stkPush({
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        timeout: 20000,
+        httpsAgent,
+        timeout: 35000,
       }
     );
+
+    console.log('[M-PESA STK PUSH] Safaricom response:', JSON.stringify(response.data));
+
+    // Safaricom returns ResponseCode: "0" for success
+    if (response.data?.ResponseCode !== '0' && response.data?.ResponseCode !== 0) {
+      throw new Error(
+        response.data?.ResponseDescription ||
+        response.data?.errorMessage ||
+        `Unexpected ResponseCode: ${response.data?.ResponseCode}`
+      );
+    }
 
     return {
       success: true,
@@ -187,9 +221,24 @@ async function stkPush({
       tillNumber: partyB,
     };
   } catch (error) {
-    const safaricomError = error.response?.data?.errorMessage || error.response?.data?.ResponseDescription || error.message;
-    console.error('Error initiating STK push:', safaricomError);
-    throw new Error(`M-Pesa STK Push failed: ${safaricomError}`);
+    // Log the full Safaricom error response for diagnostics
+    if (error.response) {
+      console.error('[M-PESA STK PUSH] HTTP Status:', error.response.status);
+      console.error('[M-PESA STK PUSH] Safaricom Error Response:', JSON.stringify(error.response.data));
+    } else {
+      console.error('[M-PESA STK PUSH] Network/Timeout error:', error.message);
+    }
+    const safaricomError =
+      error.response?.data?.errorMessage ||
+      error.response?.data?.ResponseDescription ||
+      error.message;
+    const errorCode = error.response?.data?.errorCode || '';
+    const userMessage = errorCode === '404.001.03'
+      ? 'Invalid phone number. Use format 07XXXXXXXX.'
+      : errorCode === '400.002.02'
+      ? 'Invalid shortcode or Till number configuration. Contact support.'
+      : safaricomError;
+    throw new Error(`M-Pesa STK Push failed: ${userMessage}`);
   }
 }
 
@@ -201,7 +250,7 @@ async function stkPushQuery({ checkoutRequestId }) {
     throw new Error('checkoutRequestId is required for STK Push query');
   }
 
-  const shortcode = process.env.MPESA_SHORTCODE;
+  const shortcode = process.env.MPESA_STORE_NUMBER || process.env.MPESA_SHORTCODE;
   const passkey = process.env.MPESA_PASSKEY;
   const baseUrl = getBaseUrl();
 
@@ -227,7 +276,8 @@ async function stkPushQuery({ checkoutRequestId }) {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        timeout: 15000,
+        httpsAgent,
+        timeout: 35000,
       }
     );
 
@@ -287,7 +337,8 @@ async function registerC2BUrl({
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        timeout: 20000,
+        httpsAgent,
+        timeout: 35000,
       }
     );
 

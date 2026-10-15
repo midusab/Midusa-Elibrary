@@ -338,7 +338,15 @@ export default function Checkout() {
         success('Order created! Books are available in your dashboard.');
       }
     } catch (err) {
-      error(err.message || 'Payment processing failed. Please try again or use the Till Number.');
+      const msg = err.message || 'Payment processing failed.';
+      // If STK push fails due to network/ngrok issues, fall back to manual Till payment
+      const isNetworkError = /callback|ngrok|timeout|network|reachable|connect/i.test(msg);
+      if (isNetworkError) {
+        setActiveTab('till');
+        error('M-PESA Express unavailable. Pay directly to Till Number ' + paymentConfig.tillNumber + ', then enter your receipt code below.');
+      } else {
+        error(msg);
+      }
     } finally {
       setIsProcessing(false);
     }

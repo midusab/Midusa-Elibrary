@@ -74,16 +74,28 @@ async function initiateMpesaPayment({ userId, orderId, phoneNumber, amount }) {
     },
   });
 
-  // 4. Trigger Safaricom STK Push
+  // 4. Pre-flight: ensure callback URL is configured
+  const callbackUrl = process.env.MPESA_CALLBACK_URL || '';
+  if (!callbackUrl || callbackUrl.includes('localhost') || callbackUrl.includes('127.0.0.1')) {
+    await prisma.payments.update({
+      where: { id: payment.id },
+      data: { status: 'failed', result_desc: 'Callback URL not configured for production' },
+    });
+    throw new Error(
+      'Payment service is not reachable by Safaricom. Please ensure ngrok or a public URL is running and set in MPESA_CALLBACK_URL.'
+    );
+  }
+
+  // 5. Trigger Safaricom STK Push
   try {
     const stkResult = await mpesa.stkPush({
       phoneNumber: formattedPhone,
       amount: numericAmount,
-      accountReference: orderId ? `ORD-${orderId.substring(0, 6)}` : 'Elibrary',
-      transactionDesc: `Payment for ${orderId ? `Order ${orderId.substring(0, 8)}` : 'Books'}`,
+      accountReference: orderId ? `ORD-${orderId.substring(0, 6)}` : 'MidLib',
+      transactionDesc: `Books - ${orderId ? orderId.substring(0, 8) : 'Elibrary'}`,
     });
 
-    // 5. Update payment with Safaricom request tracking IDs
+    // 6. Update payment with Safaricom request tracking IDs
     const updatedPayment = await prisma.payments.update({
       where: { id: payment.id },
       data: {
@@ -97,7 +109,8 @@ async function initiateMpesaPayment({ userId, orderId, phoneNumber, amount }) {
       paymentId: updatedPayment.id,
       checkoutRequestId: stkResult.checkoutRequestId,
       merchantRequestId: stkResult.merchantRequestId,
-      customerMessage: stkResult.customerMessage,
+      customerMessage: stkResult.customerMessage ||
+        `M-PESA prompt sent! Check your phone and enter your PIN to pay KES ${numericAmount}.`,
       amount: numericAmount,
       phoneNumber: formattedPhone,
       status: 'pending',

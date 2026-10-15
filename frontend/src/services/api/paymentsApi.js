@@ -14,9 +14,9 @@ export async function getPaymentConfig() {
   }
   // Safe default fallback
   return {
-    tillNumber: '1352040',
+    tillNumber: '1820548',
     storeNumber: '1352040',
-    businessName: 'Midusa E-Library',
+    businessName: 'MidusaELibrary',
     transactionType: 'CustomerBuyGoodsOnline',
   };
 }
