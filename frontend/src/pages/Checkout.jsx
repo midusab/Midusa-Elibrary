@@ -7,8 +7,6 @@ import {
   FiTag, FiChevronDown, FiChevronUp, FiAlertCircle
 } from 'react-icons/fi';
 
-import Button from '../components/ui/Button';
-import Breadcrumb from '../components/common/Breadcrumb';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -165,6 +163,16 @@ function TrustRow() {
       <span className="flex items-center gap-1.5">
         <FiZap className="w-3 h-3 text-emerald-500" /> Instant Real-Time Delivery
       </span>
+    </div>
+  );
+}
+
+// ── Shared page wrapper (declared outside render) ───────────────────────────
+function PageWrap({ children }) {
+  return (
+    <div className="min-h-[80vh] bg-white flex items-center justify-center p-4 py-12">
+      <style>{styles}</style>
+      {children}
     </div>
   );
 }
@@ -435,14 +443,6 @@ export default function Checkout() {
     setReceiptError('');
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
   };
-
-  // ── Shared page wrapper ──────────────────────────────────────────────────────
-  const PageWrap = ({ children }) => (
-    <div className="min-h-[80vh] bg-white flex items-center justify-center p-4 py-12">
-      <style>{styles}</style>
-      {children}
-    </div>
-  );
 
   // ── Empty cart ───────────────────────────────────────────────────────────────
   if (cart.length === 0 && !orderComplete && !pendingPaymentId) {

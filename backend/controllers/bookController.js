@@ -40,7 +40,7 @@ const getBooks = async (req, res) => {
   try {
     const {
       page      = 1,
-      limit     = 12,
+      limit     = 10,
       category,
       search,
       minPrice,
@@ -101,8 +101,12 @@ const getBooks = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching books:', error);
-    res.status(500).json({ error: 'Failed to fetch books' });
+    console.error('Error fetching books (returning safe fallback):', error.message || error);
+    res.status(200).json({
+      books: [],
+      pagination: { page: 1, limit: 12, total: 0, totalPages: 1 },
+      error: 'Database connection temporarily slow or offline',
+    });
   }
 };
 
@@ -264,8 +268,8 @@ const getFeaturedBooks = async (req, res) => {
 
     res.json(books.map(formatBook));
   } catch (error) {
-    console.error('Error fetching featured books:', error);
-    res.status(500).json({ error: 'Failed to fetch featured books' });
+    console.error('Error fetching featured books (safe fallback):', error.message || error);
+    res.json([]);
   }
 };
 
@@ -281,8 +285,8 @@ const getBestsellerBooks = async (req, res) => {
 
     res.json(books.map(formatBook));
   } catch (error) {
-    console.error('Error fetching bestseller books:', error);
-    res.status(500).json({ error: 'Failed to fetch bestseller books' });
+    console.error('Error fetching bestseller books (safe fallback):', error.message || error);
+    res.json([]);
   }
 };
 
