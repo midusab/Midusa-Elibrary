@@ -881,9 +881,9 @@ async function validateReceiptCode({ userId, orderId, receiptCode, phoneNumber }
  * Return public payment configuration (Till number, store info)
  */
 function getPublicConfig() {
-  const tillNumber = process.env.MPESA_TILL_NUMBER || process.env.MPESA_SHORTCODE || '1352040';
-  const storeNumber = process.env.MPESA_STORE_NUMBER || process.env.MPESA_SHORTCODE || '1352040';
-  const shortcode = process.env.MPESA_SHORTCODE || '1352040';
+  const tillNumber = process.env.MPESA_TILL_NUMBER || process.env.MPESA_SHORTCODE;
+  const storeNumber = process.env.MPESA_STORE_NUMBER || process.env.MPESA_SHORTCODE;
+  const shortcode = process.env.MPESA_SHORTCODE;
   const transactionType = process.env.MPESA_TRANSACTION_TYPE || 'CustomerBuyGoodsOnline';
   const businessName = process.env.MPESA_BUSINESS_NAME || 'Midusa E-Library';
   const environment = process.env.MPESA_ENV || 'production';
