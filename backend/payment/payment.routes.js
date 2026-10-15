@@ -15,14 +15,31 @@ router.post('/mpesa/stk', auth, paymentController.initiatePayment);
 router.post('/callback', paymentController.mpesaCallback);
 router.post('/mpesa/callback', paymentController.mpesaCallback);
 
-// 3. Query Payment Status (Polling / verification)
+// 3. Safaricom C2B Real-time Validation Webhook (Public endpoint for Safaricom servers)
+router.post('/c2b/validation', paymentController.c2bValidation);
+router.post('/validation', paymentController.c2bValidation);
+
+// 4. Safaricom C2B Real-time Confirmation Webhook (Public endpoint for Safaricom servers)
+router.post('/c2b/confirmation', paymentController.c2bConfirmation);
+router.post('/confirmation', paymentController.c2bConfirmation);
+
+// 5. User Real-Time M-Pesa Receipt Code Validation
+router.post('/validate-receipt', auth, paymentController.validateReceiptCode);
+router.post('/validate-code', auth, paymentController.validateReceiptCode);
+
+// 6. Public Payment Configuration (Till Number, business info)
+router.get('/config', paymentController.getPublicPaymentConfig);
+
+// 7. Query Payment Status (Polling / verification)
 router.get('/status/:id', auth, paymentController.getPaymentStatus);
 
-// 4. User Payment History
+// 8. User Payment History
 router.get('/history', auth, paymentController.getUserPayments);
 router.get('/my-payments', auth, paymentController.getUserPayments);
 
-// 5. Admin Payment Management
+// 9. Admin Payment Management & C2B URL Registration
+router.post('/c2b/register-url', adminAuth, paymentController.registerC2bUrl);
 router.get('/admin/all', adminAuth, paymentController.getAllPayments);
+
 
 module.exports = router;

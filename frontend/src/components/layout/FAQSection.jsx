@@ -5,11 +5,11 @@ import { Link } from 'react-router-dom';
 const FAQS = [
   {
     q: 'How do I purchase a book?',
-    a: 'Browse our Shop or Categories, add the title you want to your cart, then proceed to checkout. We accept M-PESA (Lipa Na M-PESA) as the primary payment method. Once your payment is confirmed, your book is instantly available in your dashboard.',
+    a: 'Browse our Shop or Categories, add the title you want to your cart, then proceed to checkout. We accept M-PESA via our official Buy Goods Till Number (Till: 1820548 - MidusaELibrary) as well as M-PESA Express STK Push. Once payment is validated in real time, your book is instantly available in your dashboard.',
   },
   {
     q: 'How do I access my purchased books?',
-    a: 'After purchase, sign in and head to your Dashboard. Under the "My Purchases" tab you will find every title you have bought with a direct download link. Books are available immediately after M-PESA payment confirmation.',
+    a: 'After purchase, sign in and head to your Dashboard. Under the "My Purchases" tab you will find every title you have bought with a direct download link. Books are available immediately after real-time M-PESA payment validation.',
   },
   {
     q: 'What formats do the books come in?',

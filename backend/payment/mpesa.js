@@ -244,10 +244,74 @@ async function stkPushQuery({ checkoutRequestId }) {
   }
 }
 
+/**
+ * Register C2B Validation and Confirmation URLs with Safaricom Daraja
+ * Needed for Buy Goods / Paybill real-time payment notifications
+ */
+async function registerC2BUrl({
+  shortCode,
+  responseType = 'Completed',
+  confirmationUrl,
+  validationUrl,
+} = {}) {
+  const baseUrl = getBaseUrl();
+  const token = await getAccessToken();
+
+  const sc = shortCode || process.env.MPESA_STORE_NUMBER || process.env.MPESA_SHORTCODE;
+  if (!sc) {
+    throw new Error('ShortCode is required to register C2B URLs');
+  }
+
+  // Auto-generate standard callback endpoints if not explicitly provided
+  let baseCallback = process.env.MPESA_CALLBACK_URL || '';
+  baseCallback = baseCallback.replace(/\/callback\/?$/, '').replace(/\/mpesa\/callback\/?$/, '');
+
+  const confirmUrl = confirmationUrl || `${baseCallback}/c2b/confirmation`;
+  const validUrl = validationUrl || `${baseCallback}/c2b/validation`;
+
+  const payload = {
+    ShortCode: sc,
+    ResponseType: responseType,
+    ConfirmationURL: confirmUrl,
+    ValidationURL: validUrl,
+  };
+
+  console.log(`[M-PESA C2B] Registering URLs with Safaricom for Shortcode: ${sc}`, payload);
+
+  try {
+    const response = await axios.post(
+      `${baseUrl}/mpesa/c2b/v1/registerurl`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 20000,
+      }
+    );
+
+    console.log('[M-PESA C2B] Register URL response:', response.data);
+    return {
+      success: true,
+      data: response.data,
+      shortCode: sc,
+      confirmationUrl: confirmUrl,
+      validationUrl: validUrl,
+    };
+  } catch (error) {
+    const errorMsg = error.response?.data?.errorMessage || error.response?.data?.ResponseDescription || error.message;
+    console.error('Error registering C2B URLs with Safaricom:', errorMsg);
+    throw new Error(`Failed to register C2B URLs: ${errorMsg}`);
+  }
+}
+
 module.exports = {
   getAccessToken,
   stkPush,
   stkPushQuery,
+  registerC2BUrl,
   formatPhoneNumber,
   getMpesaTimestamp,
 };
+
