@@ -64,6 +64,26 @@ export default function UserProfileTab({
                 />
               </div>
 
+              {/* Live Circular Avatar Preview */}
+              <div className="flex items-center gap-3.5 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                {editAvatar ? (
+                  <img
+                    src={editAvatar}
+                    alt="Avatar preview"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm ring-2 ring-[#1E90FF]/30"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#1E90FF] to-blue-400 text-white font-bold text-base flex items-center justify-center shadow-sm ring-2 ring-[#1E90FF]/30">
+                    {editName?.[0]?.toUpperCase() || user.fullname?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                )}
+                <div className="text-xs">
+                  <span className="font-semibold text-slate-800 block">Avatar Preview</span>
+                  <span className="text-[11px] text-slate-400">Rounded profile picture like modern apps</span>
+                </div>
+              </div>
+
               <div className="flex items-center gap-3 pt-2">
                 <button
                   type="submit"

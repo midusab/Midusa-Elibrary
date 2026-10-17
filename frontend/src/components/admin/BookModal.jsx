@@ -12,6 +12,10 @@ export default function BookModal({
   setPdfFile,
   isUploadingPdf,
   uploadProgress,
+  coverFile,
+  setCoverFile,
+  isUploadingCover,
+  coverUploadProgress,
   isSaving,
   handleSaveBook
 }) {
@@ -154,15 +158,54 @@ export default function BookModal({
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Cover Image URL
+                  Cover Image (File Upload or URL)
                 </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={bookForm.coverImage}
-                  onChange={(e) => setBookForm({ ...bookForm, coverImage: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
-                />
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0] || null;
+                      setCoverFile(file);
+                    }}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:bg-[#1E90FF]/10 file:text-[#1E90FF] file:font-semibold cursor-pointer text-xs"
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-400 uppercase font-semibold">Or URL</span>
+                    <input
+                      type="url"
+                      placeholder="https://images.unsplash.com/..."
+                      value={bookForm.coverImage}
+                      onChange={(e) => {
+                        setBookForm({ ...bookForm, coverImage: e.target.value });
+                        if (e.target.value) setCoverFile(null);
+                      }}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] text-xs"
+                    />
+                  </div>
+                </div>
+                {coverFile && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    Selected cover: <span className="font-medium">{coverFile.name}</span> ({(coverFile.size / 1024).toFixed(0)} KB)
+                  </p>
+                )}
+                {isUploadingCover && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center justify-between text-xs text-[#1E90FF]">
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-block w-3 h-3 border border-[#1E90FF] border-t-transparent rounded-full animate-spin" />
+                        Uploading Cover Image…
+                      </span>
+                      <span className="font-semibold tabular-nums">{coverUploadProgress}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#1E90FF] rounded-full transition-all duration-200"
+                        style={{ width: `${coverUploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>

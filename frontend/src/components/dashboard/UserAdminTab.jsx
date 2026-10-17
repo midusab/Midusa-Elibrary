@@ -93,7 +93,9 @@ export default function UserAdminTab({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Cover Image URL</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Cover Image URL <span className="text-slate-400 font-normal">(Optional — default cover used if left blank)</span>
+            </label>
             <input
               type="url"
               placeholder="https://images.unsplash.com/..."

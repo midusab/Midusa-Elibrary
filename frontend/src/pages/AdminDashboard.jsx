@@ -20,7 +20,8 @@ import {
   deleteCategory,
   syncBestsellers,
   resetOrders,
-  uploadPdf
+  uploadPdf,
+  uploadImage
 } from '../services/api';
 
 // Modular Admin Sub-Components
@@ -82,6 +83,10 @@ export default function AdminDashboard() {
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
+  const [coverFile, setCoverFile] = useState(null);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [coverUploadProgress, setCoverUploadProgress] = useState(0);
+
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [categoryForm, setCategoryForm] = useState({
@@ -119,6 +124,7 @@ export default function AdminDashboard() {
       bestseller: false
     });
     setPdfFile(null);
+    setCoverFile(null);
     setIsBookModalOpen(true);
   };
 
@@ -138,6 +144,7 @@ export default function AdminDashboard() {
       bestseller: Boolean(book.bestseller)
     });
     setPdfFile(null);
+    setCoverFile(null);
     setIsBookModalOpen(true);
   };
 
@@ -150,8 +157,19 @@ export default function AdminDashboard() {
 
     setIsSaving(true);
     try {
-      let pdfUrl = bookForm.pdfUrl;
+      let coverImage = bookForm.coverImage;
+      if (coverFile) {
+        setIsUploadingCover(true);
+        setCoverUploadProgress(0);
+        try {
+          coverImage = await uploadImage(coverFile, token, (pct) => setCoverUploadProgress(pct));
+        } finally {
+          setIsUploadingCover(false);
+          setCoverUploadProgress(0);
+        }
+      }
 
+      let pdfUrl = bookForm.pdfUrl;
       if (pdfFile) {
         setIsUploadingPdf(true);
         setUploadProgress(0);
@@ -163,8 +181,16 @@ export default function AdminDashboard() {
         }
       }
 
+      if (!editingBook && !pdfUrl && !pdfFile) {
+        toastError('Please select or upload a PDF file for this new eBook.');
+        setIsSaving(false);
+        return;
+      }
+
+      const defaultCover = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=800';
       const payload = {
         ...bookForm,
+        coverImage: coverImage?.trim() || defaultCover,
         pdfUrl,
         price: parseFloat(bookForm.price),
         discount: parseInt(bookForm.discount) || 0,
@@ -179,6 +205,7 @@ export default function AdminDashboard() {
         success('New book published to library.');
       }
       setPdfFile(null);
+      setCoverFile(null);
       setIsBookModalOpen(false);
       loadDashboardData(true);
     } catch (err) {
@@ -535,6 +562,10 @@ export default function AdminDashboard() {
           setPdfFile={setPdfFile}
           isUploadingPdf={isUploadingPdf}
           uploadProgress={uploadProgress}
+          coverFile={coverFile}
+          setCoverFile={setCoverFile}
+          isUploadingCover={isUploadingCover}
+          coverUploadProgress={coverUploadProgress}
           isSaving={isSaving}
           handleSaveBook={handleSaveBook}
         />

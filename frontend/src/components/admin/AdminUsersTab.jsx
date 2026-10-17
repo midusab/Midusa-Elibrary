@@ -176,10 +176,10 @@ export default function AdminUsersTab({
                             <img
                               src={u.avatar}
                               alt={u.fullname}
-                              className="w-9 h-9 rounded-md object-cover ring-1 ring-slate-200"
+                              className="w-9 h-9 rounded-full object-cover ring-2 ring-slate-200/80 shadow-xs"
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-md bg-blue-50 text-[#1E90FF] flex items-center justify-center font-bold text-xs ring-1 ring-blue-100">
+                            <div className="w-9 h-9 rounded-full bg-blue-50 text-[#1E90FF] flex items-center justify-center font-bold text-xs ring-2 ring-blue-100">
                               {u.fullname?.[0] || 'U'}
                             </div>
                           )}

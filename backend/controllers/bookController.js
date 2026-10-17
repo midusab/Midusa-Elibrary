@@ -143,32 +143,36 @@ const createBook = async (req, res) => {
       bestseller  = false,
     } = req.body;
 
-    if (!title || !author || price === undefined) {
+    if (!title || !author || price === undefined || price === null || price === '') {
       return res.status(400).json({ error: 'Title, author, and price are required.' });
     }
 
     // Resolve category name → UUID (upsert so new categories are created on the fly)
     let categoryId = null;
-    if (category) {
+    if (category && category.trim()) {
       const cat = await prisma.categories.upsert({
-        where:  { name: category },
+        where:  { name: category.trim() },
         update: {},
-        create: { name: category },
+        create: { name: category.trim() },
       });
       categoryId = cat.id;
     }
 
+    const defaultCover = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=800';
+    const finalCover = (coverImage && coverImage.trim()) ? coverImage.trim() : defaultCover;
+    const finalPdf = (pdfUrl && pdfUrl.trim()) ? pdfUrl.trim() : '';
+
     const book = await prisma.books.create({
       data: {
-        title,
-        author,
-        description,
+        title:       title.trim(),
+        author:      author.trim(),
+        description: (description || '').trim(),
         category_id: categoryId,
-        cover_url:   coverImage,
-        pdf_url:     pdfUrl,
-        price:       parseInt(price),
-        discount:    parseInt(discount) || 0,
-        rating:      parseFloat(rating),
+        cover_url:   finalCover,
+        pdf_url:     finalPdf,
+        price:       Math.max(0, parseInt(price) || 0),
+        discount:    Math.min(100, Math.max(0, parseInt(discount) || 0)),
+        rating:      Math.min(5, Math.max(0, parseFloat(rating) || 5)),
         featured:    Boolean(featured),
         bestseller:  Boolean(bestseller),
       },
@@ -178,7 +182,7 @@ const createBook = async (req, res) => {
     res.status(201).json(formatBook(book));
   } catch (error) {
     console.error('Error creating book:', error);
-    res.status(500).json({ error: 'Failed to create book' });
+    res.status(500).json({ error: error.message || 'Failed to create book' });
   }
 };
 
@@ -201,24 +205,26 @@ const updateBook = async (req, res) => {
     } = req.body;
 
     const data = {};
-    if (title       !== undefined) data.title       = title;
-    if (author      !== undefined) data.author      = author;
-    if (description !== undefined) data.description = description;
-    if (coverImage  !== undefined) data.cover_url   = coverImage;
-    if (pdfUrl      !== undefined) data.pdf_url     = pdfUrl;
-    if (price       !== undefined) data.price       = parseInt(price);
-    if (discount    !== undefined) data.discount    = parseInt(discount) || 0;
-    if (rating      !== undefined) data.rating      = parseFloat(rating);
+    if (title       !== undefined) data.title       = title.trim();
+    if (author      !== undefined) data.author      = author.trim();
+    if (description !== undefined) data.description = description.trim();
+    if (coverImage  !== undefined) {
+      data.cover_url = coverImage.trim() || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=800';
+    }
+    if (pdfUrl      !== undefined) data.pdf_url     = pdfUrl.trim();
+    if (price       !== undefined) data.price       = Math.max(0, parseInt(price) || 0);
+    if (discount    !== undefined) data.discount    = Math.min(100, Math.max(0, parseInt(discount) || 0));
+    if (rating      !== undefined) data.rating      = Math.min(5, Math.max(0, parseFloat(rating) || 5));
     if (featured    !== undefined) data.featured    = Boolean(featured);
     if (bestseller  !== undefined) data.bestseller  = Boolean(bestseller);
 
     // Resolve updated category name → UUID
     if (category !== undefined) {
-      if (category) {
+      if (category && category.trim()) {
         const cat = await prisma.categories.upsert({
-          where:  { name: category },
+          where:  { name: category.trim() },
           update: {},
-          create: { name: category },
+          create: { name: category.trim() },
         });
         data.category_id = cat.id;
       } else {
@@ -235,7 +241,7 @@ const updateBook = async (req, res) => {
     res.json(formatBook(book));
   } catch (error) {
     console.error('Error updating book:', error);
-    res.status(500).json({ error: 'Failed to update book' });
+    res.status(500).json({ error: error.message || 'Failed to update book' });
   }
 };
 

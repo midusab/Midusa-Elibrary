@@ -35,16 +35,17 @@ export function uploadWithProgress(endpoint, fieldName, file, token, onProgress)
       } else {
         try {
           const err = JSON.parse(xhr.responseText);
-          reject(new Error(err.error || `Upload failed (${xhr.status})`));
+          const msg = err.message || err.error || `Upload failed (${xhr.status})`;
+          reject(new Error(msg));
         } catch {
           reject(new Error(`Upload failed (${xhr.status})`));
         }
       }
     };
 
-    xhr.onerror = () => reject(new Error('Network error — upload failed'));
-    xhr.ontimeout = () => reject(new Error('Upload timed out'));
-    xhr.timeout = 120_000; // 2-minute timeout for large PDFs
+    xhr.onerror = () => reject(new Error('Network error — upload failed. Check server connection.'));
+    xhr.ontimeout = () => reject(new Error('Upload timed out — file took too long to transfer.'));
+    xhr.timeout = 300_000; // 5-minute timeout for large files
 
     xhr.open('POST', `${API_BASE_URL}/upload/${endpoint}`);
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);

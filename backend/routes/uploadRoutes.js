@@ -2,73 +2,118 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-const { supabase } = require('../config/database');
+const { prisma, supabase } = require('../config/database');
 const { adminAuth } = require('../middleware/auth');
 const { scanBufferForMalware } = require('../utils/malwareScanner');
 
-// Local storage directories
-const PDF_DIR = path.join(__dirname, '../uploads/pdfs');
-const IMG_DIR = path.join(__dirname, '../uploads/covers');
-
-for (const dir of [PDF_DIR, IMG_DIR]) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
-
-// Multer memory storage configuration for PDF
+// Multer memory storage configuration for PDF (up to 150 MB)
 const uploadPdfMulter = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB max
+  limits: { fileSize: 150 * 1024 * 1024 }, // 150 MB max
   fileFilter: (req, file, cb) => {
-    if (file.mimetype !== 'application/pdf') {
-      return cb(new Error('Only PDF files are allowed'));
+    const ext = path.extname(file.originalname).toLowerCase();
+    const isPdfExt = ext === '.pdf';
+    const isPdfMime = !file.mimetype ||
+      file.mimetype === 'application/pdf' ||
+      file.mimetype === 'application/x-pdf' ||
+      file.mimetype === 'application/octet-stream';
+
+    if (!isPdfExt && !isPdfMime) {
+      return cb(new Error('Only PDF documents (.pdf) are allowed.'));
     }
     cb(null, true);
   },
 });
 
-// Multer memory storage configuration for images
+// Multer memory storage configuration for images (up to 25 MB)
 const uploadImgMulter = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB max
   fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/')) {
-      return cb(new Error('Only image files (JPEG, PNG, WebP) are allowed'));
+    const ext = path.extname(file.originalname).toLowerCase();
+    const validImageExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.avif'];
+    const isImageMime = file.mimetype && file.mimetype.startsWith('image/');
+    const isImageExt = validImageExts.includes(ext);
+
+    if (!isImageMime && !isImageExt) {
+      return cb(new Error('Only image files (JPEG, PNG, WebP, GIF, SVG) are allowed.'));
     }
     cb(null, true);
   },
 });
 
 /**
- * Save file locally as a robust fallback
+ * GET /api/upload/file/:id
+ * Public endpoint to stream files stored directly in PostgreSQL database table `book_files`.
+ * Supports HTTP Range requests for instant page-seeking in PDF viewers.
  */
-function saveLocally(buffer, fileName, subDir, req) {
-  const targetDir = path.join(__dirname, '../uploads', subDir);
-  if (!fs.existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true });
-  }
-  const localFilePath = path.join(targetDir, fileName);
-  fs.writeFileSync(localFilePath, buffer);
+router.get('/file/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (!isUuid) {
+      return res.status(400).json({ error: 'Invalid file ID format' });
+    }
 
-  const host = req.get('host');
-  const protocol = req.protocol;
-  return `${protocol}://${host}/uploads/${subDir}/${fileName}`;
-}
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT filename, mimetype, size, data FROM public.book_files WHERE id = $1 LIMIT 1;`,
+      id
+    );
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: 'File not found in database' });
+    }
+
+    const file = rows[0];
+    const dataBuffer = Buffer.isBuffer(file.data) ? file.data : Buffer.from(file.data);
+    const totalSize = dataBuffer.length;
+    const contentType = file.mimetype || 'application/pdf';
+
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.filename || 'document.pdf')}"`);
+
+    // Handle HTTP Range header for streaming
+    const range = req.headers.range;
+    if (range) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
+
+      if (start >= totalSize || end >= totalSize) {
+        res.status(416).setHeader('Content-Range', `bytes */${totalSize}`);
+        return res.end();
+      }
+
+      const chunkSize = end - start + 1;
+      res.status(206);
+      res.setHeader('Content-Range', `bytes ${start}-${end}/${totalSize}`);
+      res.setHeader('Content-Length', chunkSize);
+      res.setHeader('Content-Type', contentType);
+      return res.end(dataBuffer.slice(start, end + 1));
+    }
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Length', totalSize);
+    return res.end(dataBuffer);
+  } catch (err) {
+    console.error('Error retrieving file from database:', err);
+    res.status(500).json({ error: 'Failed to stream file from database' });
+  }
+});
 
 /**
  * POST /api/upload/pdf
  * Admin-only. Accepts a multipart/form-data body with field "pdf".
- * Attempts to upload to the Supabase "books" storage bucket first.
- * If Supabase is restricted by RLS or connection errors, seamlessly falls back to local storage.
+ * Stores file in the database (PostgreSQL book_files table) and syncs to Supabase.
+ * NEVER stores locally on disk.
  */
 router.post('/pdf', adminAuth, (req, res, next) => {
   uploadPdfMulter.single('pdf')(req, res, (err) => {
     if (err) {
       if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
-          return res.status(400).json({ error: 'File size exceeds limit (maximum 50 MB)' });
+          return res.status(400).json({ error: 'File size exceeds limit (maximum 150 MB)' });
         }
         return res.status(400).json({ error: `Upload error: ${err.message}` });
       }
@@ -79,15 +124,15 @@ router.post('/pdf', adminAuth, (req, res, next) => {
 }, async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No PDF file provided' });
+      return res.status(400).json({ error: 'No PDF file provided. Please select a file to upload.' });
     }
 
     const { originalname, buffer, mimetype } = req.file;
 
-    // Scan file for malware / exploit signatures before saving or posting
+    // Scan file for real security vulnerabilities (executable binaries, launch exploits)
     const scanResult = scanBufferForMalware(buffer, mimetype, originalname);
     if (!scanResult.isSafe) {
-      console.warn(`[SECURITY AUDIT] Malicious PDF upload rejected (${req.user?.email || 'admin'}): ${scanResult.reason}`);
+      console.warn(`[SECURITY AUDIT] PDF rejected (${req.user?.email || 'admin'}): ${scanResult.reason}`);
       return res.status(422).json({
         error: 'Security Scan Failed',
         message: scanResult.reason,
@@ -95,50 +140,58 @@ router.post('/pdf', adminAuth, (req, res, next) => {
       });
     }
 
-    // Sanitized, collision-safe filename
     const safeName = originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
     const uniqueFileName = `${Date.now()}_${safeName}`;
     const storagePath = `pdfs/${uniqueFileName}`;
 
-    let uploadedUrl = null;
-    let storageType = 'supabase';
+    // 1. Store directly in PostgreSQL database table `book_files`
+    const insertResult = await prisma.$queryRawUnsafe(
+      `INSERT INTO public.book_files (filename, mimetype, size, data)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id;`,
+      safeName,
+      'application/pdf',
+      buffer.length,
+      buffer
+    );
 
-    // 1. Try uploading to Supabase Storage
+    const fileId = insertResult[0]?.id;
+    const host = req.get('host');
+    const protocol = req.protocol;
+    const dbUrl = `${protocol}://${host}/api/upload/file/${fileId}`;
+    let finalUrl = dbUrl;
+    let storageType = 'database';
+
+    // 2. Synchronize to Supabase storage bucket `books`
     try {
       const { error: uploadError } = await supabase.storage
         .from('books')
         .upload(storagePath, buffer, {
-          contentType: mimetype,
-          upsert: false,
+          contentType: 'application/pdf',
+          upsert: true,
         });
 
-      if (uploadError) {
-        console.warn(`[PDF Upload] Supabase Storage upload failed (${uploadError.message}). Using local storage fallback.`);
-      } else {
+      if (!uploadError) {
         const { data } = supabase.storage.from('books').getPublicUrl(storagePath);
-        uploadedUrl = data?.publicUrl;
+        if (data?.publicUrl) {
+          finalUrl = data.publicUrl;
+          storageType = 'supabase_and_database';
+        }
+      } else {
+        console.warn(`[PDF Upload] Supabase Storage upload skipped (${uploadError.message}). File successfully stored in PostgreSQL database.`);
       }
     } catch (sbErr) {
-      console.warn(`[PDF Upload] Supabase request error (${sbErr.message}). Using local storage fallback.`);
+      console.warn(`[PDF Upload] Supabase request notice (${sbErr.message}). File safely stored in PostgreSQL database.`);
     }
 
-    // 2. Fall back to local server storage if Supabase upload failed
-    if (!uploadedUrl) {
-      try {
-        uploadedUrl = saveLocally(buffer, uniqueFileName, 'pdfs', req);
-        storageType = 'local';
-        console.log(`[PDF Upload] Successfully saved locally: ${uploadedUrl}`);
-      } catch (localErr) {
-        console.error('[PDF Upload] Local storage error:', localErr);
-        return res.status(500).json({ error: `Upload failed: ${localErr.message}` });
-      }
-    }
+    console.log(`[PDF Upload] Success: fileId=${fileId}, url=${finalUrl}, storage=${storageType}`);
 
     return res.status(201).json({
-      url: uploadedUrl,
+      url: finalUrl,
+      fileId,
       path: storagePath,
       storage: storageType,
-      message: 'PDF uploaded successfully',
+      message: 'PDF uploaded and saved to database successfully',
     });
   } catch (err) {
     console.error('PDF upload unexpected error:', err);
@@ -149,11 +202,18 @@ router.post('/pdf', adminAuth, (req, res, next) => {
 /**
  * POST /api/upload/image
  * Admin-only. Accepts a multipart/form-data body with field "image".
- * Uploads cover images with local fallback support.
+ * Stores cover image in database (PostgreSQL book_files table) and syncs to Supabase.
+ * NEVER stores locally on disk.
  */
 router.post('/image', adminAuth, (req, res, next) => {
   uploadImgMulter.single('image')(req, res, (err) => {
     if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'Image size exceeds limit (maximum 25 MB)' });
+        }
+        return res.status(400).json({ error: `Upload error: ${err.message}` });
+      }
       return res.status(400).json({ error: err.message || 'Invalid image file' });
     }
     next();
@@ -166,7 +226,7 @@ router.post('/image', adminAuth, (req, res, next) => {
 
     const { originalname, buffer, mimetype } = req.file;
 
-    // Scan file for malware / polyglots / webshell signatures before saving or posting
+    // Scan file
     const scanResult = scanBufferForMalware(buffer, mimetype, originalname);
     if (!scanResult.isSafe) {
       console.warn(`[SECURITY AUDIT] Malicious image upload rejected (${req.user?.email || 'admin'}): ${scanResult.reason}`);
@@ -181,33 +241,48 @@ router.post('/image', adminAuth, (req, res, next) => {
     const uniqueFileName = `${Date.now()}_${safeName}`;
     const storagePath = `covers/${uniqueFileName}`;
 
-    let uploadedUrl = null;
-    let storageType = 'supabase';
+    // 1. Store directly in PostgreSQL database table `book_files`
+    const insertResult = await prisma.$queryRawUnsafe(
+      `INSERT INTO public.book_files (filename, mimetype, size, data)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id;`,
+      safeName,
+      mimetype || 'image/jpeg',
+      buffer.length,
+      buffer
+    );
 
+    const fileId = insertResult[0]?.id;
+    const host = req.get('host');
+    const protocol = req.protocol;
+    const dbUrl = `${protocol}://${host}/api/upload/file/${fileId}`;
+    let finalUrl = dbUrl;
+    let storageType = 'database';
+
+    // 2. Synchronize to Supabase storage bucket `books`
     try {
       const { error: uploadError } = await supabase.storage
         .from('books')
         .upload(storagePath, buffer, {
-          contentType: mimetype,
-          upsert: false,
+          contentType: mimetype || 'image/jpeg',
+          upsert: true,
         });
 
       if (!uploadError) {
         const { data } = supabase.storage.from('books').getPublicUrl(storagePath);
-        uploadedUrl = data?.publicUrl;
+        if (data?.publicUrl) {
+          finalUrl = data.publicUrl;
+          storageType = 'supabase_and_database';
+        }
       }
     } catch (_) {}
 
-    if (!uploadedUrl) {
-      uploadedUrl = saveLocally(buffer, uniqueFileName, 'covers', req);
-      storageType = 'local';
-    }
-
     return res.status(201).json({
-      url: uploadedUrl,
+      url: finalUrl,
+      fileId,
       path: storagePath,
       storage: storageType,
-      message: 'Image uploaded successfully',
+      message: 'Cover image uploaded and saved to database successfully',
     });
   } catch (err) {
     console.error('Image upload unexpected error:', err);

@@ -1,14 +1,12 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const { prisma } = require('../config/database');
 
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || 'midusabrian@gmail.com').trim().toLowerCase();
 
 /**
- * Lazily initialise Firebase Admin so that a missing service-account
- * does NOT crash the server on startup — it only fails at call time.
+ * Lazily initialise Firebase Admin so a missing service-account does NOT
+ * crash the server on startup — it only fails at call time.
  */
 let _admin = null;
 function getAdmin() {
@@ -47,31 +45,30 @@ function signToken(user) {
 }
 
 // ============================================================
-// POST /api/auth/login (Disabled - Google Sign-In Only)
+// POST /api/auth/login  (Disabled — Google Sign-In only)
 // ============================================================
-exports.login = async (req, res) => {
-  return res.status(403).json({
+exports.login = async (_req, res) => {
+  res.status(403).json({
     error: 'Password sign-in has been disabled. Please authenticate using Google Sign-In.'
   });
 };
 
 // ============================================================
-// POST /api/auth/register (Disabled - Google Sign-In Only)
+// POST /api/auth/register  (Disabled — Google Sign-In only)
 // ============================================================
-exports.register = async (req, res) => {
-  return res.status(403).json({
+exports.register = async (_req, res) => {
+  res.status(403).json({
     error: 'Password registration has been disabled. Please authenticate using Google Sign-In.'
   });
 };
 
 // ============================================================
 // POST /api/auth/google
-// Body: { idToken: string }   (Firebase ID token from client)
+// Body: { idToken: string }  (Firebase ID token from the client)
 // ============================================================
 exports.googleAuth = async (req, res) => {
   try {
     const { idToken } = req.body;
-
     if (!idToken) {
       return res.status(400).json({ error: 'Firebase ID token is required' });
     }
@@ -82,88 +79,49 @@ exports.googleAuth = async (req, res) => {
       const admin = getAdmin();
       decoded = await admin.auth().verifyIdToken(idToken);
     } catch (adminErr) {
-      console.error('Firebase Admin verification notice:', adminErr.message);
-      
-      // If service account credentials aren't set in backend, safely parse JWT payload
-      try {
-        const parts = idToken.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-          decoded = {
-            uid: payload.user_id || payload.sub || ('google-' + Date.now()),
-            email: payload.email,
-            name: payload.name || 'Google User',
-            picture: payload.picture || ''
-          };
-        }
-      } catch (parseErr) {
-        return res.status(401).json({ error: 'Invalid authentication token.' });
-      }
-
-      if (!decoded || !decoded.email) {
-        return res.status(401).json({ error: 'Invalid or expired authentication token.' });
-      }
+      console.error('Firebase Admin token verification failed:', adminErr.message);
+      return res.status(401).json({ error: 'Invalid or expired authentication token.' });
     }
 
     const { uid, email, name, picture } = decoded;
     const normalizedEmail = (email || '').trim().toLowerCase();
-    const isAdmin = Boolean(normalizedEmail === ADMIN_EMAIL);
+    const isAdmin = normalizedEmail === ADMIN_EMAIL;
 
-    try {
-      // Upsert user — create if first login, update avatar/role if they exist
-      const userModel = prisma.users || prisma.user;
-      let user = await userModel.findUnique({
-        where: { email: normalizedEmail }
-      });
+    // Upsert user — create on first login, update avatar/role on subsequent logins
+    let user = await prisma.users.findUnique({ where: { email: normalizedEmail } });
 
-      if (user) {
-        user = await userModel.update({
-          where: { id: user.id },
-          data: {
-            avatar: picture || user.avatar,
-            fullname: user.fullname || name || 'Google User',
-            role: isAdmin ? 'admin' : (user.role || 'user'),
-          }
-        });
-      } else {
-        user = await userModel.create({
-          data: {
-            email: normalizedEmail,
-            fullname: name || 'Google User',
-            avatar: picture || '',
-            role: isAdmin ? 'admin' : 'user',
-            password: null,
-          }
-        });
-      }
-
-      const token = signToken(user);
-      return res.json({
-        token,
-        user: {
-          id:       user.id,
-          email:    user.email,
-          fullname: user.fullname,
-          avatar:   user.avatar,
-          role:     user.role,
+    if (user) {
+      user = await prisma.users.update({
+        where: { id: user.id },
+        data: {
+          avatar:   picture || user.avatar,
+          fullname: user.fullname || name || 'Google User',
+          role:     isAdmin ? 'admin' : (user.role || 'user'),
         }
       });
-    } catch (dbErr) {
-      console.warn('Prisma DB error in googleAuth (using fallback):', dbErr.message);
-      const fallbackUser = {
-        id: uid || 'google-usr-' + Date.now(),
-        email: normalizedEmail,
-        fullname: name || 'Google User',
-        avatar: picture || '',
-        role: isAdmin ? 'admin' : 'user'
-      };
-      const token = signToken(fallbackUser);
-      return res.json({
-        token,
-        user: fallbackUser
+    } else {
+      user = await prisma.users.create({
+        data: {
+          email:    normalizedEmail,
+          fullname: name || 'Google User',
+          avatar:   picture || '',
+          role:     isAdmin ? 'admin' : 'user',
+          password: null,
+        }
       });
     }
 
+    const token = signToken(user);
+    return res.json({
+      token,
+      user: {
+        id:       user.id,
+        email:    user.email,
+        fullname: user.fullname,
+        avatar:   user.avatar,
+        role:     user.role,
+      }
+    });
   } catch (err) {
     console.error('Google auth error:', err);
     res.status(500).json({ error: 'Authentication failed. Please try again.' });
@@ -175,41 +133,21 @@ exports.googleAuth = async (req, res) => {
 // ============================================================
 exports.getCurrentUser = async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: { id: true, email: true, fullname: true, avatar: true, role: true, createdAt: true }
+    const user = await prisma.users.findUnique({
+      where:  { id: req.user.id },
+      select: { id: true, email: true, fullname: true, avatar: true, role: true, created_at: true }
     });
 
-    if (!user) {
-      // Fallback if token user exists in payload
-      if (req.user) {
-        return res.json({
-          id: req.user.id,
-          email: req.user.email,
-          fullname: req.user.fullname || req.user.email?.split('@')[0],
-          avatar: '',
-          role: req.user.role || 'user'
-        });
-      }
-      return res.status(404).json({ error: 'User not found' });
-    }
-
+    if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
   } catch (err) {
     console.error('Get current user error:', err);
-    if (req.user) {
-      return res.json({
-        id: req.user.id,
-        email: req.user.email,
-        role: req.user.role || 'user'
-      });
-    }
     res.status(500).json({ error: 'Failed to fetch user profile' });
   }
 };
 
 // ============================================================
-// PUT /api/auth/profile (protected)
+// PUT /api/auth/profile  (protected)
 // Body: { fullname, avatar }
 // ============================================================
 exports.updateProfile = async (req, res) => {
@@ -219,39 +157,27 @@ exports.updateProfile = async (req, res) => {
       return res.status(400).json({ error: 'Full name is required' });
     }
 
-    try {
-      const updatedUser = await prisma.user.update({
-        where: { id: req.user.id },
-        data: {
-          fullname: fullname.trim(),
-          ...(avatar ? { avatar } : {})
-        },
-        select: { id: true, email: true, fullname: true, avatar: true, role: true }
-      });
-      return res.json({ user: updatedUser, message: 'Profile updated successfully' });
-    } catch (dbErr) {
-      return res.json({
-        user: {
-          id: req.user.id,
-          email: req.user.email,
-          fullname: fullname.trim(),
-          avatar: avatar || '',
-          role: req.user.role
-        },
-        message: 'Profile updated successfully'
-      });
-    }
+    const updatedUser = await prisma.users.update({
+      where:  { id: req.user.id },
+      data:   {
+        fullname: fullname.trim(),
+        ...(avatar ? { avatar } : {})
+      },
+      select: { id: true, email: true, fullname: true, avatar: true, role: true }
+    });
+    res.json({ user: updatedUser, message: 'Profile updated successfully' });
   } catch (err) {
     console.error('Update profile error:', err);
     res.status(500).json({ error: 'Failed to update profile' });
   }
 };
 
-exports.changePassword = (req, res) => res.status(200).json({ message: 'Password updated successfully' });
+exports.changePassword = (_req, res) =>
+  res.status(200).json({ message: 'Password updated successfully' });
 
 // ============================================================
 // POST /api/auth/refresh-token
-// Session Management: Re-issues a fresh token with renewed lifespan
+// Re-issues a fresh token with renewed lifespan
 // ============================================================
 exports.refreshToken = async (req, res) => {
   try {
@@ -267,53 +193,43 @@ exports.refreshToken = async (req, res) => {
     try {
       decoded = jwt.verify(token, JWT_SECRET);
     } catch (verifyErr) {
-      // Allow refresh if token expired within the last 24 hours
+      // Allow refresh if token expired within the last 24 hours (grace period)
       if (verifyErr.name === 'TokenExpiredError') {
-        try {
-          decoded = jwt.decode(token);
-          const nowSeconds = Math.floor(Date.now() / 1000);
-          // 24 hours grace period for seamless session renewal
-          if (decoded && decoded.exp && (nowSeconds - decoded.exp) < 86400) {
-            // within grace period
-          } else {
-            return res.status(401).json({ error: 'Session has fully expired. Please log in again.', code: 'TOKEN_EXPIRED' });
-          }
-        } catch {
-          return res.status(401).json({ error: 'Invalid session token', code: 'INVALID_TOKEN' });
+        decoded = jwt.decode(token);
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        if (!decoded || !decoded.exp || (nowSeconds - decoded.exp) >= 86400) {
+          return res.status(401).json({ error: 'Session has fully expired. Please log in again.', code: 'TOKEN_EXPIRED' });
         }
       } else {
         return res.status(401).json({ error: 'Invalid session token', code: 'INVALID_TOKEN' });
       }
     }
 
-    if (!decoded || !decoded.email) {
+    if (!decoded?.email) {
       return res.status(401).json({ error: 'Malformed token payload', code: 'INVALID_TOKEN' });
     }
 
     // Retrieve fresh user info from database
-    const userModel = prisma.users || prisma.user;
     let userRecord = null;
     try {
-      userRecord = await userModel.findUnique({
+      userRecord = await prisma.users.findUnique({
         where: { email: decoded.email.trim().toLowerCase() }
       });
     } catch {
-      // DB offline fallback
+      // DB offline — fall back to token payload
     }
 
     const userForToken = {
-      id: userRecord?.id || decoded.id,
-      email: userRecord?.email || decoded.email,
+      id:       userRecord?.id       || decoded.id,
+      email:    userRecord?.email    || decoded.email,
       fullname: userRecord?.fullname || decoded.fullname || decoded.email.split('@')[0],
-      avatar: userRecord?.avatar || decoded.avatar || '',
-      role: userRecord?.role || decoded.role || 'user'
+      avatar:   userRecord?.avatar   || decoded.avatar   || '',
+      role:     userRecord?.role     || decoded.role      || 'user'
     };
 
-    const newToken = signToken(userForToken);
-
     return res.json({
-      token: newToken,
-      user: userForToken,
+      token:   signToken(userForToken),
+      user:    userForToken,
       message: 'Session token refreshed successfully.'
     });
   } catch (err) {
@@ -323,7 +239,7 @@ exports.refreshToken = async (req, res) => {
 };
 
 // ============================================================
-// GET /api/auth/session (protected)
+// GET /api/auth/session  (protected)
 // Validates whether the active session is intact and returns user
 // ============================================================
 exports.getSession = async (req, res) => {
@@ -332,29 +248,25 @@ exports.getSession = async (req, res) => {
       return res.status(401).json({ active: false, error: 'No active session' });
     }
 
-    const userModel = prisma.users || prisma.user;
     let dbUser = null;
     try {
-      dbUser = await userModel.findUnique({
-        where: { email: req.user.email.toLowerCase() },
+      dbUser = await prisma.users.findUnique({
+        where:  { email: req.user.email.toLowerCase() },
         select: { id: true, email: true, fullname: true, avatar: true, role: true, created_at: true }
       });
     } catch {
-      // DB offline
+      // DB offline — fall back to token payload
     }
 
     const sessionUser = dbUser || {
-      id: req.user.id,
-      email: req.user.email,
+      id:       req.user.id,
+      email:    req.user.email,
       fullname: req.user.fullname || req.user.email?.split('@')[0],
-      avatar: req.user.avatar || '',
-      role: req.user.role || 'user'
+      avatar:   req.user.avatar || '',
+      role:     req.user.role || 'user'
     };
 
-    return res.json({
-      active: true,
-      user: sessionUser
-    });
+    return res.json({ active: true, user: sessionUser });
   } catch (err) {
     console.error('Session check error:', err);
     res.status(500).json({ active: false, error: 'Session check failed' });
@@ -363,7 +275,7 @@ exports.getSession = async (req, res) => {
 
 // ============================================================
 // POST /api/auth/forgot-password
-// Generates a secure, signed password reset token (15 mins lifespan)
+// Generates a signed password reset token (15-minute lifespan)
 // ============================================================
 exports.forgotPassword = async (req, res) => {
   try {
@@ -373,41 +285,32 @@ exports.forgotPassword = async (req, res) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const userModel = prisma.users || prisma.user;
+    const isAdmin = normalizedEmail === ADMIN_EMAIL;
+
     let user = null;
     try {
-      user = await userModel.findUnique({
-        where: { email: normalizedEmail }
-      });
+      user = await prisma.users.findUnique({ where: { email: normalizedEmail } });
     } catch {
-      // Fallback
+      // DB offline — allow admin reset path below
     }
 
-    // Always generate reset token for existing accounts (or valid admin email)
-    const isAdmin = normalizedEmail === ADMIN_EMAIL;
     if (!user && !isAdmin) {
-      // Return helpful message to client
       return res.status(404).json({ error: 'No account found with this email address.' });
     }
 
     const userId = user?.id || (isAdmin ? 'admin-1' : 'user-temp');
     const JWT_SECRET = process.env.JWT_SECRET || 'midusa-elibrary-jwt-secret-key-2026';
 
-    // Sign dedicated password reset token expiring in 15 minutes
     const resetToken = jwt.sign(
-      {
-        id: userId,
-        email: normalizedEmail,
-        purpose: 'password_reset'
-      },
+      { id: userId, email: normalizedEmail, purpose: 'password_reset' },
       JWT_SECRET,
       { expiresIn: '15m' }
     );
 
     return res.json({
-      message: 'Password reset token generated successfully. Valid for 15 minutes.',
+      message:          'Password reset token generated successfully. Valid for 15 minutes.',
       resetToken,
-      email: normalizedEmail,
+      email:            normalizedEmail,
       expiresInMinutes: 15
     });
   } catch (err) {
@@ -418,7 +321,7 @@ exports.forgotPassword = async (req, res) => {
 
 // ============================================================
 // POST /api/auth/verify-reset-token
-// Verifies validity and remaining lifespan of a password reset token
+// Validates a password reset token's integrity and expiry
 // ============================================================
 exports.verifyResetToken = async (req, res) => {
   try {
@@ -442,11 +345,7 @@ exports.verifyResetToken = async (req, res) => {
       return res.status(400).json({ error: 'Token is not designated for password reset.', valid: false });
     }
 
-    return res.json({
-      valid: true,
-      email: decoded.email,
-      message: 'Token is valid and active.'
-    });
+    return res.json({ valid: true, email: decoded.email, message: 'Token is valid and active.' });
   } catch (err) {
     console.error('Verify reset token error:', err);
     res.status(500).json({ error: 'Failed to verify reset token.', valid: false });
@@ -496,33 +395,30 @@ exports.resetPassword = async (req, res) => {
     }
 
     const normalizedEmail = decoded.email.trim().toLowerCase();
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword  = await bcrypt.hash(newPassword, 10);
 
-    const userModel = prisma.users || prisma.user;
     try {
-      const existing = await userModel.findUnique({
-        where: { email: normalizedEmail }
-      });
+      const existing = await prisma.users.findUnique({ where: { email: normalizedEmail } });
 
       if (existing) {
-        await userModel.update({
+        await prisma.users.update({
           where: { email: normalizedEmail },
-          data: { password: hashedPassword }
+          data:  { password: hashedPassword }
         });
       } else if (normalizedEmail === ADMIN_EMAIL) {
-        // Auto-create admin if resetting for admin initial setup
-        await userModel.create({
+        // Auto-create admin on first password reset
+        await prisma.users.create({
           data: {
-            email: normalizedEmail,
+            email:    normalizedEmail,
             fullname: 'Brian Midusa (Admin)',
             password: hashedPassword,
-            role: 'admin',
-            avatar: ''
+            role:     'admin',
+            avatar:   ''
           }
         });
       }
     } catch (dbErr) {
-      console.warn('Prisma DB error updating password (fallback):', dbErr.message);
+      console.error('DB error updating password:', dbErr.message);
     }
 
     return res.json({
@@ -534,5 +430,3 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ error: 'Failed to reset password. Please try again.' });
   }
 };
-
-

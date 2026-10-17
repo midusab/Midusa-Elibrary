@@ -7,7 +7,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
-const path = require('path');
 
 dotenv.config();
 
@@ -32,8 +31,6 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Root info
 app.get('/', (req, res) => {
@@ -57,7 +54,6 @@ const routes = [
   { path: '/api/categories', module: './routes/categoryRoutes' },
   { path: '/api/orders',     module: './routes/orderRoutes' },
   { path: '/api/payments',   module: './payment/payment.routes' },
-  { path: '/api/payment',    module: './payment/payment.routes' },
   { path: '/api/admin',      module: './routes/adminRoutes' },
   { path: '/api/upload',     module: './routes/uploadRoutes' },
 ];

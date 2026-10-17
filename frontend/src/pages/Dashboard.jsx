@@ -169,9 +169,11 @@ export default function Dashboard({ initialTab }) {
         }
       }
 
+      const defaultCover = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=800';
       await createBook({
         ...newBook,
         category: effectiveCategory,
+        coverImage: newBook.coverImage?.trim() || defaultCover,
         pdfUrl,
         price: parseFloat(newBook.price)
       }, user?.token);
@@ -206,10 +208,11 @@ export default function Dashboard({ initialTab }) {
           <p className="text-xs text-slate-500 mb-5">
             Sign in to view your profile, purchased library, and personal dashboard.
           </p>
-          <Link to="/login">
-            <Button size="sm" className="w-full bg-[#1E90FF] hover:bg-[#1C86EE] text-white">
-              Sign In to Your Account
-            </Button>
+          <Link
+            to="/login"
+            className="block w-full text-center text-sm font-semibold py-2.5 px-4 rounded-xl bg-[#1E90FF] hover:bg-[#1C86EE] text-white transition-colors duration-200"
+          >
+            Sign In to Your Account
           </Link>
         </Card>
       </div>
@@ -255,10 +258,10 @@ export default function Dashboard({ initialTab }) {
                 <img
                   src={user.avatar}
                   alt={user.fullname}
-                  className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-100 shadow-sm"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md ring-2 ring-[#1E90FF]/30"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#1E90FF] to-blue-400 text-white font-black text-2xl flex items-center justify-center shadow-md shadow-[#1E90FF]/20">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#1E90FF] to-blue-400 text-white font-black text-2xl flex items-center justify-center shadow-md shadow-[#1E90FF]/25 ring-2 ring-[#1E90FF]/30">
                   {user.fullname?.[0]?.toUpperCase() || 'U'}
                 </div>
               )}
