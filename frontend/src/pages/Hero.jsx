@@ -49,8 +49,6 @@ function BookCard({ book, onAddToCart }) {
     setTimeout(() => setAdded(false), 1800);
   };
 
-  const reviewCount = Math.floor((book.clicks || 0) * 4.2 + 38);
-
   return (
     <Link
       to={`/book/${book.id}`}
@@ -106,7 +104,7 @@ function BookCard({ book, onAddToCart }) {
 
         {/* Stars */}
         <div className="pt-0.5">
-          <StarRating rating={book.rating || 4.5} count={reviewCount} />
+          <StarRating rating={book.rating || 5} count={book.clicks ? `${book.clicks} reads` : undefined} />
         </div>
 
         {/* Price block */}

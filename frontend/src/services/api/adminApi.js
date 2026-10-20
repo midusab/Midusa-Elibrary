@@ -112,7 +112,9 @@ export async function getAdminAuthors(token) {
     });
     if (res.ok) {
       const data = await res.json();
-      return Array.isArray(data) ? data : [];
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.authors)) return data.authors;
+      return [];
     }
     return [];
   } catch (err) {

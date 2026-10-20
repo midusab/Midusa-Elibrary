@@ -35,13 +35,8 @@ function getJwtPayload(token) {
   }
 }
 
-const TWO_HOURS_MS = 2 * 60 * 60 * 1000; // Strictly 2 hours session limit
-
-/** Check if JWT is expired or exceeds 2-hour max session lifespan */
-function isTokenExpired(token, sessionStartedAt) {
-  if (sessionStartedAt && Date.now() - sessionStartedAt >= TWO_HOURS_MS) {
-    return true;
-  }
+/** Check if JWT is expired */
+function isTokenExpired(token) {
   const payload = getJwtPayload(token);
   if (!payload || !payload.exp) return false;
   return payload.exp * 1000 <= Date.now();
@@ -99,47 +94,32 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   /**
-   * Schedule automatic logout when the current token/session expires (2-hour limit)
+   * Keep session persistent until user signs out
    */
-  const scheduleTokenExpiration = useCallback((token, sessionStartedAt) => {
+  const scheduleTokenExpiration = useCallback((token) => {
     if (expiryTimerRef.current) {
       clearTimeout(expiryTimerRef.current);
       expiryTimerRef.current = null;
     }
 
-    const startedAt = sessionStartedAt || Date.now();
-    const timeSinceStart = Math.max(0, Date.now() - startedAt);
-    const maxSessionRemaining = Math.max(0, TWO_HOURS_MS - timeSinceStart);
-
-    let tokenRemaining = maxSessionRemaining;
     const payload = getJwtPayload(token);
     if (payload && payload.exp) {
-      tokenRemaining = Math.max(0, payload.exp * 1000 - Date.now());
+      const remaining = payload.exp * 1000 - Date.now();
+      if (remaining <= 0) {
+        logout('Session expired. Please sign in again.');
+        return;
+      }
+      expiryTimerRef.current = setTimeout(() => {
+        logout('Session expired. Please sign in again.');
+      }, remaining);
     }
-
-    const effectiveRemainingMs = Math.min(maxSessionRemaining, tokenRemaining);
-
-    if (effectiveRemainingMs <= 0) {
-      // Already expired
-      logout('Your 2-hour session has expired. Please sign in again with Google.');
-      return;
-    }
-
-    // Schedule auto-logout right at token/session expiry
-    expiryTimerRef.current = setTimeout(() => {
-      logout('Your 2-hour session has expired. Please sign in again with Google.');
-    }, effectiveRemainingMs);
   }, [logout]);
 
   const saveUserSession = useCallback((sessionUser) => {
-    const sessionStartedAt = sessionUser.sessionStartedAt || Date.now();
-    const processed = {
-      ...processUser(sessionUser, sessionUser.token),
-      sessionStartedAt
-    };
+    const processed = processUser(sessionUser, sessionUser.token);
     setUser(processed);
     localStorage.setItem('user', JSON.stringify(processed));
-    scheduleTokenExpiration(processed.token, processed.sessionStartedAt);
+    scheduleTokenExpiration(processed.token);
     return processed;
   }, [processUser, scheduleTokenExpiration]);
 
@@ -230,8 +210,8 @@ export const AuthProvider = ({ children }) => {
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (parsed && parsed.token && isTokenExpired(parsed.token, parsed.sessionStartedAt)) {
-            // Stored token is already expired
+          if (parsed && parsed.token && isTokenExpired(parsed.token)) {
+            // Stored token is expired
             localStorage.removeItem('user');
             if (!cancelled) {
               setUser(null);
@@ -240,13 +220,10 @@ export const AuthProvider = ({ children }) => {
             return;
           }
 
-          restoredUser = {
-            ...processUser(parsed, parsed.token),
-            sessionStartedAt: parsed.sessionStartedAt || Date.now()
-          };
+          restoredUser = processUser(parsed, parsed.token);
           if (!cancelled) {
             setUser(restoredUser);
-            scheduleTokenExpiration(parsed.token, restoredUser.sessionStartedAt);
+            scheduleTokenExpiration(parsed.token);
           }
         } catch {
           localStorage.removeItem('user');

@@ -167,7 +167,7 @@ export default function AdminAuthorsTab({ token, _books = [], onRefresh }) {
                         </h4>
                         <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 font-medium">
                           <BookOpen className="w-3 h-3 text-slate-400" />
-                          <span>{author.book_count || 0} eBook{author.book_count === 1 ? '' : 's'}</span>
+                          <span>{(author.bookCount ?? author.book_count ?? 0)} eBook{(author.bookCount ?? author.book_count ?? 0) === 1 ? '' : 's'}</span>
                         </span>
                       </div>
                     </div>

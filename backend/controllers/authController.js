@@ -40,7 +40,7 @@ function signToken(user) {
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role },
     process.env.JWT_SECRET || 'midusa-elibrary-jwt-secret-key-2026',
-    { expiresIn: process.env.JWT_EXPIRE || '2h' }
+    { expiresIn: process.env.JWT_EXPIRE || '365d' }
   );
 }
 

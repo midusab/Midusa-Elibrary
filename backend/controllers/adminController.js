@@ -554,6 +554,9 @@ const updateAuthor = async (req, res) => {
       WHERE LOWER(TRIM(author)) = LOWER(TRIM($2))
     `, cleanBio, cleanName);
 
+    // Invalidate book caches so updated bio reflects across all endpoints immediately
+    await delCachePattern('books:*');
+
     res.json({
       success: true,
       message: 'Author biography updated successfully',

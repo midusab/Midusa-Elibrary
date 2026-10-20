@@ -349,29 +349,21 @@ export default function Navigation() {
                 <button
                   type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 p-1 sm:pr-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200/90 shadow-xs transition-all cursor-pointer focus:outline-none"
+                  className="relative p-0.5 rounded-full hover:ring-2 hover:ring-[#1E90FF]/40 transition-all cursor-pointer focus:outline-none flex items-center justify-center"
                   aria-expanded={isUserMenuOpen}
+                  title={user.fullname || user.email}
                 >
                   {user.avatar ? (
                     <img
                       src={user.avatar}
-                      alt={user.fullname}
-                      className="w-8 h-8 rounded-xl object-cover ring-2 ring-[#1E90FF]/20"
+                      alt={user.fullname || 'User'}
+                      className="w-9 h-9 rounded-full object-cover ring-2 ring-[#1E90FF]/30 shadow-xs"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center text-xs font-bold ring-2 ring-[#1E90FF]/20">
-                      {user.fullname?.[0] || 'U'}
+                    <div className="w-9 h-9 rounded-full bg-blue-50 text-[#1E90FF] flex items-center justify-center text-xs font-black ring-2 ring-[#1E90FF]/25 shadow-xs">
+                      {(user.fullname || user.email || 'U')[0].toUpperCase()}
                     </div>
                   )}
-                  <span className="text-xs font-bold text-slate-800 hidden md:inline max-w-[85px] truncate">
-                    {user.fullname?.split(' ')[0]}
-                  </span>
-                  {isAdmin && (
-                    <span className="hidden md:inline text-[9px] font-bold px-1.5 py-0.5 rounded-xl bg-black text-white uppercase tracking-wider">
-                      Admin
-                    </span>
-                  )}
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden md:inline" />
                 </button>
 
                 {/* User Dropdown */}

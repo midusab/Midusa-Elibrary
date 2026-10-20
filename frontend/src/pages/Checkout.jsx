@@ -123,10 +123,10 @@ async function pollPaymentStatus(paymentId, token) {
 // ── Interactive 4-Step Indicator ──────────────────────────────────────────────
 function InteractiveStepIndicator({ currentStep }) {
   const steps = [
-    { num: 1, label: 'Phone Validation' },
-    { num: 2, label: 'STK Dispatch' },
-    { num: 3, label: 'PIN Approval' },
-    { num: 4, label: 'Access Granted' }
+    { num: 1, label: 'Phone Number' },
+    { num: 2, label: 'M-Pesa Prompt' },
+    { num: 3, label: 'Enter PIN' },
+    { num: 4, label: 'eBooks Ready' }
   ];
 
   return (
@@ -189,13 +189,13 @@ function TrustRow() {
   return (
     <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-6 text-[11px] text-slate-500">
       <span className="flex items-center gap-1.5 font-medium">
-        <Lock className="w-3.5 h-3.5 text-emerald-600" /> 256-bit SSL Encryption
+        <Lock className="w-3.5 h-3.5 text-emerald-600" /> Secure 256-bit Encryption
       </span>
       <span className="flex items-center gap-1.5 font-medium">
-        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Official Safaricom Daraja API
+        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Verified M-Pesa Checkout
       </span>
       <span className="flex items-center gap-1.5 font-medium">
-        <BookOpen className="w-3.5 h-3.5 text-emerald-600" /> Direct Account eBook Library
+        <BookOpen className="w-3.5 h-3.5 text-emerald-600" /> Instant eBook Downloads
       </span>
     </div>
   );
@@ -435,14 +435,14 @@ export default function Checkout() {
 
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-[#00A651] text-xs font-bold uppercase tracking-wider mb-2">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Step 4: Real-Time Confirmation</span>
+              <span>Step 4: Payment Confirmed</span>
             </div>
 
             <h1 className="text-2xl font-black text-black mb-1 tracking-tight">
               Payment Confirmed!
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mb-6">
-              Safaricom Daraja webhook confirmed your M-PESA payment. Your eBooks are permanently unlocked.
+              Your M-Pesa payment was received successfully! Your eBooks are now permanently unlocked and ready in your library.
             </p>
 
             {confirmedReceipt && (
@@ -561,18 +561,18 @@ export default function Checkout() {
 
     const realTimeSteps = [
       {
-        label: 'Prompt Dispatched to Phone',
-        desc: `USSD push delivered to ${phoneNumber}`,
+        label: 'Prompt Sent to Your Phone',
+        desc: `Payment request sent to ${phoneNumber}`,
         done: elapsed >= 1
       },
       {
-        label: 'Enter M-PESA PIN',
+        label: 'Enter Your M-Pesa PIN',
         desc: 'Look at your mobile screen, input your 4-digit PIN, and press OK',
         done: elapsed >= 25
       },
       {
-        label: 'Awaiting Webhook Confirmation',
-        desc: 'Listening for Safaricom Daraja confirmation to unlock your library',
+        label: 'Confirming Payment',
+        desc: 'Verifying your payment and preparing your eBooks...',
         done: false
       }
     ];
@@ -602,7 +602,7 @@ export default function Checkout() {
 
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-[#00A651] text-xs font-bold uppercase tracking-wider mt-3 mb-1">
                 <Smartphone className="w-3.5 h-3.5" />
-                <span>Step 3: Awaiting PIN Approval</span>
+                <span>Step 3: Enter Your M-Pesa PIN</span>
               </div>
 
               <h1 className="text-xl font-black text-black mt-2 mb-1">
@@ -809,7 +809,7 @@ export default function Checkout() {
                         <span>Step 2: Sending Prompt to Phone…</span>
                       </div>
                       <p className="text-xs text-emerald-700">
-                        Connecting to Safaricom Daraja STK Gateway. Please do not close this window.
+                        Sending M-Pesa prompt to your phone. Please keep this window open.
                       </p>
                     </div>
                   )}

@@ -65,25 +65,44 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Dynamic Ambient Cover Background with smooth fade on carousel slide */}
+      {/* Full-Bleed Animated Book Cover Background with Smooth Cross-Fade */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <img
-          key={currentBook.id}
-          src={
-            currentBook.coverImage ||
-            'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=1200'
-          }
-          alt=""
-          className="w-full h-full object-cover scale-125 blur-3xl opacity-30 transition-all duration-1000 ease-out"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-black/60" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
-      </div>
-      <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-[#1E90FF]/20 rounded-full blur-[130px] pointer-events-none" />
-      <div className="absolute -bottom-40 right-10 w-[450px] h-[450px] bg-[#F40009]/15 rounded-full blur-[130px] pointer-events-none" />
+        {carouselBooks.map((b, idx) => {
+          const isActive = idx === currentIndex;
+          return (
+            <div
+              key={b.id || idx}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
+              }`}
+            >
+              {/* Full-bleed book cover image */}
+              <img
+                src={
+                  b.coverImage ||
+                  'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=1600&auto=format&fit=crop&q=85'
+                }
+                alt=""
+                className={`w-full h-full object-cover object-center md:object-right transition-transform duration-7000 ease-out ${
+                  isActive ? 'scale-105' : 'scale-100'
+                }`}
+              />
 
-      {/* Main Slide Presentation */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 min-h-[400px] sm:min-h-[460px] flex items-center relative z-20">
+              {/* Directional gradient overlay: Rich black on the left for text contrast, fading across to reveal the book cover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 md:via-black/70 to-black/25" />
+              {/* Top and bottom subtle vignettes for clean section separation */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60" />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Ambient Brand Accent Glows */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#1E90FF]/20 rounded-full blur-[120px] pointer-events-none z-10" />
+      <div className="absolute -bottom-32 right-10 w-96 h-96 bg-[#F40009]/15 rounded-full blur-[120px] pointer-events-none z-10" />
+
+      {/* Main Slide Presentation Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 min-h-[400px] sm:min-h-[480px] flex items-center relative z-20">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-center w-full">
           
           {/* Left Column: Netflix-style Typography & Calls to Action */}
@@ -96,13 +115,13 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
                 <span>NEW ARRIVAL</span>
               </span>
 
-              <span className="inline-flex items-center px-3 py-1 rounded-xl bg-white/10 border border-white/20 text-[#1E90FF] text-[11px] font-extrabold uppercase tracking-wide">
+              <span className="inline-flex items-center px-3 py-1 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-[#1E90FF] text-[11px] font-extrabold uppercase tracking-wide">
                 {currentBook.category || 'eBook Release'}
               </span>
             </div>
 
             {/* Title */}
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white line-clamp-2 leading-tight">
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white line-clamp-2 leading-tight drop-shadow-md">
               {currentBook.title}
             </h1>
 
@@ -137,7 +156,7 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
               )}
 
               {/* Dodgerblue Star Rating */}
-              <div className="flex items-center gap-1.5 text-xs bg-white/10 border border-white/20 px-2.5 py-1 rounded-xl">
+              <div className="flex items-center gap-1.5 text-xs bg-white/10 backdrop-blur-md border border-white/20 px-2.5 py-1 rounded-xl">
                 <Star className="w-3.5 h-3.5 fill-[#1E90FF] text-[#1E90FF]" />
                 <span className="font-bold text-white">{currentBook.rating || 4.9}</span>
                 <span className="text-slate-400">/ 5.0</span>
@@ -149,7 +168,7 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
               <button
                 type="button"
                 onClick={(e) => handleQuickAdd(e, currentBook)}
-                className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer shadow-md active:scale-95 ${
+                className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer shadow-lg active:scale-95 ${
                   addedIds[currentBook.id]
                     ? 'bg-[#00A651] text-white border border-[#00A651]'
                     : 'bg-[#F40009] hover:bg-[#CC0007] text-white border border-[#F40009]'
@@ -170,7 +189,7 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
 
               <Link
                 to={`/book/${currentBook.id}`}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white hover:bg-slate-100 text-black text-xs sm:text-sm font-extrabold transition-all cursor-pointer shadow-md active:scale-95"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white hover:bg-slate-100 text-black text-xs sm:text-sm font-extrabold transition-all cursor-pointer shadow-lg active:scale-95"
               >
                 <BookOpen className="w-4 h-4 text-black" />
                 <span>Explore Book</span>
@@ -178,21 +197,21 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
             </div>
           </div>
 
-          {/* Right Column: Book Image with Smooth Fade Background (Not a Card) */}
-          <div className="md:col-span-5 flex items-center justify-center relative">
+          {/* Right Column: Seamless Cover Presentation Fading Into Background (Not a Card) */}
+          <div className="md:col-span-5 hidden sm:flex items-center justify-center relative">
             <Link
               to={`/book/${currentBook.id}`}
               className="relative group block cursor-pointer transition-transform duration-500 hover:scale-105"
             >
-              {/* Soft Ambient Behind-Image Glow & Radial Fade */}
+              {/* Soft Ambient Radial Behind-Image Blend */}
               <div
-                className="absolute -inset-6 rounded-full blur-3xl opacity-70 group-hover:opacity-90 transition-opacity duration-700 pointer-events-none"
+                className="absolute -inset-8 rounded-full blur-3xl opacity-60 group-hover:opacity-85 transition-opacity duration-700 pointer-events-none"
                 style={{
-                  background: 'radial-gradient(circle, rgba(30,144,255,0.4) 0%, rgba(244,0,9,0.2) 40%, transparent 70%)'
+                  background: 'radial-gradient(circle, rgba(30,144,255,0.45) 0%, rgba(244,0,9,0.2) 50%, transparent 75%)'
                 }}
               />
 
-              {/* The Book Image with Cinematic Drop Shadow */}
+              {/* Book artwork seamlessly fading at edges into the background (No card frame/border) */}
               <div className="relative flex items-center justify-center">
                 <img
                   key={currentBook.id}
@@ -201,11 +220,11 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
                     'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80'
                   }
                   alt={currentBook.title}
-                  className="w-52 sm:w-60 md:w-68 aspect-[3/4] object-cover rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] ring-1 ring-white/15 transition-all duration-700 animate-in fade-in zoom-in-95"
+                  className="w-56 sm:w-64 md:w-72 aspect-[3/4] object-cover rounded-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] transition-all duration-700 animate-in fade-in zoom-in-95"
                 />
 
-                {/* Subtle base vignette fading the bottom into the scene */}
-                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 via-black/15 to-transparent rounded-b-2xl pointer-events-none" />
+                {/* Soft ambient bottom & edge fade blending with the full carousel atmosphere */}
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
               </div>
             </Link>
           </div>
