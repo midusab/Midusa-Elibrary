@@ -1,8 +1,15 @@
 const { prisma } = require('../config/database');
+const { getCache, setCache, delCachePattern } = require('../config/redis');
 
 // Get all categories
 const getCategories = async (req, res) => {
   try {
+    const cacheKey = 'categories:all';
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      return res.status(200).json(cached);
+    }
+
     const categories = await prisma.categories.findMany({
       include: {
         _count: {
@@ -15,6 +22,9 @@ const getCategories = async (req, res) => {
         name: 'asc'
       }
     });
+
+    // Cache categories for 30 minutes (1800s)
+    await setCache(cacheKey, categories, 1800);
 
     res.status(200).json(categories);
   } catch (error) {
@@ -29,6 +39,11 @@ const getCategories = async (req, res) => {
 const getCategoryById = async (req, res) => {
   try {
     const { id } = req.params;
+    const cacheKey = `categories:id:${id}`;
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      return res.status(200).json(cached);
+    }
 
     const category = await prisma.categories.findUnique({
       where: { id },
@@ -46,6 +61,8 @@ const getCategoryById = async (req, res) => {
         error: 'Category not found'
       });
     }
+
+    await setCache(cacheKey, category, 1800);
 
     res.status(200).json(category);
   } catch (error) {
@@ -85,6 +102,9 @@ const createCategory = async (req, res) => {
         ...(image_url ? { image_url } : {})
       }
     });
+
+    await delCachePattern('categories:*');
+    await delCachePattern('books:*');
 
     res.status(201).json(category);
   } catch (error) {
@@ -130,6 +150,9 @@ const updateCategory = async (req, res) => {
       }
     });
 
+    await delCachePattern('categories:*');
+    await delCachePattern('books:*');
+
     res.status(200).json(category);
   } catch (error) {
     console.error('Error updating category:', error);
@@ -166,6 +189,9 @@ const deleteCategory = async (req, res) => {
     await prisma.categories.delete({
       where: { id }
     });
+
+    await delCachePattern('categories:*');
+    await delCachePattern('books:*');
 
     res.status(200).json({
       message: 'Category deleted successfully'

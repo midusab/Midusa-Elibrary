@@ -53,6 +53,12 @@ const getBooks = async (req, res) => {
       bestseller,
     } = req.query;
 
+    const cacheKey = `books:list:${JSON.stringify(req.query)}`;
+    const cachedData = await getCache(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     const skip  = (parseInt(page) - 1) * parseInt(limit);
     const where = {};
 
@@ -93,7 +99,7 @@ const getBooks = async (req, res) => {
       }),
     ]);
 
-    res.json({
+    const result = {
       books: books.map(formatBook),
       pagination: {
         page:       parseInt(page),
@@ -101,7 +107,12 @@ const getBooks = async (req, res) => {
         total,
         totalPages: Math.ceil(total / parseInt(limit)),
       },
-    });
+    };
+
+    // Cache the result for 3 minutes (180s)
+    await setCache(cacheKey, result, 180);
+
+    res.json(result);
   } catch (error) {
     console.error('Error fetching books (returning safe fallback):', error.message || error);
     res.status(200).json({
@@ -116,6 +127,12 @@ const getBooks = async (req, res) => {
 const getBookById = async (req, res) => {
   try {
     const rawId = req.params.id;
+    const cacheKey = `books:detail:${rawId}`;
+    const cachedBook = await getCache(cacheKey);
+    if (cachedBook) {
+      return res.json(cachedBook);
+    }
+
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId);
 
     let book = null;
@@ -150,6 +167,9 @@ const getBookById = async (req, res) => {
         }
       } catch (e) {}
     }
+
+    // Cache book details for 10 minutes (600s)
+    await setCache(cacheKey, formatted, 600);
 
     res.json(formatted);
   } catch (error) {
@@ -273,6 +293,9 @@ const createBook = async (req, res) => {
       }
     }
 
+    // Invalidate book caches
+    await delCachePattern('books:*');
+
     res.status(201).json(formatBook(book));
   } catch (error) {
     console.error('Error creating book:', error);
@@ -350,6 +373,9 @@ const updateBook = async (req, res) => {
       }
     }
 
+    // Invalidate book caches
+    await delCachePattern('books:*');
+
     res.json(formatBook(book));
   } catch (error) {
     console.error('Error updating book:', error);
@@ -367,6 +393,9 @@ const deleteBook = async (req, res) => {
 
     await prisma.books.delete({ where: { id } });
 
+    // Invalidate book caches
+    await delCachePattern('books:*');
+
     res.json({ message: 'Book deleted successfully' });
   } catch (error) {
     console.error('Error deleting book:', error);
@@ -377,6 +406,10 @@ const deleteBook = async (req, res) => {
 // ─── Get featured books ────────────────────────────────────────────────────────
 const getFeaturedBooks = async (req, res) => {
   try {
+    const cacheKey = 'books:featured';
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
     const books = await prisma.books.findMany({
       where:   { featured: true },
       include: bookInclude,
@@ -384,7 +417,9 @@ const getFeaturedBooks = async (req, res) => {
       orderBy: { created_at: 'desc' },
     });
 
-    res.json(books.map(formatBook));
+    const result = books.map(formatBook);
+    await setCache(cacheKey, result, 300);
+    res.json(result);
   } catch (error) {
     console.error('Error fetching featured books (safe fallback):', error.message || error);
     res.json([]);
@@ -394,6 +429,10 @@ const getFeaturedBooks = async (req, res) => {
 // ─── Get bestseller books ──────────────────────────────────────────────────────
 const getBestsellerBooks = async (req, res) => {
   try {
+    const cacheKey = 'books:bestsellers';
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
     const books = await prisma.books.findMany({
       where:   { bestseller: true },
       include: bookInclude,
@@ -401,7 +440,9 @@ const getBestsellerBooks = async (req, res) => {
       orderBy: { created_at: 'desc' },
     });
 
-    res.json(books.map(formatBook));
+    const result = books.map(formatBook);
+    await setCache(cacheKey, result, 300);
+    res.json(result);
   } catch (error) {
     console.error('Error fetching bestseller books (safe fallback):', error.message || error);
     res.json([]);
@@ -419,35 +460,15 @@ const recordBookClick = async (req, res) => {
       return res.status(400).json({ error: 'Book ID is required' });
     }
 
-    // Check if book exists
-    const book = await prisma.books.findUnique({ where: { id } });
-    if (!book) {
-      return res.status(404).json({ error: 'Book not found' });
-    }
-
-    // Increment clicks_count
-    const updated = await prisma.books.update({
-      where: { id },
-      data: { clicks_count: { increment: 1 } },
-      select: { id: true, clicks_count: true, title: true }
+    // Queue async task for Redis worker
+    await pushAsyncTask('record_book_click', {
+      bookId: id,
+      visitorId: visitorId || null,
+      userId: userId || null,
+      timestamp: new Date().toISOString()
     });
 
-    // Record click log
-    try {
-      const isUuid = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
-      await prisma.book_clicks.create({
-        data: {
-          book_id: id,
-          visitor_id: visitorId || null,
-          user_id: isUuid(userId) ? userId : null
-        }
-      });
-    } catch (logErr) {
-      // Non-fatal if detail log fails
-      console.warn('Click log warning:', logErr.message);
-    }
-
-    res.json({ success: true, clicks: updated.clicks_count });
+    res.json({ success: true, message: 'Click recorded asynchronously' });
   } catch (error) {
     console.error('Error recording book click:', error);
     res.status(500).json({ error: 'Failed to record click' });

@@ -206,6 +206,17 @@ function createSupabaseTable(tableName) {
       return updated;
     },
 
+    async updateMany({ where = {}, data = {} } = {}) {
+      let query = supabase.from(tableName).update(data);
+      query = applyFilters(query, where);
+      const { data: updated, error } = await query.select();
+      if (error) {
+        console.error(`Supabase updateMany error in ${tableName}:`, error);
+        throw new Error(error.message || `Failed to update records in ${tableName}`);
+      }
+      return { count: updated?.length || 0 };
+    },
+
     async delete({ where = {} } = {}) {
       let query = supabase.from(tableName).delete();
       for (const [k, v] of Object.entries(where)) {

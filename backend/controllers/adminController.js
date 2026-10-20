@@ -1,25 +1,25 @@
 const { prisma, supabase } = require('../config/database');
+const { pushAsyncTask, getCache, setCache, delCachePattern } = require('../config/redis');
 
 const isUuid = (str) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
 
 /**
- * Record a public site visit (pageview)
+ * Record a public site visit (pageview) - queued asynchronously via Redis
  */
 const recordSiteVisit = async (req, res) => {
   try {
     const { visitorId, userId, pagePath, referrer } = req.body || {};
     
-    await prisma.site_visits.create({
-      data: {
-        visitor_id: visitorId || null,
-        user_id: isUuid(userId) ? userId : null,
-        page_path: pagePath || '/',
-        referrer: referrer || null
-      }
+    await pushAsyncTask('record_site_visit', {
+      visitorId: visitorId || null,
+      userId: isUuid(userId) ? userId : null,
+      pagePath: pagePath || '/',
+      referrer: referrer || null,
+      timestamp: new Date().toISOString()
     });
 
-    res.json({ success: true, message: 'Visit recorded' });
+    res.json({ success: true, message: 'Visit queued asynchronously' });
   } catch (error) {
     console.error('Error recording site visit:', error);
     // Return success anyway so frontend is not blocked
@@ -128,6 +128,12 @@ const getUsers = async (req, res) => {
  */
 const getAnalytics = async (req, res) => {
   try {
+    const cacheKey = 'admin:analytics';
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
@@ -334,7 +340,7 @@ const getAnalytics = async (req, res) => {
       };
     });
 
-    res.json({
+    const analyticsResponse = {
       totalRevenue,
       totalSales,
       totalOrders,
@@ -378,7 +384,12 @@ const getAnalytics = async (req, res) => {
       // Charts data
       dailyTrends,
       categoryStats
-    });
+    };
+
+    // Cache analytics for 30s
+    await setCache(cacheKey, analyticsResponse, 30);
+
+    res.json(analyticsResponse);
   } catch (error) {
     console.error('Error calculating analytics:', error);
     res.status(500).json({ error: 'Failed to calculate analytics' });
@@ -411,6 +422,9 @@ const autoMarkBestsellers = async (req, res) => {
         where: { id: { in: bestsellerBookIds } },
         data: { bestseller: true }
       });
+
+      // Invalidate book cache
+      await delCachePattern('books:*');
     }
 
     res.json({

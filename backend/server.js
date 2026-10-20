@@ -91,6 +91,55 @@ process.on('unhandledRejection', (reason) => {
   console.error('[UNHANDLED REJECTION]:', reason);
 });
 
+// ─── Redis Async Background Workers ─────────────────────────────
+const { registerWorker } = require('./config/redis');
+const { db } = require('./config/database');
+
+const isUuid = (str) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
+
+// Worker 1: Asynchronous Book Click & View Aggregation
+registerWorker('record_book_click', async (payload) => {
+  try {
+    const { bookId, visitorId, userId } = payload || {};
+    if (!bookId) return;
+
+    await db.books.update({
+      where: { id: bookId },
+      data: { clicks_count: { increment: 1 } }
+    });
+
+    await db.book_clicks.create({
+      data: {
+        book_id: bookId,
+        visitor_id: visitorId || null,
+        user_id: isUuid(userId) ? userId : null
+      }
+    });
+  } catch (err) {
+    // Non-fatal logging for async worker
+    console.warn('[Worker: record_book_click]:', err.message);
+  }
+}, 1000);
+
+// Worker 2: Asynchronous Site Visit & Pageview Tracking
+registerWorker('record_site_visit', async (payload) => {
+  try {
+    const { visitorId, userId, pagePath, referrer } = payload || {};
+    await db.site_visits.create({
+      data: {
+        visitor_id: visitorId || null,
+        user_id: isUuid(userId) ? userId : null,
+        page_path: pagePath || '/',
+        referrer: referrer || null
+      }
+    });
+  } catch (err) {
+    // Non-fatal logging for async worker
+    console.warn('[Worker: record_site_visit]:', err.message);
+  }
+}, 1000);
+
 // Start server if run directly
 if (require.main === module) {
   app.listen(PORT, '0.0.0.0', () => {
