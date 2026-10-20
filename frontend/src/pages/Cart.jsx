@@ -1,16 +1,12 @@
-import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiArrowLeft, FiShield } from 'react-icons/fi';
-import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Breadcrumb from '../components/common/Breadcrumb';
 import { useCart } from '../context/CartContext';
-import { useToast } from '../context/ToastContext';
 import { formatPrice } from '../utils/currency';
 
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, clearCart, cartTotal, cartCount } = useCart();
-  const { success } = useToast();
 
   const handleRemoveFromCart = (bookId) => {
     removeFromCart(bookId);

@@ -8,8 +8,7 @@ import {
   FiDownload,
   FiBookOpen,
   FiCheck,
-  FiCopy,
-  FiSmartphone
+  FiCopy
 } from 'react-icons/fi';
 import Card from '../ui/Card';
 import Button from '../ui/Button';

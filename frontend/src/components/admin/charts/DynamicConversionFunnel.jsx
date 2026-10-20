@@ -4,9 +4,7 @@ import {
   FiMousePointer,
   FiShoppingBag,
   FiActivity,
-  FiArrowRight,
-  FiTrendingUp,
-  FiBook
+  FiTrendingUp
 } from 'react-icons/fi';
 import { formatPrice } from '../../../utils/currency';
 

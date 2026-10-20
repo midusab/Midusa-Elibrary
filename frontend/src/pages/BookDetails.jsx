@@ -29,6 +29,7 @@ export default function BookDetails() {
   const [relatedBooks, setRelatedBooks] = useState([]);
   const [reviewsList, setReviewsList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdded, setIsAdded] = useState(false);
 
   // Review form state
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -108,9 +109,11 @@ export default function BookDetails() {
     );
   }
 
+
   const handleAddToCart = () => {
     addToCart(book);
-    success(`"${book.title}" added to cart!`);
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 2000);
   };
 
   const handleFavorite = () => {
@@ -157,7 +160,7 @@ export default function BookDetails() {
   // Safe table of contents from real data
   const tableOfContents = Array.isArray(book.tableOfContents) ? book.tableOfContents : [];
 
-  const authorBio = book.authorInfo || `${book.author} is an accomplished specialist and writer known for delivering research-driven insights and timeless guidance in the field of ${book.category}.`;
+  const authorBio = book.authorBio || book.authorInfo || (book.author ? `${book.author} is an accomplished specialist and writer known for delivering research-driven insights and timeless guidance in the field of ${book.category || 'literature'}.` : '');
 
   return (
     <div className="min-h-screen bg-white py-6 sm:py-10">
@@ -189,18 +192,18 @@ export default function BookDetails() {
           
           {/* Large Cover Image */}
           <div className="md:col-span-5 lg:col-span-5">
-            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-md">
+            <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-md">
               <img
                 src={book.coverImage}
                 alt={book.title}
                 className="w-full h-full object-cover"
                 loading="eager"
               />
-              <span className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-sm text-slate-800 text-xs font-bold px-3 py-1 rounded-lg shadow-sm border border-slate-200/50">
+              <span className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-sm text-black text-xs font-bold px-3 py-1 rounded-xl shadow-sm border border-slate-200/50">
                 {book.category}
               </span>
               {book.bestseller && (
-                <span className="absolute top-3.5 right-3.5 bg-[#F40009] text-white text-xs font-bold px-3 py-1 rounded-lg">
+                <span className="absolute top-3.5 right-3.5 bg-[#F40009] text-white text-xs font-bold px-3 py-1 rounded-xl">
                   Bestseller
                 </span>
               )}
@@ -211,16 +214,16 @@ export default function BookDetails() {
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 text-xs"
+                className="flex-1 text-xs rounded-xl"
                 onClick={handleFavorite}
               >
-                <FiHeart className={`mr-1.5 ${isFavorite ? 'fill-current text-rose-500' : ''}`} />
+                <FiHeart className={`mr-1.5 ${isFavorite ? 'fill-[#F40009] text-[#F40009]' : ''}`} />
                 {isFavorite ? 'Saved to Wishlist' : 'Add to Wishlist'}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 text-xs"
+                className="flex-1 text-xs rounded-xl"
                 onClick={handleShare}
               >
                 <FiShare2 className="mr-1.5" />
@@ -233,25 +236,25 @@ export default function BookDetails() {
           <div className="md:col-span-7 lg:col-span-7 flex flex-col justify-between">
             <div>
               {/* Category Pill */}
-              <div className="inline-block text-xs font-bold text-primary uppercase tracking-wider bg-primary-50 px-3 py-1 rounded-full mb-3">
+              <div className="inline-block text-xs font-bold text-[#1E90FF] uppercase tracking-wider bg-blue-50 px-3 py-1 rounded-xl mb-3">
                 {book.category}
               </div>
 
               {/* Title */}
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight mb-2">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-black tracking-tight leading-tight mb-2">
                 {book.title}
               </h1>
 
               {/* Author */}
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-sm sm:text-base text-slate-600">By</span>
-                <span className="text-sm sm:text-base font-bold text-slate-900">{book.author}</span>
+                <span className="text-sm sm:text-base font-bold text-black">{book.author}</span>
               </div>
 
               {/* Rating */}
               <div className="flex items-center gap-3 py-3 border-y border-slate-100 mb-6">
-                <div className="flex items-center text-amber-500 font-bold text-sm">
-                  <FiStar className="fill-current w-4 h-4 mr-1.5" />
+                <div className="flex items-center text-[#1E90FF] font-bold text-sm">
+                  <FiStar className="fill-[#1E90FF] w-4 h-4 mr-1.5" />
                   <span>{book.rating || 4.8}</span>
                 </div>
                 <span className="text-slate-300">|</span>
@@ -259,20 +262,20 @@ export default function BookDetails() {
                   {reviewsList.length} verified reader {reviewsList.length === 1 ? 'review' : 'reviews'}
                 </span>
                 <span className="text-slate-300">|</span>
-                <span className="text-xs text-emerald-600 font-semibold flex items-center">
+                <span className="text-xs text-[#00A651] font-semibold flex items-center">
                   <FiCheck className="mr-1" /> Instant Digital Delivery
                 </span>
               </div>
 
               {/* Price Display in Kenyan Shillings */}
-              <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm mb-6">
+              <div className="p-6 rounded-xl bg-white border border-slate-200/80 shadow-sm mb-6">
                 <div className="flex items-baseline justify-between mb-4">
                   <div>
                     <span className="text-xs font-semibold text-slate-500 block uppercase tracking-wider mb-1">
                       Price
                     </span>
                     <div className="flex flex-wrap items-baseline gap-3">
-                      <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                      <span className="text-3xl sm:text-4xl font-extrabold text-black tracking-tight">
                         {formatPrice(book.price)}
                       </span>
                       {book.discountPercent > 0 && book.originalPrice > book.price && (
@@ -280,34 +283,46 @@ export default function BookDetails() {
                           <span className="text-lg sm:text-xl text-slate-400 line-through">
                             {formatPrice(book.originalPrice)}
                           </span>
-                          <span className="text-xs font-extrabold text-[#F40009] bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                          <span className="text-xs font-extrabold text-[#F40009] bg-red-50 px-2 py-0.5 rounded-xl border border-red-200">
                             {book.discountPercent}% OFF
                           </span>
                         </>
                       )}
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
+                  <span className="text-xs font-semibold text-[#00A651] bg-green-50 px-3 py-1 rounded-xl">
                     Digital Edition Unlocked
                   </span>
                 </div>
 
-                {/* Purchase Button - Only Add to Cart is Coca-Cola Red */}
+                {/* Purchase Button - Primary Add to Cart CTA */}
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    variant="cart"
-                    size="lg"
-                    className="flex-1 py-3.5 text-sm sm:text-base font-bold shadow-sm cursor-pointer"
+                  <button
+                    type="button"
+                    className={`flex-1 py-3.5 px-6 rounded-xl text-sm sm:text-base font-bold shadow-sm cursor-pointer transition-all flex items-center justify-center text-white ${
+                      isAdded
+                        ? 'bg-[#00A651] hover:bg-[#008f45]'
+                        : 'bg-[#F40009] hover:bg-[#d00008] shadow-[#F40009]/20'
+                    }`}
                     onClick={handleAddToCart}
                   >
-                    <FiShoppingCart className="mr-2 w-5 h-5" />
-                    Add to Cart ({formatPrice(book.price)})
-                  </Button>
+                    {isAdded ? (
+                      <>
+                        <FiCheck className="mr-2 w-5 h-5" />
+                        Added to Cart ({formatPrice(book.price)})
+                      </>
+                    ) : (
+                      <>
+                        <FiShoppingCart className="mr-2 w-5 h-5" />
+                        Add to Cart ({formatPrice(book.price)})
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                   <div className="flex items-center gap-1.5">
-                    <FiShield className="text-emerald-600 w-4 h-4" />
+                    <FiShield className="text-[#00A651] w-4 h-4" />
                     <span>Secure M-PESA Checkout · Instant Digital Delivery</span>
                   </div>
                   <span>Lifetime Access</span>
@@ -336,14 +351,14 @@ export default function BookDetails() {
           {/* 1. Description Section */}
           <section>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center">
                 <FiBookOpen className="w-4 h-4" />
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                Description & Synopsis
+              <h2 className="text-xl sm:text-2xl font-bold text-black tracking-tight">
+                Description &amp; Synopsis
               </h2>
             </div>
-            <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+            <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl shadow-sm">
               <p className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-line">
                 {book.description}
               </p>
@@ -354,18 +369,18 @@ export default function BookDetails() {
           {tableOfContents.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center">
                   <FiList className="w-4 h-4" />
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                <h2 className="text-xl sm:text-2xl font-bold text-black tracking-tight">
                   Table of Contents
                 </h2>
               </div>
-              <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+              <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl shadow-sm">
                 <div className="divide-y divide-slate-100">
                   {tableOfContents.map((chapter, index) => (
                     <div key={index} className="py-3 flex items-start gap-3">
-                      <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-semibold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="w-6 h-6 rounded-xl bg-slate-100 text-slate-600 font-semibold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
                         {index + 1}
                       </span>
                       <span className="text-xs sm:text-sm font-medium text-slate-800">
@@ -381,22 +396,22 @@ export default function BookDetails() {
           {/* 3. Author Information Section */}
           <section>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center">
                 <FiUser className="w-4 h-4" />
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-bold text-black tracking-tight">
                 About the Author
               </h2>
             </div>
-            <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-5 items-start">
-              <div className="w-16 h-16 rounded-2xl bg-primary-50 text-primary flex items-center justify-center text-xl font-bold flex-shrink-0 border border-primary/20">
+            <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl shadow-sm flex flex-col sm:flex-row gap-5 items-start">
+              <div className="w-16 h-16 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center text-xl font-bold flex-shrink-0 border border-[#1E90FF]/20">
                 {book.author.split(' ').map(n => n[0]).slice(0, 2).join('')}
               </div>
               <div className="flex-1">
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1">
+                <h3 className="text-base sm:text-lg font-bold text-black mb-1">
                   {book.author}
                 </h3>
-                <p className="text-xs font-semibold text-primary mb-3">
+                <p className="text-xs font-semibold text-[#1E90FF] mb-3">
                   Author • {book.category} Specialist
                 </p>
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
@@ -411,7 +426,7 @@ export default function BookDetails() {
             <section>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                  <h2 className="text-xl sm:text-2xl font-bold text-black tracking-tight">
                     Related Books
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
@@ -420,16 +435,16 @@ export default function BookDetails() {
                 </div>
                 <Link
                   to={`/library?category=${encodeURIComponent(book.category)}`}
-                  className="text-xs font-semibold text-primary hover:underline"
+                  className="text-xs font-semibold text-[#1E90FF] hover:underline"
                 >
-                  View Category →
+                  View Category &rarr;
                 </Link>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 {relatedBooks.map((item) => (
                   <Link key={item.id} to={`/book/${item.id}`} className="group block">
-                    <Card className="h-full flex flex-col justify-between overflow-hidden bg-white border border-slate-200/80 hover:border-slate-300 rounded-2xl shadow-sm hover:shadow transition-all">
+                    <Card className="h-full flex flex-col justify-between overflow-hidden bg-white border border-slate-200/80 hover:border-slate-300 rounded-xl shadow-sm hover:shadow transition-all">
                       <div>
                         <div className="aspect-[3/4] bg-slate-100 overflow-hidden">
                           <img
@@ -440,15 +455,15 @@ export default function BookDetails() {
                           />
                         </div>
                         <div className="p-3.5">
-                          <span className="text-[10px] font-semibold text-primary block truncate mb-0.5">
+                          <span className="text-[10px] font-semibold text-[#1E90FF] block truncate mb-0.5">
                             {item.category}
                           </span>
-                          <h4 className="font-semibold text-xs sm:text-sm text-slate-900 line-clamp-1 group-hover:text-primary transition-colors">
+                          <h4 className="font-semibold text-xs sm:text-sm text-black line-clamp-1 group-hover:text-[#1E90FF] transition-colors">
                             {item.title}
                           </h4>
                           <p className="text-[11px] text-slate-500 mb-2 truncate">{item.author}</p>
                           <div className="flex items-baseline gap-2">
-                            <span className="text-xs sm:text-sm font-bold text-slate-900">
+                            <span className="text-xs sm:text-sm font-bold text-[#F40009]">
                               {formatPrice(item.price)}
                             </span>
                             {item.discountPercent > 0 && item.originalPrice > item.price && (
@@ -456,7 +471,7 @@ export default function BookDetails() {
                                 <span className="text-[10px] text-slate-400 line-through">
                                   {formatPrice(item.originalPrice)}
                                 </span>
-                                <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-1 py-0.2 rounded">
+                                <span className="text-[9px] font-bold text-[#F40009] bg-red-50 px-1 py-0.2 rounded-xl">
                                   {item.discountPercent}% OFF
                                 </span>
                               </>
@@ -475,17 +490,17 @@ export default function BookDetails() {
           <section>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center">
                   <FiMessageSquare className="w-4 h-4" />
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                <h2 className="text-xl sm:text-2xl font-bold text-black tracking-tight">
                   Reader Reviews ({reviewsList.length})
                 </h2>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="text-xs"
+                className="text-xs rounded-xl"
                 onClick={() => setShowReviewForm(!showReviewForm)}
               >
                 {showReviewForm ? 'Cancel' : 'Write a Review'}
@@ -494,8 +509,8 @@ export default function BookDetails() {
 
             {/* Interactive Write Review Form */}
             {showReviewForm && (
-              <Card className="p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm mb-6 animate-fadeIn">
-                <h3 className="text-sm font-bold text-slate-900 mb-4">Write Your Review</h3>
+              <Card className="p-6 bg-white border border-slate-200/80 rounded-xl shadow-sm mb-6 animate-fadeIn">
+                <h3 className="text-sm font-bold text-black mb-4">Write Your Review</h3>
                 <form onSubmit={handleSubmitReview} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -506,7 +521,7 @@ export default function BookDetails() {
                         value={reviewName}
                         onChange={(e) => setReviewName(e.target.value)}
                         required
-                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
                       />
                     </div>
                     <div>
@@ -514,7 +529,7 @@ export default function BookDetails() {
                       <select
                         value={reviewRating}
                         onChange={(e) => setReviewRating(e.target.value)}
-                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
                       >
                         <option value={5}>5 Stars - Outstanding</option>
                         <option value={4}>4 Stars - Great</option>
@@ -532,10 +547,10 @@ export default function BookDetails() {
                       value={reviewComment}
                       onChange={(e) => setReviewComment(e.target.value)}
                       required
-                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                      className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] resize-none"
                     />
                   </div>
-                  <Button type="submit" size="sm" className="text-xs">
+                  <Button type="submit" size="sm" className="text-xs rounded-xl bg-[#1E90FF] hover:bg-blue-600 text-white">
                     <FiSend className="mr-1.5" /> Submit Review
                   </Button>
                 </form>
@@ -544,32 +559,32 @@ export default function BookDetails() {
 
             {/* Reviews List */}
             {reviewsList.length === 0 ? (
-              <Card className="p-6 text-center bg-white border border-dashed border-slate-200 rounded-2xl">
+              <Card className="p-6 text-center bg-white border border-dashed border-slate-200 rounded-xl">
                 <p className="text-xs text-slate-500">No reviews yet for this title. Be the first to share your thoughts!</p>
               </Card>
             ) : (
               <div className="space-y-3">
               {reviewsList.map((rev) => (
-                <Card key={rev.id} className="p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+                <Card key={rev.id} className="p-5 bg-white border border-slate-200/80 rounded-xl shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center">
                         {rev.user?.[0] || 'U'}
                       </div>
                       <div>
-                        <h4 className="font-bold text-xs sm:text-sm text-slate-900">{rev.user}</h4>
-                        <span className="text-[10px] text-emerald-600 font-semibold flex items-center">
+                        <h4 className="font-bold text-xs sm:text-sm text-black">{rev.user}</h4>
+                        <span className="text-[10px] text-[#00A651] font-semibold flex items-center">
                           <FiCheck className="mr-0.5" /> Verified Purchase
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center text-amber-500 text-xs font-bold">
-                      <FiStar className="fill-current w-3.5 h-3.5 mr-1" />
+                    <div className="flex items-center text-[#1E90FF] text-xs font-bold">
+                      <FiStar className="fill-[#1E90FF] w-3.5 h-3.5 mr-1" />
                       <span>{rev.rating}.0</span>
                     </div>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-2">
-                    "{rev.comment}"
+                    &ldquo;{rev.comment}&rdquo;
                   </p>
                   <p className="text-[10px] text-slate-400 mt-2">{rev.date}</p>
                 </Card>

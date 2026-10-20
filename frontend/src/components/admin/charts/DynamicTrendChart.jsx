@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   FiDollarSign,
   FiShoppingBag,
@@ -227,20 +227,15 @@ export default function DynamicTrendChart({
 
   const handleTouchEnd = () => setHoveredIndex(null);
 
-  // Tooltip left position: clamp against the actual rendered container width
-  const getTooltipLeft = (pt) => {
-    if (!containerRef.current) return Math.max(10, pt.x - 70);
-    const containerW = containerRef.current.getBoundingClientRect().width;
-    const tooltipW = 184; // min-w in px
-    const scaleFactor = containerW / width;
-    const scaledX = pt.x * scaleFactor;
-    return Math.min(Math.max(scaledX - tooltipW / 2, 8), containerW - tooltipW - 8);
-  };
-
   const activePoint = hoveredIndex !== null ? points[hoveredIndex] : points[points.length - 1];
   const activeSecondaryPoint = (chartMode === 'dual' && hoveredIndex !== null)
     ? secondaryPoints[hoveredIndex]
     : secondaryPoints[secondaryPoints.length - 1];
+
+  // Tooltip left position: responsive percentage without reading ref during render
+  const tooltipLeftPercent = activePoint
+    ? `${Math.min(Math.max((activePoint.x / width) * 100, 15), 85)}%`
+    : '50%';
 
   return (
     <div className="bg-white border border-slate-200/90 rounded-lg p-5 sm:p-6 space-y-6">
@@ -362,7 +357,7 @@ export default function DynamicTrendChart({
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             className="absolute z-20 top-2 pointer-events-none bg-slate-900 text-white p-3 rounded-md border border-slate-800 text-xs min-w-[170px]"
-            style={{ left: getTooltipLeft(activePoint) }}
+            style={{ left: tooltipLeftPercent, transform: 'translateX(-50%)' }}
           >
             <div className="flex items-center gap-1.5 text-slate-400 text-[11px] mb-1">
               <FiCalendar className="w-3 h-3" />

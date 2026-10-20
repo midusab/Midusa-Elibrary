@@ -6,7 +6,8 @@ import {
   FiUsers,
   FiLayers,
   FiTrendingUp,
-  FiRefreshCw
+  FiRefreshCw,
+  FiFeather
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -28,6 +29,7 @@ import {
 import AdminOverviewTab from '../components/admin/AdminOverviewTab';
 import AdminBooksTab from '../components/admin/AdminBooksTab';
 import AdminCategoriesTab from '../components/admin/AdminCategoriesTab';
+import AdminAuthorsTab from '../components/admin/AdminAuthorsTab';
 import AdminOrdersTab from '../components/admin/AdminOrdersTab';
 import AdminUsersTab from '../components/admin/AdminUsersTab';
 import BookModal from '../components/admin/BookModal';
@@ -50,7 +52,6 @@ export default function AdminDashboard() {
     setBooks,
     categories,
     orders,
-    setOrders,
     usersList,
     derivedStats,
     loadDashboardData
@@ -70,6 +71,7 @@ export default function AdminDashboard() {
   const [bookForm, setBookForm] = useState({
     title: '',
     author: '',
+    authorBio: '',
     description: '',
     category: '',
     coverImage: '',
@@ -113,6 +115,7 @@ export default function AdminDashboard() {
     setBookForm({
       title: '',
       author: '',
+      authorBio: '',
       description: '',
       category: categories[0]?.name || 'General',
       coverImage: '',
@@ -133,6 +136,7 @@ export default function AdminDashboard() {
     setBookForm({
       title: book.title || '',
       author: book.author || '',
+      authorBio: book.authorBio || book.author_bio || '',
       description: book.description || '',
       category: book.category || (categories[0]?.name || 'General'),
       coverImage: book.coverImage || '',
@@ -419,13 +423,13 @@ export default function AdminDashboard() {
         {/* ========================================================= */}
         {/* Header Section */}
         {/* ========================================================= */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 sm:p-8 rounded-lg border border-slate-200/80">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 sm:p-8 rounded-xl border border-slate-200/80">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-blue-50 text-[#1E90FF] text-xs font-semibold mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-blue-50 text-[#1E90FF] text-xs font-semibold mb-3">
               <span className="w-2 h-2 rounded-full bg-[#1E90FF] animate-pulse" />
               Admin Portal
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-black tracking-tight">
               Platform Administration
             </h1>
             <p className="text-sm text-slate-500 mt-1">
@@ -437,7 +441,7 @@ export default function AdminDashboard() {
             <button
               onClick={() => loadDashboardData(true)}
               disabled={isRefreshing}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold transition-all cursor-pointer disabled:opacity-60"
             >
               <FiRefreshCw className={`w-4 h-4 text-slate-500 ${isRefreshing ? 'animate-spin' : ''}`} />
               <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
@@ -445,7 +449,7 @@ export default function AdminDashboard() {
 
             <button
               onClick={handleOpenAddBook}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-[#1E90FF] hover:bg-[#1873cc] text-white text-xs sm:text-sm font-semibold active:scale-[0.99] transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1E90FF] hover:bg-[#1873cc] text-white text-xs sm:text-sm font-semibold active:scale-[0.99] transition-all cursor-pointer shadow-xs"
             >
               <FiPlus className="w-4 h-4" />
               <span>Post New Book</span>
@@ -461,6 +465,7 @@ export default function AdminDashboard() {
             { id: 'overview', label: 'Overview & Trends', icon: FiTrendingUp },
             { id: 'users', label: `Registered Customers (${usersList.length})`, icon: FiUsers },
             { id: 'books', label: `Books (${books.length})`, icon: FiBook },
+            { id: 'authors', label: 'Authors & Bios', icon: FiFeather },
             { id: 'categories', label: `Catalogue (${categories.length})`, icon: FiLayers },
             { id: 'orders', label: `Orders (${orders.length})`, icon: FiDollarSign }
           ].map((tab) => {
@@ -470,10 +475,10 @@ export default function AdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-md text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
                   isActive
                     ? 'bg-[#1E90FF] text-white font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    : 'text-slate-600 hover:text-black hover:bg-slate-100'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -513,6 +518,14 @@ export default function AdminDashboard() {
             handleOpenReviewModal={handleOpenReviewModal}
             handleToggleFeatured={handleToggleFeatured}
             handleToggleBestseller={handleToggleBestseller}
+          />
+        )}
+
+        {activeTab === 'authors' && (
+          <AdminAuthorsTab
+            token={token}
+            books={books}
+            onRefresh={() => loadDashboardData(true)}
           />
         )}
 

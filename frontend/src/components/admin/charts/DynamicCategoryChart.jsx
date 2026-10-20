@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { FiPieChart, FiDollarSign, FiShoppingBag, FiBook, FiMousePointer } from 'react-icons/fi';
 import { formatPrice } from '../../../utils/currency';
 

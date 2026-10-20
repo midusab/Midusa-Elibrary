@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FiMail,
-  FiPhone,
-  FiMapPin,
-  FiClock,
-  FiArrowRight,
-  FiCheck,
-  FiShield
-} from 'react-icons/fi';
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  ArrowRight,
+  Check,
+  ShieldCheck
+} from 'lucide-react';
 import { useCookie } from '../../context/CookieContext';
 
 export default function Footer() {
@@ -43,15 +43,15 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-xs sm:text-sm text-white/85 leading-relaxed">
-              Kenya’s premier digital eBookstore for curated personal growth, finance, psychology, and faith literature. Instant delivery via automated M-PESA.
+              Kenya’s premier digital eBookstore for curated personal growth, finance, psychology, and faith literature with automated M-PESA checkout.
             </p>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/10 text-white text-xs border border-white/20">
-              <FiShield className="w-3.5 h-3.5 text-white" />
-              <span>Instant M-PESA Access • Lifetime Downloads</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-white" />
+              <span>Verified M-PESA Checkout • Lifetime Access</span>
             </div>
           </div>
 
-          {/* Column 2: Quick Links (with About & Contact prominently visible) */}
+          {/* Column 2: Quick Links */}
           <div>
             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3.5 pb-1 border-b border-white/20">
               Quick Navigation
@@ -59,32 +59,26 @@ export default function Footer() {
             <ul className="space-y-2 text-xs sm:text-sm">
               <li>
                 <Link to="/" className="text-white/85 hover:text-white transition-colors flex items-center gap-1.5">
-                  <FiArrowRight className="w-3 h-3 text-white/60" />
+                  <ArrowRight className="w-3 h-3 text-white/60" />
                   <span>Home</span>
                 </Link>
               </li>
               <li>
                 <Link to="/library" className="text-white/85 hover:text-white transition-colors flex items-center gap-1.5">
-                  <FiArrowRight className="w-3 h-3 text-white/60" />
-                  <span>Shop</span>
+                  <ArrowRight className="w-3 h-3 text-white/60" />
+                  <span>Shop Catalog</span>
                 </Link>
               </li>
               <li>
                 <Link to="/categories" className="text-white/85 hover:text-white transition-colors flex items-center gap-1.5">
-                  <FiArrowRight className="w-3 h-3 text-white/60" />
+                  <ArrowRight className="w-3 h-3 text-white/60" />
                   <span>Categories</span>
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-white font-semibold hover:text-white/80 transition-colors flex items-center gap-1.5 underline decoration-white/40 underline-offset-4">
-                  <FiArrowRight className="w-3 h-3 text-white" />
-                  <span>About Us</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-white font-semibold hover:text-white/80 transition-colors flex items-center gap-1.5 underline decoration-white/40 underline-offset-4">
-                  <FiArrowRight className="w-3 h-3 text-white" />
-                  <span>Contact Us</span>
+                <Link to="/legal" className="text-white/85 hover:text-white transition-colors flex items-center gap-1.5">
+                  <ArrowRight className="w-3 h-3 text-white/60" />
+                  <span>Terms &amp; Policies</span>
                 </Link>
               </li>
             </ul>
@@ -97,7 +91,7 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2.5 text-xs sm:text-sm text-white/90">
               <li className="flex items-start gap-2.5">
-                <FiPhone className="w-4 h-4 text-white flex-shrink-0 mt-0.5" />
+                <Phone className="w-4 h-4 text-white flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-white">WhatsApp &amp; Call</p>
                   <a
@@ -111,17 +105,17 @@ export default function Footer() {
                 </div>
               </li>
               <li className="flex items-center gap-2.5">
-                <FiMail className="w-4 h-4 text-white flex-shrink-0" />
+                <Mail className="w-4 h-4 text-white flex-shrink-0" />
                 <a href="mailto:midusab@gmail.com" className="hover:underline">
                   midusab@gmail.com
                 </a>
               </li>
               <li className="flex items-center gap-2.5">
-                <FiMapPin className="w-4 h-4 text-white flex-shrink-0" />
+                <MapPin className="w-4 h-4 text-white flex-shrink-0" />
                 <span>Nairobi, Kenya</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <FiClock className="w-4 h-4 text-white flex-shrink-0" />
+                <Clock className="w-4 h-4 text-white flex-shrink-0" />
                 <span>Mon–Sat: 8:00 AM – 9:00 PM EAT</span>
               </li>
             </ul>
@@ -137,7 +131,7 @@ export default function Footer() {
             </p>
             {isSubscribed ? (
               <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-white text-[#1E90FF] text-xs font-bold">
-                <FiCheck className="w-4 h-4 text-emerald-600" />
+                <Check className="w-4 h-4 text-emerald-600" />
                 <span>Thank you! You're subscribed.</span>
               </div>
             ) : (
@@ -166,14 +160,6 @@ export default function Footer() {
           <p>© {currentYear} Midusa eLibrary. All rights reserved.</p>
 
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs">
-            <Link to="/about" className="hover:text-white font-medium hover:underline">
-              About Us
-            </Link>
-            <span className="text-white/40">•</span>
-            <Link to="/contact" className="hover:text-white font-medium hover:underline">
-              Contact
-            </Link>
-            <span className="text-white/40">•</span>
             <Link to="/refund-policy" className="hover:text-white hover:underline">
               Refund Policy
             </Link>

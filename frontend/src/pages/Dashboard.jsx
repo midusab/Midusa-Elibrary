@@ -251,32 +251,32 @@ export default function Dashboard({ initialTab }) {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Top Profile Summary Header Card */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm mb-6">
+        <div className="bg-white rounded-xl p-6 sm:p-8 border border-slate-200/80 shadow-sm mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5">
             <div className="flex items-center gap-4">
               {user.avatar ? (
                 <img
                   src={user.avatar}
                   alt={user.fullname}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md ring-2 ring-[#1E90FF]/30"
+                  className="w-16 h-16 rounded-xl object-cover border-2 border-white shadow-md ring-2 ring-[#1E90FF]/30"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#1E90FF] to-blue-400 text-white font-black text-2xl flex items-center justify-center shadow-md shadow-[#1E90FF]/25 ring-2 ring-[#1E90FF]/30">
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-tr from-[#1E90FF] to-blue-400 text-white font-black text-2xl flex items-center justify-center shadow-md shadow-[#1E90FF]/25 ring-2 ring-[#1E90FF]/30">
                   {user.fullname?.[0]?.toUpperCase() || 'U'}
                 </div>
               )}
               <div>
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                  <h1 className="text-xl sm:text-2xl font-extrabold text-black tracking-tight">
                     {user.fullname}
                   </h1>
                   {isAdmin ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                      <FiShield className="w-3 h-3 text-amber-600" />
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-xl text-xs font-bold bg-black text-white">
+                      <FiShield className="w-3 h-3 text-white" />
                       Administrator
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-xl text-xs font-semibold bg-green-50 text-[#00A651] border border-green-200">
                       <FiCheckCircle className="w-3 h-3" />
                       Verified Reader
                     </span>
@@ -293,7 +293,7 @@ export default function Dashboard({ initialTab }) {
             <div className="flex items-center gap-2.5 w-full sm:w-auto">
               {isAdmin && (
                 <Link to="/admin" className="flex-1 sm:flex-none">
-                  <button className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm transition-all cursor-pointer">
+                  <button className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-black hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition-all cursor-pointer">
                     <FiShield className="w-3.5 h-3.5" />
                     Admin Portal
                   </button>
@@ -301,9 +301,9 @@ export default function Dashboard({ initialTab }) {
               )}
               <button
                 onClick={handleLogout}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors cursor-pointer"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-red-50 hover:text-[#F40009] hover:border-red-200 transition-colors cursor-pointer"
               >
-                <FiLogOut className="w-3.5 h-3.5 text-rose-500" />
+                <FiLogOut className="w-3.5 h-3.5 text-[#F40009]" />
                 Sign Out
               </button>
             </div>
@@ -311,16 +311,16 @@ export default function Dashboard({ initialTab }) {
 
           {/* Admin Notice Bar if signed in as admin */}
           {isAdmin && (
-            <div className="mt-5 p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-start gap-2 text-xs text-amber-900 min-w-0">
-                <FiShield className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="mt-5 p-3.5 rounded-xl bg-blue-50/80 border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2 text-xs text-black min-w-0">
+                <FiShield className="w-4 h-4 text-[#1E90FF] flex-shrink-0 mt-0.5" />
                 <span className="min-w-0">
                   <strong>Admin Account Verified:</strong> Signed in as{' '}
                   <code className="break-all">{user.email}</code>. Full system privileges active.
                 </span>
               </div>
-              <Link to="/admin" className="text-xs font-bold text-amber-800 hover:underline flex-shrink-0 self-end sm:self-auto">
-                Launch Portal →
+              <Link to="/admin" className="text-xs font-bold text-[#1E90FF] hover:underline flex-shrink-0 self-end sm:self-auto">
+                Launch Portal &rarr;
               </Link>
             </div>
           )}

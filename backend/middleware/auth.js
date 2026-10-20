@@ -64,4 +64,30 @@ const adminAuth = (req, res, next) => {
   });
 };
 
-module.exports = { auth, adminAuth };
+/**
+ * Optional authentication middleware
+ * Attaches req.user if a valid token is present, but allows guest access if not
+ */
+const optionalAuth = (req, res, next) => {
+  try {
+    const authHeader = req.header('Authorization');
+    if (!authHeader) {
+      req.user = null;
+      return next();
+    }
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    if (!token) {
+      req.user = null;
+      return next();
+    }
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch {
+    req.user = null;
+    next();
+  }
+};
+
+module.exports = { auth, adminAuth, optionalAuth };
+

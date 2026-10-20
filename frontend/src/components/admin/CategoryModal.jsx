@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiLink, FiImage } from 'react-icons/fi';
+import { FiX, FiLink } from 'react-icons/fi';
 
 export default function CategoryModal({
   isOpen,

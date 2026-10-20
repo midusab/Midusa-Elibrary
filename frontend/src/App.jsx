@@ -20,8 +20,6 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
-import About from './pages/About';
-import Contact from './pages/Contact';
 import Legal from './pages/Legal';
 
 import { useEffect } from 'react';
@@ -69,7 +67,7 @@ export default function App() {
                     <WhatsAppButton />
                     <div className="min-h-screen flex flex-col bg-white text-slate-900 overflow-x-hidden w-full">
                       <Navigation />
-                      <main className="flex-1 pt-20 bg-white">
+                      <main className="flex-1 pt-32 bg-white">
                         <Routes>
                           <Route path="/" element={<Hero />} />
                           <Route path="/categories" element={<Categories />} />
@@ -124,8 +122,6 @@ export default function App() {
                               </AdminRoute>
                             }
                           />
-                          <Route path="/about" element={<About />} />
-                          <Route path="/contact" element={<Contact />} />
                           <Route path="/legal" element={<Legal />} />
                           <Route path="/refund-policy" element={<Legal />} />
                           <Route path="/privacy" element={<Legal />} />

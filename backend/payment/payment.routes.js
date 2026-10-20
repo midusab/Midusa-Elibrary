@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const paymentController = require('./payment.controller');
-const { auth, adminAuth } = require('../middleware/auth');
+const { auth, adminAuth, optionalAuth } = require('../middleware/auth');
 
 /**
  * Payment Routes Definition
  */
 
-// 1. Trigger M-Pesa STK Push (Authenticated users)
-router.post('/stkpush', auth, paymentController.initiatePayment);
-router.post('/mpesa/stk', auth, paymentController.initiatePayment);
+// 1. Trigger M-Pesa STK Push
+router.post('/stkpush', optionalAuth, paymentController.initiatePayment);
+router.post('/mpesa/stk', optionalAuth, paymentController.initiatePayment);
 
 // 2. Safaricom Webhook Callback (Public endpoint for Safaricom servers)
 router.post('/callback', paymentController.mpesaCallback);
@@ -24,14 +24,14 @@ router.post('/c2b/confirmation', paymentController.c2bConfirmation);
 router.post('/confirmation', paymentController.c2bConfirmation);
 
 // 5. User Real-Time M-Pesa Receipt Code Validation
-router.post('/validate-receipt', auth, paymentController.validateReceiptCode);
-router.post('/validate-code', auth, paymentController.validateReceiptCode);
+router.post('/validate-receipt', optionalAuth, paymentController.validateReceiptCode);
+router.post('/validate-code', optionalAuth, paymentController.validateReceiptCode);
 
 // 6. Public Payment Configuration (Till Number, business info)
 router.get('/config', paymentController.getPublicPaymentConfig);
 
-// 7. Query Payment Status (Polling / verification)
-router.get('/status/:id', auth, paymentController.getPaymentStatus);
+// 7. Query Payment Status (Polling / verification - allows optionalAuth so polling never fails on token refresh)
+router.get('/status/:id', optionalAuth, paymentController.getPaymentStatus);
 
 // 8. User Payment History
 router.get('/history', auth, paymentController.getUserPayments);

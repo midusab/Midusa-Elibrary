@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* Brand Colors - Dodgerblue */
+  /* Brand Colors - Only 5 Allowed Colors: White, Black, Dodgerblue, Green, Coca-Cola Red */
   --color-primary: #1E90FF;
   --color-primary-50: #F0F7FF;
   --color-primary-100: #E0EFFF;
@@ -14,43 +14,30 @@
   --color-primary-800: #0C4D8A;
   --color-primary-900: #0A3D6E;
 
-  /* Brand Accent: Coca-Cola Red — CTAs, Sale Badges, Urgency */
+  /* Brand Accent: Coca-Cola Red — Primary CTAs, Discounts, Urgency */
   --color-cta: #F40009;
   --color-cta-hover: #CC0007;
   --color-cta-50: #FFF0F0;
   --color-cta-100: #FFD6D7;
   --color-cta-200: #FFA8AA;
 
+  /* Brand Accent: M-Pesa Green — Payment, Success, Verified */
+  --color-green-brand: #00A651;
+  --color-green-hover: #008F44;
+
   /* Typography: Apple SF Pro System Font Stack */
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", -apple-system-subheadline, "Helvetica Neue", Helvetica, Arial, sans-serif;
 
-  /* Reduced Border Radius Scale (Max 8px for cards/containers, 4-6px for controls) */
-  --radius-xs: 2px;
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
-  --radius-xl: 6px;
-  --radius-2xl: 8px;
-  --radius-3xl: 8px;
-  --radius-4xl: 8px;
-  --radius: 6px;
-
-  /* Zero Box Shadow Definition */
-  --shadow-2xs: none;
-  --shadow-xs: none;
-  --shadow-sm: none;
-  --shadow: none;
-  --shadow-md: none;
-  --shadow-lg: none;
-  --shadow-xl: none;
-  --shadow-2xl: none;
-  --shadow-inner: none;
-}
-
-/* Global Zero-Shadow Enforcement: Eliminate box-shadow on everything */
-*, *::before, *::after {
-  box-shadow: none !important;
-  text-shadow: none !important;
+  /* Strict Unified Border Radius: 12px across entire website */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 12px;
+  --radius-xl: 12px;
+  --radius-2xl: 12px;
+  --radius-3xl: 12px;
+  --radius-4xl: 12px;
+  --radius: 12px;
 }
 
 /* Crisp Clean Surfaces (Flat Minimalist Aesthetic) */
@@ -59,7 +46,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .liquid-glass-pill {
@@ -67,7 +54,7 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 
 .liquid-glass-nav {

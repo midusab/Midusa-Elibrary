@@ -15,6 +15,7 @@ function formatBook(book) {
     id:          book.id,
     title:       book.title,
     author:      book.author,
+    authorBio:   book.author_bio || '',
     description: book.description || '',
     category:    book.categories?.name || '',
     coverImage:  book.cover_url || '',
@@ -119,10 +120,68 @@ const getBookById = async (req, res) => {
     });
 
     if (!book) return res.status(404).json({ error: 'Book not found' });
-    res.json(formatBook(book));
+    const formatted = formatBook(book);
+
+    // If authorBio not on book, check authors table
+    if (!formatted.authorBio && book.author) {
+      try {
+        const rows = await prisma.$queryRawUnsafe(`
+          SELECT bio FROM public.authors WHERE LOWER(TRIM(name)) = LOWER(TRIM($1)) LIMIT 1
+        `, book.author.trim());
+        if (rows.length > 0 && rows[0].bio) {
+          formatted.authorBio = rows[0].bio;
+        }
+      } catch (e) {}
+    }
+
+    res.json(formatted);
   } catch (error) {
     console.error('Error fetching book:', error);
     res.status(500).json({ error: 'Failed to fetch book' });
+  }
+};
+
+// ─── Get author details and books by author name ─────────────────────────────
+const getAuthorByName = async (req, res) => {
+  try {
+    const authorName = decodeURIComponent(req.params.name || '').trim();
+    if (!authorName) {
+      return res.status(400).json({ error: 'Author name is required' });
+    }
+
+    const rows = await prisma.$queryRawUnsafe(`
+      SELECT id, name, COALESCE(bio, '') as bio, COALESCE(avatar, '') as avatar
+      FROM public.authors
+      WHERE LOWER(TRIM(name)) = LOWER(TRIM($1))
+      LIMIT 1
+    `, authorName);
+
+    // Get all books written by this author
+    const authorBooks = await prisma.books.findMany({
+      where: {
+        author: { equals: authorName, mode: 'insensitive' }
+      },
+      include: bookInclude,
+      orderBy: { created_at: 'desc' }
+    });
+
+    const bio = rows.length > 0 && rows[0].bio
+      ? rows[0].bio
+      : `${authorName} is an accomplished specialist and writer known for delivering research-driven insights and timeless guidance.`;
+
+    res.json({
+      success: true,
+      author: {
+        id: rows[0]?.id || null,
+        name: authorName,
+        bio,
+        avatar: rows[0]?.avatar || '',
+        books: authorBooks.map(formatBook)
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching author details:', err);
+    res.status(500).json({ error: 'Failed to fetch author profile' });
   }
 };
 
@@ -132,6 +191,7 @@ const createBook = async (req, res) => {
     const {
       title,
       author,
+      authorBio   = '',
       description = '',
       category,
       coverImage  = '',
@@ -161,11 +221,14 @@ const createBook = async (req, res) => {
     const defaultCover = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=800';
     const finalCover = (coverImage && coverImage.trim()) ? coverImage.trim() : defaultCover;
     const finalPdf = (pdfUrl && pdfUrl.trim()) ? pdfUrl.trim() : '';
+    const cleanAuthor = author.trim();
+    const cleanAuthorBio = (authorBio || '').trim();
 
     const book = await prisma.books.create({
       data: {
         title:       title.trim(),
-        author:      author.trim(),
+        author:      cleanAuthor,
+        author_bio:  cleanAuthorBio,
         description: (description || '').trim(),
         category_id: categoryId,
         cover_url:   finalCover,
@@ -178,6 +241,20 @@ const createBook = async (req, res) => {
       },
       include: bookInclude,
     });
+
+    // Also upsert author biography into authors table if provided
+    if (cleanAuthor) {
+      try {
+        await prisma.$executeRawUnsafe(`
+          INSERT INTO public.authors (name, bio)
+          VALUES ($1, $2)
+          ON CONFLICT (name) 
+          DO UPDATE SET bio = CASE WHEN $2 <> '' THEN $2 ELSE public.authors.bio END, updated_at = NOW()
+        `, cleanAuthor, cleanAuthorBio);
+      } catch (authorErr) {
+        console.warn('Author sync notice:', authorErr.message);
+      }
+    }
 
     res.status(201).json(formatBook(book));
   } catch (error) {
@@ -193,6 +270,7 @@ const updateBook = async (req, res) => {
     const {
       title,
       author,
+      authorBio,
       description,
       category,
       coverImage,
@@ -207,6 +285,7 @@ const updateBook = async (req, res) => {
     const data = {};
     if (title       !== undefined) data.title       = title.trim();
     if (author      !== undefined) data.author      = author.trim();
+    if (authorBio   !== undefined) data.author_bio  = String(authorBio).trim();
     if (description !== undefined) data.description = description.trim();
     if (coverImage  !== undefined) {
       data.cover_url = coverImage.trim() || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=800';
@@ -237,6 +316,22 @@ const updateBook = async (req, res) => {
       data,
       include: bookInclude,
     });
+
+    // Also update authors table if author or authorBio changed
+    const targetAuthor = (author !== undefined ? author : book.author || '').trim();
+    const targetBio = (authorBio !== undefined ? authorBio : book.author_bio || '').trim();
+    if (targetAuthor) {
+      try {
+        await prisma.$executeRawUnsafe(`
+          INSERT INTO public.authors (name, bio)
+          VALUES ($1, $2)
+          ON CONFLICT (name) 
+          DO UPDATE SET bio = CASE WHEN $2 <> '' THEN $2 ELSE public.authors.bio END, updated_at = NOW()
+        `, targetAuthor, targetBio);
+      } catch (authorErr) {
+        console.warn('Author sync notice:', authorErr.message);
+      }
+    }
 
     res.json(formatBook(book));
   } catch (error) {
@@ -413,6 +508,7 @@ const verifyBookAccess = async (req, res) => {
 module.exports = {
   getBooks,
   getBookById,
+  getAuthorByName,
   verifyBookAccess,
   createBook,
   updateBook,

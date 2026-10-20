@@ -9,7 +9,6 @@ import {
   FiBookOpen,
   FiCopy,
   FiCheck,
-  FiArrowRight,
   FiSmartphone
 } from 'react-icons/fi';
 import Card from '../ui/Card';

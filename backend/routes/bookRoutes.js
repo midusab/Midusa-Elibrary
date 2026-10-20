@@ -7,6 +7,7 @@ const { auth, adminAuth } = require('../middleware/auth');
 router.get('/', bookController.getBooks);
 router.get('/featured', bookController.getFeaturedBooks);
 router.get('/bestsellers', bookController.getBestsellerBooks);
+router.get('/author/:name', bookController.getAuthorByName);
 router.get('/:id', bookController.getBookById);
 router.get('/:id/access', auth, bookController.verifyBookAccess);
 router.post('/:id/click', bookController.recordBookClick);

@@ -99,3 +99,43 @@ export async function resetOrders(token) {
   }
   return res.json();
 }
+
+/**
+ * Get all authors with biography details (Admin only)
+ */
+export async function getAdminAuthors(token) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/admin/authors`, {
+      headers: {
+        ...authHeader(token)
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+    return [];
+  } catch (err) {
+    console.error('Error fetching admin authors:', err);
+    return [];
+  }
+}
+
+/**
+ * Add or update author biography
+ */
+export async function saveAuthorBio(authorData, token) {
+  const res = await fetch(`${API_BASE_URL}/admin/authors`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeader(token)
+    },
+    body: JSON.stringify(authorData)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to save author biography');
+  }
+  return res.json();
+}

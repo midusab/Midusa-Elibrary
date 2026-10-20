@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const orderController = require('../controllers/orderController');
-const { auth, adminAuth } = require('../middleware/auth');
+const { auth, adminAuth, optionalAuth } = require('../middleware/auth');
 
-// Protected routes
-router.post('/', auth, orderController.createOrder);
+// Protected / Optional auth routes
+router.post('/', optionalAuth, orderController.createOrder);
 router.get('/my-orders', auth, orderController.getUserOrders);
 router.get('/my-purchases', auth, orderController.getUserPurchases);
 router.get('/:id', auth, orderController.getOrderById);

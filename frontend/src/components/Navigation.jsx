@@ -1,51 +1,60 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
-  FiSearch,
-  FiShoppingCart,
-  FiMenu,
-  FiX,
-  FiChevronDown,
-  FiLogOut,
-  FiUser,
-  FiShield,
-  FiArrowRight,
-  FiCreditCard,
-  FiFileText,
-  FiHeart
-} from 'react-icons/fi';
+  Search,
+  ShoppingCart,
+  Menu,
+  X,
+  ChevronDown,
+  LogOut,
+  User,
+  ShieldCheck,
+  ArrowRight,
+  FileText,
+  Heart,
+  BookOpen
+} from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { useCategories } from '../context/CategoryContext';
 import { getBooks } from '../services/api';
 import { formatPrice } from '../utils/currency';
-import CategoryIcon from './ui/CategoryIcon';
+import AuthModal from './auth/AuthModal';
 import Logo from '../assets/logo.jpg';
 
 export default function Navigation() {
-  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [cartAnimate, setCartAnimate] = useState(false);
 
   const dropdownRef = useRef(null);
   const userMenuRef = useRef(null);
   const searchContainerRef = useRef(null);
-  const mobileSearchRef = useRef(null);
 
   const location = useLocation();
   const navigate = useNavigate();
 
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
-  const { categories } = useCategories();
   const { user, logout, isAdmin } = useAuth();
   const { success } = useToast();
+
+  // Trigger subtle visual pulse on cart badge whenever cart count changes
+  const prevCountRef = useRef(cartCount);
+  useEffect(() => {
+    if (cartCount > prevCountRef.current) {
+      setCartAnimate(true);
+      const t = setTimeout(() => setCartAnimate(false), 800);
+      return () => clearTimeout(t);
+    }
+    prevCountRef.current = cartCount;
+  }, [cartCount]);
 
   // Keep search input in sync with URL search param on /library page during render
   const currentUrlSearch = location.pathname === '/library'
@@ -62,7 +71,6 @@ export default function Navigation() {
   if (location.pathname !== prevPathname) {
     setPrevPathname(location.pathname);
     setIsMobileMenuOpen(false);
-    setIsCategoriesOpen(false);
     setIsUserMenuOpen(false);
     setIsSuggestionsOpen(false);
   }
@@ -70,9 +78,6 @@ export default function Navigation() {
   // Handle outside click to close popups
   useEffect(() => {
     function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsCategoriesOpen(false);
-      }
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setIsUserMenuOpen(false);
       }
@@ -84,7 +89,7 @@ export default function Navigation() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Live debounced search suggestions (asynchronous timer callback only)
+  // Live debounced search suggestions
   useEffect(() => {
     const trimmed = searchQuery.trim();
     if (trimmed.length < 2) {
@@ -160,166 +165,51 @@ export default function Navigation() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 h-20 bg-white/90 backdrop-blur-xl border-b border-slate-200/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
-        <div className="flex items-center justify-between h-full gap-2 sm:gap-4 lg:gap-6">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-xs">
+      {/* ── Top Main Navbar (80px height) ── */}
+      <nav className="h-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-full gap-3 md:gap-6">
           
-          {/* ========================================================= */}
-          {/* 1. BRAND LOGO + CORE NAVIGATION LINKS                     */}
-          {/* ========================================================= */}
-          <div className="flex items-center gap-4 lg:gap-7 flex-shrink-0">
-            {/* Brand Logo */}
+          {/* 1. Left: Brand Logo & Shop link */}
+          <div className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
             <Link to="/" className="flex items-center gap-2.5 group py-1">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-[#1E90FF] to-[#2563EB] flex items-center justify-center text-white shadow-md shadow-[#1E90FF]/25 border border-white/60 ring-2 ring-[#1E90FF]/15 group-hover:scale-105 transition-transform duration-200 overflow-hidden flex-shrink-0">
                 <img className="w-full h-full object-cover" src={Logo} alt="Midusa Elibrary" />
               </div>
               <span className="text-lg sm:text-xl font-black tracking-tight select-none">
-                <span className="text-slate-900">Midusa</span>
+                <span className="text-black">Midusa</span>
                 <span className="text-[#1E90FF]">Elibrary</span>
               </span>
             </Link>
 
-            {/* Streamlined Desktop Navigation Links (Shop, Categories, Bestsellers) */}
-            <div className="hidden lg:flex items-center gap-1">
-              {/* Shop */}
-              <Link
-                to="/library"
-                className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                  isActive('/library') && !location.search.includes('bestseller')
-                    ? 'text-[#1E90FF] bg-blue-50 font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-                }`}
-              >
-                Shop
-              </Link>
-
-              {/* Categories with Dropdown */}
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
-                    isCategoriesOpen || isActive('/categories')
-                      ? 'text-[#1E90FF] bg-blue-50 font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-                  }`}
-                  aria-expanded={isCategoriesOpen}
-                  aria-haspopup="true"
-                >
-                  <span>Categories</span>
-                  <FiChevronDown
-                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                      isCategoriesOpen ? 'rotate-180 text-[#1E90FF]' : 'text-slate-400'
-                    }`}
-                  />
-                </button>
-
-                {/* Categories Dropdown Menu */}
-                {isCategoriesOpen && (
-                  <div className="absolute left-0 mt-2 w-72 bg-white/95 backdrop-blur-2xl rounded-lg p-2.5 border border-slate-200/90 animate-in fade-in zoom-in-95 duration-150 z-50">
-                    <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      Book Categories
-                    </div>
-                    <div className="space-y-1 mt-1 max-h-72 overflow-y-auto">
-                      {categories.length === 0 ? (
-                        <div className="px-3 py-2 text-xs text-slate-400">Loading categories...</div>
-                      ) : (
-                        categories.map((cat) => (
-                          <Link
-                            key={cat.id}
-                            to={`/library?category=${encodeURIComponent(cat.name)}`}
-                            onClick={() => setIsCategoriesOpen(false)}
-                            className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-blue-50/70 transition-colors group/item"
-                          >
-                            <div className="w-7 h-7 rounded-lg bg-blue-50 text-[#1E90FF] flex items-center justify-center flex-shrink-0 group-hover/item:scale-105 group-hover/item:bg-[#1E90FF] group-hover/item:text-white transition-all">
-                              <CategoryIcon slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')} className="w-3.5 h-3.5" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold text-slate-800 group-hover/item:text-[#1E90FF] truncate transition-colors">
-                                {cat.name}
-                              </p>
-                              {cat._count?.books !== undefined && (
-                                <p className="text-[10px] text-slate-400 line-clamp-1">
-                                  {cat._count.books} {cat._count.books === 1 ? 'book' : 'books'}
-                                </p>
-                              )}
-                            </div>
-                          </Link>
-                        ))
-                      )}
-                    </div>
-
-                    <div className="border-t border-slate-100 mt-2 pt-2">
-                      <Link
-                        to="/categories"
-                        onClick={() => setIsCategoriesOpen(false)}
-                        className="flex items-center justify-between px-3 py-2 text-xs font-bold text-[#1E90FF] hover:bg-blue-50 rounded-xl transition-colors"
-                      >
-                        <span>Explore All Categories</span>
-                        <FiArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Bestsellers Link */}
-              <Link
-                to="/library?bestseller=true"
-                className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 ${
-                  location.search.includes('bestseller')
-                    ? 'text-amber-700 bg-amber-50 font-bold'
-                    : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50/60'
-                }`}
-              >
-                <span>Bestsellers</span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                  ★
-                </span>
-              </Link>
-
-              {/* About Link */}
-              <Link
-                to="/about"
-                className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                  isActive('/about')
-                    ? 'text-[#1E90FF] bg-blue-50 font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-                }`}
-              >
-                About
-              </Link>
-
-              {/* Contact Link */}
-              <Link
-                to="/contact"
-                className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                  isActive('/contact')
-                    ? 'text-[#1E90FF] bg-blue-50 font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-                }`}
-              >
-                Contact
-              </Link>
-            </div>
+            <Link
+              to="/library"
+              className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 ${
+                isActive('/library')
+                  ? 'text-[#1E90FF] bg-blue-50'
+                  : 'text-slate-600 hover:text-black hover:bg-slate-100/70'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5 text-[#1E90FF]" />
+              <span>Shop</span>
+            </Link>
           </div>
 
-          {/* ========================================================= */}
-          {/* 2. PROMINENT, FUNCTIONAL SEARCH BAR (MD & UP)              */}
-          {/* ========================================================= */}
-          <div className="hidden md:flex flex-1 max-w-sm lg:max-w-md xl:max-w-lg mx-2 lg:mx-4 relative" ref={searchContainerRef}>
+          {/* 2. Center: Extended Width Search Bar with 12px rounded-xl radius */}
+          <div
+            className="flex-1 max-w-xl lg:max-w-2xl xl:max-w-3xl mx-auto relative hidden sm:flex"
+            ref={searchContainerRef}
+          >
             <form onSubmit={handleSearchSubmit} className="relative w-full flex items-center">
-              {/* Clickable Search Magnifier Button */}
               <button
                 type="submit"
                 aria-label="Submit search"
                 title="Search"
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#1E90FF] transition-colors p-1 rounded-full cursor-pointer z-10"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#1E90FF] transition-colors p-1 rounded-xl cursor-pointer z-10"
               >
-                <FiSearch className="w-4 h-4" />
+                <Search className="w-4 h-4" />
               </button>
 
-              {/* Main Search Input */}
               <input
                 type="text"
                 value={searchQuery}
@@ -334,31 +224,30 @@ export default function Navigation() {
                     setIsSuggestionsOpen(false);
                   }
                 }}
-                placeholder="Search books, authors, genres..."
-                className="w-full pl-11 pr-10 py-2.5 bg-slate-100/70 hover:bg-slate-100/90 focus:bg-white border border-slate-200/90 focus:border-[#1E90FF] rounded-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-[#1E90FF]/15 transition-all shadow-xs"
+                placeholder="Search thousands of books, authors, or genres..."
+                className="w-full pl-11 pr-10 py-2.5 bg-slate-100/80 hover:bg-slate-100 focus:bg-white border border-slate-200/90 focus:border-[#1E90FF] rounded-xl text-sm text-black placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-[#1E90FF]/15 transition-all shadow-xs"
               />
 
-              {/* Clear Search Button */}
               {searchQuery && (
                 <button
                   type="button"
                   onClick={handleClearSearch}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1 rounded-full z-10"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-black cursor-pointer p-1 rounded-xl z-10"
                   aria-label="Clear search"
                   title="Clear"
                 >
-                  <FiX className="w-3.5 h-3.5" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </form>
 
             {/* Instant Live Search Suggestions Dropdown */}
             {isSuggestionsOpen && searchQuery.trim().length >= 2 && (
-              <div className="absolute left-0 right-0 top-full mt-2 bg-white/98 backdrop-blur-2xl rounded-lg p-2.5 border border-slate-200/90 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute left-0 right-0 top-full mt-2 bg-white backdrop-blur-2xl rounded-xl p-2.5 border border-slate-200 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150">
                 {suggestions.length > 0 ? (
                   <div className="space-y-1">
                     <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                      <span>Matching Books</span>
+                      <span>Matching Titles</span>
                       <span>{suggestions.length} found</span>
                     </div>
 
@@ -372,16 +261,15 @@ export default function Navigation() {
                         <img
                           src={book.coverImage}
                           alt={book.title}
-                          className="w-8 h-11 object-cover rounded-md shadow-xs bg-slate-100 flex-shrink-0"
+                          className="w-9 h-12 object-cover rounded-xl shadow-xs bg-slate-100 flex-shrink-0"
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-slate-900 group-hover:text-[#1E90FF] truncate">
+                          <p className="text-xs font-bold text-black group-hover:text-[#1E90FF] truncate">
                             {book.title}
                           </p>
-                          <p className="text-[11px] text-slate-500 truncate flex items-center gap-1.5">
+                          <p className="text-[11px] text-slate-500 truncate flex items-center gap-1.5 mt-0.5">
                             <span>by {book.author}</span> · 
-                            <span className="font-bold text-slate-900">{formatPrice(book.price)}</span>
-                            <span className="text-[10px] text-slate-400 line-through">{formatPrice(book.originalPrice || Math.round(book.price * 1.35))}</span>
+                            <span className="font-bold text-[#F40009]">{formatPrice(book.price)}</span>
                           </p>
                         </div>
                       </button>
@@ -394,7 +282,7 @@ export default function Navigation() {
                         className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-[#1E90FF] hover:bg-blue-50 rounded-xl transition-colors cursor-pointer"
                       >
                         <span>View all catalog results for &ldquo;{searchQuery}&rdquo;</span>
-                        <FiArrowRight className="w-3.5 h-3.5" />
+                        <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -418,82 +306,87 @@ export default function Navigation() {
             )}
           </div>
 
-          {/* ========================================================= */}
-          {/* 3. RIGHT SECTION: CART + USER ACCOUNT / SIGN IN           */}
-          {/* ========================================================= */}
-          <div className="flex items-center gap-2.5 sm:gap-3.5 flex-shrink-0">
-            {/* Wishlist Heart Icon with Notification Badge */}
+          {/* 3. Right: Wishlist + Cart + User Profile / Sign In */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            {/* Wishlist */}
             <Link
               to="/wishlist"
-              className="relative p-2.5 rounded-full text-slate-700 hover:text-rose-500 hover:bg-rose-50 border border-slate-200/80 transition-all focus:outline-none focus:ring-2 focus:ring-rose-500/30 cursor-pointer"
+              className="relative p-2.5 rounded-xl text-slate-700 hover:text-[#F40009] hover:bg-red-50/70 border border-slate-200/80 transition-all focus:outline-none cursor-pointer"
               aria-label={`Wishlist with ${wishlistCount} items`}
               title="Your Wishlist"
             >
-              <FiHeart className={`w-5 h-5 ${wishlistCount > 0 ? 'text-rose-500 fill-rose-50' : ''}`} />
+              <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${wishlistCount > 0 ? 'text-[#F40009] fill-[#F40009]/15' : ''}`} />
               {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center shadow-xs">
+                <span className="absolute -top-1 -right-1 bg-[#F40009] text-white text-[10px] font-bold rounded-xl h-4.5 min-w-[18px] px-1 flex items-center justify-center shadow-xs">
                   {wishlistCount}
                 </span>
               )}
             </Link>
 
-            {/* Cart Icon with Notification Badge */}
+            {/* Cart with smooth visual counter badge update */}
             <Link
               to="/cart"
-              className="relative p-2.5 rounded-full text-slate-700 hover:text-[#1E90FF] hover:bg-slate-100/80 border border-slate-200/80 transition-all focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/30 cursor-pointer"
+              className={`relative p-2.5 rounded-xl text-slate-700 hover:text-[#1E90FF] hover:bg-blue-50/70 border border-slate-200/80 transition-all focus:outline-none cursor-pointer ${
+                cartAnimate ? 'scale-110 border-[#1E90FF]' : ''
+              }`}
               aria-label={`Shopping cart with ${cartCount} items`}
+              title="Shopping Cart"
             >
-              <FiShoppingCart className="w-5 h-5" />
+              <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#1E90FF] text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center shadow-md shadow-[#1E90FF]/30 animate-pulse">
+                <span
+                  className={`absolute -top-1 -right-1 bg-[#1E90FF] text-white text-[10px] font-extrabold rounded-xl h-5 min-w-[20px] px-1.5 flex items-center justify-center shadow-md shadow-[#1E90FF]/30 transition-transform duration-300 ${
+                    cartAnimate ? 'scale-125 bg-[#00A651]' : 'scale-100'
+                  }`}
+                >
                   {cartCount}
                 </span>
               )}
             </Link>
 
-            {/* Auth: Authenticated Profile Menu OR Clean Sign In Pill */}
+            {/* User Account / Sign In */}
             {user ? (
               <div className="relative" ref={userMenuRef}>
                 <button
                   type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 p-1.5 sm:pr-3 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 shadow-xs transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/30"
+                  className="flex items-center gap-2 p-1 sm:pr-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200/90 shadow-xs transition-all cursor-pointer focus:outline-none"
                   aria-expanded={isUserMenuOpen}
                 >
                   {user.avatar ? (
                     <img
                       src={user.avatar}
                       alt={user.fullname}
-                      className="w-8 h-8 rounded-full object-cover ring-2 ring-[#1E90FF]/20"
+                      className="w-8 h-8 rounded-xl object-cover ring-2 ring-[#1E90FF]/20"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-50 text-[#1E90FF] flex items-center justify-center text-xs font-bold ring-2 ring-[#1E90FF]/20">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center text-xs font-bold ring-2 ring-[#1E90FF]/20">
                       {user.fullname?.[0] || 'U'}
                     </div>
                   )}
-                  <span className="text-xs font-bold text-slate-800 hidden sm:inline max-w-[90px] truncate">
+                  <span className="text-xs font-bold text-slate-800 hidden md:inline max-w-[85px] truncate">
                     {user.fullname?.split(' ')[0]}
                   </span>
                   {isAdmin && (
-                    <span className="hidden sm:inline text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 uppercase">
+                    <span className="hidden md:inline text-[9px] font-bold px-1.5 py-0.5 rounded-xl bg-black text-white uppercase tracking-wider">
                       Admin
                     </span>
                   )}
-                  <FiChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:inline" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden md:inline" />
                 </button>
 
                 {/* User Dropdown */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-60 bg-white/98 backdrop-blur-2xl rounded-lg p-2 border border-slate-200/90 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl p-2 border border-slate-200 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150">
                     <div className="px-3.5 py-2.5 border-b border-slate-100">
                       <div className="flex items-center justify-between gap-1 mb-0.5">
-                        <p className="font-bold text-slate-900 text-sm truncate">{user.fullname}</p>
+                        <p className="font-bold text-black text-sm truncate">{user.fullname}</p>
                         {isAdmin ? (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 uppercase tracking-wider">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-xl bg-black text-white uppercase tracking-wider">
                             Admin
                           </span>
                         ) : (
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-xl bg-blue-50 text-[#1E90FF]">
                             Reader
                           </span>
                         )}
@@ -506,9 +399,9 @@ export default function Navigation() {
                         to="/dashboard"
                         state={{ tab: 'library' }}
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#1E90FF] rounded-xl transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#1E90FF] rounded-xl transition-colors"
                       >
-                        <FiUser className="w-4 h-4 text-slate-400" />
+                        <User className="w-4 h-4 text-slate-400" />
                         <span>My Library</span>
                       </Link>
 
@@ -516,45 +409,31 @@ export default function Navigation() {
                         to="/dashboard"
                         state={{ tab: 'orders' }}
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#1E90FF] rounded-xl transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#1E90FF] rounded-xl transition-colors"
                       >
-                        <FiFileText className="w-4 h-4 text-slate-400" />
-                        <span>Order History</span>
-                      </Link>
-
-                      <Link
-                        to="/wishlist"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-rose-600 rounded-xl transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <FiHeart className="w-4 h-4 text-slate-400" />
-                          <span>My Wishlist</span>
-                        </div>
-                        {wishlistCount > 0 && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-600">
-                            {wishlistCount}
-                          </span>
-                        )}
+                        <FileText className="w-4 h-4 text-slate-400" />
+                        <span>Orders &amp; Payments</span>
                       </Link>
 
                       {isAdmin && (
                         <Link
                           to="/admin"
                           onClick={() => setIsUserMenuOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 rounded-xl transition-colors"
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#1E90FF] bg-blue-50/70 hover:bg-blue-100/70 rounded-xl transition-colors"
                         >
-                          <FiShield className="w-4 h-4 text-amber-600" />
-                          <span>Admin Portal</span>
+                          <ShieldCheck className="w-4 h-4 text-[#1E90FF]" />
+                          <span>Admin Dashboard</span>
                         </Link>
                       )}
+
+                      <div className="border-t border-slate-100 my-1" />
 
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer text-left"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-[#F40009] hover:bg-red-50 rounded-xl transition-colors cursor-pointer text-left"
                       >
-                        <FiLogOut className="w-4 h-4 text-rose-500" />
+                        <LogOut className="w-4 h-4 text-[#F40009]" />
                         <span>Sign Out</span>
                       </button>
                     </div>
@@ -562,207 +441,146 @@ export default function Navigation() {
                 )}
               </div>
             ) : (
-              /* Sign In Button */
-              <Link
-                to="/login"
-                className="flex items-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-full bg-[#1E90FF] hover:bg-[#1C86EE] text-white text-xs sm:text-sm font-semibold shadow-xs hover:shadow-sm transition-all duration-200 active:scale-[0.98] cursor-pointer"
-              >
-                <FiUser className="w-3.5 h-3.5" />
-                <span className="whitespace-nowrap">Sign In</span>
+              <Link to="/login">
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-[#1E90FF] hover:bg-blue-600 text-white text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition-all cursor-pointer"
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Sign In</span>
+                </button>
               </Link>
             )}
 
-            {/* Mobile Hamburger Toggle Button */}
+            {/* Mobile Menu Hamburger */}
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2.5 text-slate-700 hover:text-[#1E90FF] hover:bg-slate-100/80 rounded-full md:hidden transition-colors border border-slate-200/80 cursor-pointer"
-              aria-label="Toggle navigation menu"
-              aria-expanded={isMobileMenuOpen}
+              className="p-2 sm:hidden rounded-xl text-slate-700 hover:bg-slate-100"
+              aria-label="Toggle menu"
             >
-              {isMobileMenuOpen ? <FiX className="w-5 h-5" /> : <FiMenu className="w-5 h-5" />}
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
+      </nav>
 
-        {/* ========================================================= */}
-        {/* 4. MOBILE NAVIGATION DRAWER (FOR MOBILE SCREENS)          */}
-        {/* ========================================================= */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden fixed top-20 left-0 right-0 z-40 bg-white/98 backdrop-blur-2xl border-t border-slate-200/80 max-h-[calc(100vh-5rem)] overflow-y-auto overscroll-contain">
-            <div className="px-4 py-4 space-y-4">
-              {/* Mobile Search Bar */}
-              <form onSubmit={handleSearchSubmit} className="relative" ref={mobileSearchRef}>
-                <button
-                  type="submit"
-                  aria-label="Submit search"
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[#1E90FF] p-0.5 cursor-pointer"
-                >
-                  <FiSearch className="w-4 h-4" />
-                </button>
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={handleQueryChange}
-                  placeholder="Search books, authors, categories..."
-                  className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/25"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={handleClearSearch}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
-                    aria-label="Clear search"
-                  >
-                    <FiX className="w-4 h-4" />
-                  </button>
-                )}
-              </form>
+      {/* ── High-Visibility Category Bar directly beneath navbar ── */}
+      <div className="bg-slate-50/90 backdrop-blur-md border-t border-slate-200/60 h-12 flex items-center">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 w-full flex items-center justify-between gap-1">
+          {/* Left Arrow */}
+          <button
+            type="button"
+            onClick={() => scrollCategoryBar('left')}
+            className="p-1 rounded-xl text-slate-500 hover:text-black hover:bg-slate-200/60 hidden sm:flex cursor-pointer transition-colors"
+            aria-label="Scroll categories left"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
 
-              {/* Mobile Navigation Links */}
-              <div className="flex flex-col space-y-1 text-sm font-semibold text-slate-800">
+          {/* Horizontal Scrollable Categories Container */}
+          <div
+            ref={categoryScrollRef}
+            className="flex items-center gap-1.5 overflow-x-auto py-1 px-1 scroll-smooth flex-1"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {/* All Books pill */}
+            <Link
+              to="/library"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                !currentCategoryParam && isActive('/library')
+                  ? 'bg-[#1E90FF] text-white shadow-xs'
+                  : 'text-slate-700 bg-white border border-slate-200/80 hover:border-[#1E90FF]/40 hover:text-[#1E90FF]'
+              }`}
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>All Books</span>
+            </Link>
+
+            {/* Dynamic Categories */}
+            {categories.map((cat) => {
+              const active = currentCategoryParam.toLowerCase() === cat.name.toLowerCase();
+              return (
                 <Link
-                  to="/library"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors flex items-center justify-between"
+                  key={cat.id}
+                  to={`/library?category=${encodeURIComponent(cat.name)}`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                    active
+                      ? 'bg-[#1E90FF] text-white font-bold shadow-xs'
+                      : 'text-slate-700 bg-white border border-slate-200/80 hover:border-[#1E90FF]/40 hover:text-[#1E90FF]'
+                  }`}
                 >
-                  <span>Shop</span>
-                  <FiArrowRight className="w-4 h-4 text-slate-400" />
+                  <CategoryIcon
+                    slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
+                    className={`w-3.5 h-3.5 ${active ? 'text-white' : 'text-[#1E90FF]'}`}
+                  />
+                  <span>{cat.name}</span>
                 </Link>
-                
-                <Link
-                  to="/library?bestseller=true"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-3.5 py-2.5 rounded-xl hover:bg-amber-50 hover:text-amber-800 transition-colors flex items-center justify-between"
-                >
-                  <span>Top Bestsellers</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">★ Popular</span>
-                </Link>
-
-                <div className="px-3.5 pt-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Browse by Category
-                </div>
-                {categories.length === 0 ? (
-                  <div className="px-3.5 py-1 text-xs text-slate-400">Loading categories...</div>
-                ) : (
-                  categories.map((cat) => (
-                    <Link
-                      key={cat.id}
-                      to={`/library?category=${encodeURIComponent(cat.name)}`}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="px-3.5 py-2 rounded-xl hover:bg-slate-50 flex items-center gap-3 text-slate-600 hover:text-[#1E90FF] transition-colors"
-                    >
-                      <div className="w-6 h-6 rounded-lg bg-blue-50 text-[#1E90FF] flex items-center justify-center flex-shrink-0">
-                        <CategoryIcon slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')} className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="text-xs font-semibold">{cat.name}</span>
-                    </Link>
-                  ))
-                )}
-
-                <div className="border-t border-slate-100 pt-2 my-1" />
-                
-                <Link
-                  to="/about"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors"
-                >
-                  About Us
-                </Link>
-                <Link
-                  to="/contact"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors"
-                >
-                  Contact &amp; Support
-                </Link>
-
-                {user ? (
-                  <>
-                    <div className="border-t border-slate-100 pt-2 my-1" />
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FiUser className="w-4 h-4 text-slate-400" />
-                        <span>My Profile &amp; Library</span>
-                      </div>
-                      {isAdmin && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
-                          Admin
-                        </span>
-                      )}
-                    </Link>
-
-                    <Link
-                      to="/dashboard"
-                      state={{ tab: 'orders' }}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-[#1E90FF] transition-colors flex items-center gap-2"
-                    >
-                      <FiFileText className="w-4 h-4 text-slate-400" />
-                      <span>Order History</span>
-                    </Link>
-
-                    <Link
-                      to="/wishlist"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="px-3.5 py-2.5 rounded-xl hover:bg-slate-50 hover:text-rose-600 transition-colors flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FiHeart className="w-4 h-4 text-slate-400" />
-                        <span>My Wishlist</span>
-                      </div>
-                      {wishlistCount > 0 && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-50 text-rose-600">
-                          {wishlistCount}
-                        </span>
-                      )}
-                    </Link>
-
-                    {isAdmin && (
-                      <Link
-                        to="/admin"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="px-3.5 py-2.5 rounded-xl hover:bg-amber-50 text-amber-700 font-semibold transition-colors flex items-center gap-2"
-                      >
-                        <FiShield className="w-4 h-4 text-amber-500" />
-                        <span>Admin Portal</span>
-                      </Link>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        handleLogout();
-                      }}
-                      className="w-full px-3.5 py-2.5 rounded-xl hover:bg-rose-50 text-rose-600 transition-colors flex items-center gap-2 cursor-pointer text-left font-medium"
-                    >
-                      <FiLogOut className="w-4 h-4 text-rose-500" />
-                      <span>Sign Out</span>
-                    </button>
-                  </>
-                ) : (
-                  <div className="pt-2 border-t border-slate-100">
-                    <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                      <button
-                        type="button"
-                        className="w-full flex items-center justify-center gap-2.5 py-3 rounded-full bg-[#1E90FF] text-white text-sm font-semibold shadow-xs transition-all cursor-pointer"
-                      >
-                        <FiUser className="w-4 h-4" />
-                        <span>Sign In to Account</span>
-                      </button>
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </div>
+              );
+            })}
           </div>
-        )}
+
+          {/* Right Arrow */}
+          <button
+            type="button"
+            onClick={() => scrollCategoryBar('right')}
+            className="p-1 rounded-xl text-slate-500 hover:text-black hover:bg-slate-200/60 hidden sm:flex cursor-pointer transition-colors"
+            aria-label="Scroll categories right"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
-    </nav>
+
+      {/* ── Mobile Menu Dropdown ── */}
+      {isMobileMenuOpen && (
+        <div className="sm:hidden bg-white border-b border-slate-200 px-4 py-4 space-y-4 animate-in slide-in-from-top-2">
+          {/* Mobile Search */}
+          <form onSubmit={handleSearchSubmit} className="relative w-full">
+            <button
+              type="submit"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleQueryChange}
+              placeholder="Search books, authors, genres..."
+              className="w-full pl-9 pr-8 py-2 bg-slate-100 rounded-xl text-xs text-black focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
+            />
+          </form>
+
+          {/* Quick links */}
+          <div className="space-y-1 text-sm font-semibold text-slate-800">
+            <Link
+              to="/library"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50"
+            >
+              <span>Catalog</span>
+              <ArrowRight className="w-4 h-4 text-slate-400" />
+            </Link>
+            <Link
+              to="/categories"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50"
+            >
+              <span>Categories</span>
+              <ArrowRight className="w-4 h-4 text-slate-400" />
+            </Link>
+            <Link
+              to="/wishlist"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50"
+            >
+              <span>Wishlist ({wishlistCount})</span>
+              <Heart className="w-4 h-4 text-[#F40009]" />
+            </Link>
+          </div>
+        </div>
+      )}
+    </header>
   );
 }

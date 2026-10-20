@@ -484,6 +484,73 @@ const resetOrders = async (req, res) => {
   }
 };
 
+/**
+ * Get all authors with biography and book counts (Admin only)
+ */
+const getAuthors = async (req, res) => {
+  try {
+    const authors = await prisma.$queryRawUnsafe(`
+      SELECT 
+        a.id, 
+        a.name, 
+        COALESCE(a.bio, '') as bio, 
+        COALESCE(a.avatar, '') as avatar, 
+        a.created_at, 
+        a.updated_at,
+        COUNT(b.id)::int as "bookCount"
+      FROM public.authors a
+      LEFT JOIN public.books b ON LOWER(TRIM(b.author)) = LOWER(TRIM(a.name))
+      GROUP BY a.id, a.name, a.bio, a.avatar, a.created_at, a.updated_at
+      ORDER BY a.name ASC
+    `);
+
+    res.json({ success: true, authors });
+  } catch (error) {
+    console.error('Error fetching authors:', error);
+    res.status(500).json({ error: 'Failed to fetch authors', details: error.message });
+  }
+};
+
+/**
+ * Add or update Author Biography (Admin only)
+ */
+const updateAuthor = async (req, res) => {
+  try {
+    const { name, bio = '', avatar = '' } = req.body;
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ error: 'Author name is required' });
+    }
+
+    const cleanName = String(name).trim();
+    const cleanBio = String(bio || '').trim();
+    const cleanAvatar = String(avatar || '').trim();
+
+    const result = await prisma.$queryRawUnsafe(`
+      INSERT INTO public.authors (name, bio, avatar, updated_at)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (name) 
+      DO UPDATE SET bio = EXCLUDED.bio, avatar = EXCLUDED.avatar, updated_at = NOW()
+      RETURNING id, name, bio, avatar, created_at, updated_at
+    `, cleanName, cleanBio, cleanAvatar);
+
+    // Also sync author_bio column across existing books by this author
+    await prisma.$executeRawUnsafe(`
+      UPDATE public.books
+      SET author_bio = $1
+      WHERE LOWER(TRIM(author)) = LOWER(TRIM($2))
+    `, cleanBio, cleanName);
+
+    res.json({
+      success: true,
+      message: 'Author biography updated successfully',
+      author: result[0]
+    });
+  } catch (error) {
+    console.error('Error updating author bio:', error);
+    res.status(500).json({ error: 'Failed to update author biography', details: error.message });
+  }
+};
+
 module.exports = {
   recordSiteVisit,
   getUsers,
@@ -491,4 +558,7 @@ module.exports = {
   autoMarkBestsellers,
   resetRevenue,
   resetOrders,
+  getAuthors,
+  updateAuthor,
 };
+
