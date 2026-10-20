@@ -405,7 +405,7 @@ export default function BookDetails() {
             </div>
             <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl shadow-sm flex flex-col sm:flex-row gap-5 items-start">
               <div className="w-16 h-16 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center text-xl font-bold flex-shrink-0 border border-[#1E90FF]/20">
-                {book.author.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                {(book.author || 'Author').trim().split(/\s+/).map(n => n[0]).slice(0, 2).join('').toUpperCase()}
               </div>
               <div className="flex-1">
                 <h3 className="text-base sm:text-lg font-bold text-black mb-1">

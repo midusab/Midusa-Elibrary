@@ -65,10 +65,22 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Netflix Cinematic Backdrop with dark vignette & soft Dodgerblue / Red accents */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent z-10 pointer-events-none" />
-      <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-[#1E90FF]/15 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute -bottom-40 right-10 w-[450px] h-[450px] bg-[#F40009]/10 rounded-full blur-[120px] pointer-events-none" />
+      {/* Dynamic Ambient Cover Background with smooth fade on carousel slide */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <img
+          key={currentBook.id}
+          src={
+            currentBook.coverImage ||
+            'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=1200'
+          }
+          alt=""
+          className="w-full h-full object-cover scale-125 blur-3xl opacity-30 transition-all duration-1000 ease-out"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
+      </div>
+      <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-[#1E90FF]/20 rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute -bottom-40 right-10 w-[450px] h-[450px] bg-[#F40009]/15 rounded-full blur-[130px] pointer-events-none" />
 
       {/* Main Slide Presentation */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 min-h-[400px] sm:min-h-[460px] flex items-center relative z-20">
@@ -166,34 +178,34 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
             </div>
           </div>
 
-          {/* Right Column: 3D Floating Book Showcase with Glass Reflection */}
+          {/* Right Column: Book Image with Smooth Fade Background (Not a Card) */}
           <div className="md:col-span-5 flex items-center justify-center relative">
             <Link
               to={`/book/${currentBook.id}`}
-              className="relative group block cursor-pointer transition-transform duration-300 hover:scale-105"
+              className="relative group block cursor-pointer transition-transform duration-500 hover:scale-105"
             >
-              {/* Blue Glow Halo */}
-              <div className="absolute inset-0 bg-[#1E90FF]/30 rounded-xl blur-2xl transform group-hover:scale-110 transition-transform duration-500" />
+              {/* Soft Ambient Behind-Image Glow & Radial Fade */}
+              <div
+                className="absolute -inset-6 rounded-full blur-3xl opacity-70 group-hover:opacity-90 transition-opacity duration-700 pointer-events-none"
+                style={{
+                  background: 'radial-gradient(circle, rgba(30,144,255,0.4) 0%, rgba(244,0,9,0.2) 40%, transparent 70%)'
+                }}
+              />
 
-              {/* Glass Frame */}
-              <div className="relative p-3 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl">
+              {/* The Book Image with Cinematic Drop Shadow */}
+              <div className="relative flex items-center justify-center">
                 <img
+                  key={currentBook.id}
                   src={
                     currentBook.coverImage ||
                     'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80'
                   }
                   alt={currentBook.title}
-                  className="w-48 sm:w-56 md:w-64 aspect-[3/4] object-cover rounded-xl shadow-2xl"
+                  className="w-52 sm:w-60 md:w-68 aspect-[3/4] object-cover rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] ring-1 ring-white/15 transition-all duration-700 animate-in fade-in zoom-in-95"
                 />
 
-                {/* Floating Bottom Card */}
-                <div className="absolute bottom-5 left-5 right-5 p-3 rounded-xl bg-black/90 backdrop-blur-md border border-white/20 flex items-center justify-between text-xs">
-                  <div className="min-w-0 pr-2">
-                    <p className="font-bold text-white truncate">{currentBook.title}</p>
-                    <p className="text-[10px] text-[#1E90FF] font-semibold">{currentBook.author}</p>
-                  </div>
-                  <span className="font-black text-white whitespace-nowrap">{formatPrice(currentBook.price)}</span>
-                </div>
+                {/* Subtle base vignette fading the bottom into the scene */}
+                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/50 via-black/15 to-transparent rounded-b-2xl pointer-events-none" />
               </div>
             </Link>
           </div>

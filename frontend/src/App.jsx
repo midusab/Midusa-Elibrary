@@ -67,7 +67,7 @@ export default function App() {
                     <WhatsAppButton />
                     <div className="min-h-screen flex flex-col bg-white text-slate-900 overflow-x-hidden w-full">
                       <Navigation />
-                      <main className="flex-1 pt-32 bg-white">
+                      <main className="flex-1 pt-20 bg-white">
                         <Routes>
                           <Route path="/" element={<Hero />} />
                           <Route path="/categories" element={<Categories />} />

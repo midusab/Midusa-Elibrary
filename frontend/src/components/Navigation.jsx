@@ -441,15 +441,14 @@ export default function Navigation() {
                 )}
               </div>
             ) : (
-              <Link to="/login">
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-[#1E90FF] hover:bg-blue-600 text-white text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition-all cursor-pointer"
-                >
-                  <User className="w-3.5 h-3.5" />
-                  <span>Sign In</span>
-                </button>
-              </Link>
+              <button
+                type="button"
+                onClick={() => setIsAuthModalOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-[#1E90FF] hover:bg-blue-600 text-white text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition-all cursor-pointer"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </button>
             )}
 
             {/* Mobile Menu Hamburger */}
@@ -464,73 +463,6 @@ export default function Navigation() {
           </div>
         </div>
       </nav>
-
-      {/* ── High-Visibility Category Bar directly beneath navbar ── */}
-      <div className="bg-slate-50/90 backdrop-blur-md border-t border-slate-200/60 h-12 flex items-center">
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 w-full flex items-center justify-between gap-1">
-          {/* Left Arrow */}
-          <button
-            type="button"
-            onClick={() => scrollCategoryBar('left')}
-            className="p-1 rounded-xl text-slate-500 hover:text-black hover:bg-slate-200/60 hidden sm:flex cursor-pointer transition-colors"
-            aria-label="Scroll categories left"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-
-          {/* Horizontal Scrollable Categories Container */}
-          <div
-            ref={categoryScrollRef}
-            className="flex items-center gap-1.5 overflow-x-auto py-1 px-1 scroll-smooth flex-1"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {/* All Books pill */}
-            <Link
-              to="/library"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                !currentCategoryParam && isActive('/library')
-                  ? 'bg-[#1E90FF] text-white shadow-xs'
-                  : 'text-slate-700 bg-white border border-slate-200/80 hover:border-[#1E90FF]/40 hover:text-[#1E90FF]'
-              }`}
-            >
-              <Sparkles className="w-3 h-3" />
-              <span>All Books</span>
-            </Link>
-
-            {/* Dynamic Categories */}
-            {categories.map((cat) => {
-              const active = currentCategoryParam.toLowerCase() === cat.name.toLowerCase();
-              return (
-                <Link
-                  key={cat.id}
-                  to={`/library?category=${encodeURIComponent(cat.name)}`}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                    active
-                      ? 'bg-[#1E90FF] text-white font-bold shadow-xs'
-                      : 'text-slate-700 bg-white border border-slate-200/80 hover:border-[#1E90FF]/40 hover:text-[#1E90FF]'
-                  }`}
-                >
-                  <CategoryIcon
-                    slug={cat.slug || cat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
-                    className={`w-3.5 h-3.5 ${active ? 'text-white' : 'text-[#1E90FF]'}`}
-                  />
-                  <span>{cat.name}</span>
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Right Arrow */}
-          <button
-            type="button"
-            onClick={() => scrollCategoryBar('right')}
-            className="p-1 rounded-xl text-slate-500 hover:text-black hover:bg-slate-200/60 hidden sm:flex cursor-pointer transition-colors"
-            aria-label="Scroll categories right"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
 
       {/* ── Mobile Menu Dropdown ── */}
       {isMobileMenuOpen && (
@@ -559,15 +491,7 @@ export default function Navigation() {
               onClick={() => setIsMobileMenuOpen(false)}
               className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50"
             >
-              <span>Catalog</span>
-              <ArrowRight className="w-4 h-4 text-slate-400" />
-            </Link>
-            <Link
-              to="/categories"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50"
-            >
-              <span>Categories</span>
+              <span>Shop</span>
               <ArrowRight className="w-4 h-4 text-slate-400" />
             </Link>
             <Link
@@ -578,9 +502,29 @@ export default function Navigation() {
               <span>Wishlist ({wishlistCount})</span>
               <Heart className="w-4 h-4 text-[#F40009]" />
             </Link>
+
+            {!user && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsAuthModalOpen(true);
+                }}
+                className="w-full mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#1E90FF] text-white text-xs font-bold shadow-xs cursor-pointer"
+              >
+                <User className="w-4 h-4" />
+                <span>Sign In</span>
+              </button>
+            )}
           </div>
         </div>
       )}
+
+      {/* ── Google Sign In Pop-up Modal ── */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </header>
   );
 }

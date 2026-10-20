@@ -114,10 +114,26 @@ const getBooks = async (req, res) => {
 // ─── Get single book by ID ─────────────────────────────────────────────────────
 const getBookById = async (req, res) => {
   try {
-    const book = await prisma.books.findUnique({
-      where:   { id: req.params.id },
-      include: bookInclude,
-    });
+    const rawId = req.params.id;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId);
+
+    let book = null;
+    if (isUuid) {
+      book = await prisma.books.findUnique({
+        where:   { id: rawId },
+        include: bookInclude,
+      });
+    } else {
+      book = await prisma.books.findFirst({
+        where: {
+          OR: [
+            { title: { equals: rawId, mode: 'insensitive' } },
+            { title: { contains: rawId.replace(/-/g, ' '), mode: 'insensitive' } },
+          ]
+        },
+        include: bookInclude,
+      });
+    }
 
     if (!book) return res.status(404).json({ error: 'Book not found' });
     const formatted = formatBook(book);
