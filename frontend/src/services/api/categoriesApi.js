@@ -1,5 +1,14 @@
 import { API_BASE_URL, authHeader } from './client';
 
+const DEFAULT_CATEGORIES = [
+  { id: 'c1', name: 'Self Development', _count: { books: 4 } },
+  { id: 'c2', name: 'Psychology', _count: { books: 2 } },
+  { id: 'c3', name: 'Finance & Business', _count: { books: 3 } },
+  { id: 'c4', name: 'Christianity', _count: { books: 2 } },
+  { id: 'c5', name: 'Programming', _count: { books: 2 } },
+  { id: 'c6', name: 'Marketing', _count: { books: 1 } },
+];
+
 /**
  * Fetch categories from backend database
  */
@@ -8,12 +17,12 @@ export async function getCategories() {
     const res = await fetch(`${API_BASE_URL}/categories`);
     if (res.ok) {
       const data = await res.json();
-      return Array.isArray(data) ? data : [];
+      if (Array.isArray(data) && data.length > 0) return data;
     }
-    return [];
+    return DEFAULT_CATEGORIES;
   } catch (err) {
-    console.error('Error fetching categories from backend:', err);
-    return [];
+    console.warn('Categories fetch failed, using fallback:', err.message);
+    return DEFAULT_CATEGORIES;
   }
 }
 

@@ -1,5 +1,6 @@
 const { prisma, supabase } = require('../config/database');
 const { getCache, setCache, delCachePattern, pushAsyncTask } = require('../config/redis');
+const { DEFAULT_BOOKS } = require('../data/defaultBooks');
 
 /**
  * Map a raw DB book row to the shape the frontend expects.
@@ -99,13 +100,46 @@ const getBooks = async (req, res) => {
       }),
     ]);
 
+    let formattedBooks = books.map(formatBook);
+    let finalTotal = total;
+
+    // Fallback to DEFAULT_BOOKS if database is empty
+    if (formattedBooks.length === 0) {
+      let filtered = [...DEFAULT_BOOKS];
+      if (search && search.trim()) {
+        const s = search.trim().toLowerCase();
+        filtered = filtered.filter(b =>
+          b.title.toLowerCase().includes(s) ||
+          b.author.toLowerCase().includes(s) ||
+          b.description.toLowerCase().includes(s)
+        );
+      }
+      if (category && category !== 'all') {
+        filtered = filtered.filter(b => b.category.toLowerCase() === category.toLowerCase());
+      }
+      if (featured === 'true') {
+        filtered = filtered.filter(b => b.featured);
+      }
+      if (bestseller === 'true') {
+        filtered = filtered.filter(b => b.bestseller);
+      }
+      if (minPrice) {
+        filtered = filtered.filter(b => b.price >= parseInt(minPrice));
+      }
+      if (maxPrice) {
+        filtered = filtered.filter(b => b.price <= parseInt(maxPrice));
+      }
+      finalTotal = filtered.length;
+      formattedBooks = filtered.slice(skip, skip + parseInt(limit));
+    }
+
     const result = {
-      books: books.map(formatBook),
+      books: formattedBooks,
       pagination: {
         page:       parseInt(page),
         limit:      parseInt(limit),
-        total,
-        totalPages: Math.ceil(total / parseInt(limit)),
+        total:      finalTotal,
+        totalPages: Math.max(1, Math.ceil(finalTotal / parseInt(limit))),
       },
     };
 
@@ -116,8 +150,8 @@ const getBooks = async (req, res) => {
   } catch (error) {
     console.error('Error fetching books (returning safe fallback):', error.message || error);
     res.status(200).json({
-      books: [],
-      pagination: { page: 1, limit: 12, total: 0, totalPages: 1 },
+      books: DEFAULT_BOOKS.slice(0, 12),
+      pagination: { page: 1, limit: 12, total: DEFAULT_BOOKS.length, totalPages: 1 },
       error: 'Database connection temporarily slow or offline',
     });
   }
@@ -153,15 +187,26 @@ const getBookById = async (req, res) => {
       });
     }
 
-    if (!book) return res.status(404).json({ error: 'Book not found' });
-    const formatted = formatBook(book);
+    let formatted = null;
+    if (book) {
+      formatted = formatBook(book);
+    } else {
+      const match = DEFAULT_BOOKS.find(b =>
+        b.id === rawId ||
+        b.title.toLowerCase() === rawId.toLowerCase() ||
+        b.title.toLowerCase().replace(/[^a-z0-9]/g, '') === rawId.toLowerCase().replace(/[^a-z0-9]/g, '')
+      );
+      if (match) formatted = { ...match };
+    }
+
+    if (!formatted) return res.status(404).json({ error: 'Book not found' });
 
     // If authorBio not on book, check authors table
-    if (!formatted.authorBio && book.author) {
+    if (!formatted.authorBio && formatted.author) {
       try {
         const rows = await prisma.$queryRawUnsafe(`
           SELECT bio FROM public.authors WHERE LOWER(TRIM(name)) = LOWER(TRIM($1)) LIMIT 1
-        `, book.author.trim());
+        `, formatted.author.trim());
         if (rows.length > 0 && rows[0].bio) {
           formatted.authorBio = rows[0].bio;
         }
@@ -408,7 +453,7 @@ const getFeaturedBooks = async (req, res) => {
   try {
     const cacheKey = 'books:featured';
     const cached = await getCache(cacheKey);
-    if (cached) return res.json(cached);
+    if (cached && Array.isArray(cached) && cached.length > 0) return res.json(cached);
 
     const books = await prisma.books.findMany({
       where:   { featured: true },
@@ -417,12 +462,16 @@ const getFeaturedBooks = async (req, res) => {
       orderBy: { created_at: 'desc' },
     });
 
-    const result = books.map(formatBook);
+    let result = books.map(formatBook);
+    if (result.length === 0) {
+      result = DEFAULT_BOOKS.filter(b => b.featured).slice(0, 6);
+    }
+
     await setCache(cacheKey, result, 300);
     res.json(result);
   } catch (error) {
     console.error('Error fetching featured books (safe fallback):', error.message || error);
-    res.json([]);
+    res.json(DEFAULT_BOOKS.filter(b => b.featured).slice(0, 6));
   }
 };
 
@@ -431,7 +480,7 @@ const getBestsellerBooks = async (req, res) => {
   try {
     const cacheKey = 'books:bestsellers';
     const cached = await getCache(cacheKey);
-    if (cached) return res.json(cached);
+    if (cached && Array.isArray(cached) && cached.length > 0) return res.json(cached);
 
     const books = await prisma.books.findMany({
       where:   { bestseller: true },
@@ -440,12 +489,16 @@ const getBestsellerBooks = async (req, res) => {
       orderBy: { created_at: 'desc' },
     });
 
-    const result = books.map(formatBook);
+    let result = books.map(formatBook);
+    if (result.length === 0) {
+      result = DEFAULT_BOOKS.filter(b => b.bestseller).slice(0, 8);
+    }
+
     await setCache(cacheKey, result, 300);
     res.json(result);
   } catch (error) {
     console.error('Error fetching bestseller books (safe fallback):', error.message || error);
-    res.json([]);
+    res.json(DEFAULT_BOOKS.filter(b => b.bestseller).slice(0, 8));
   }
 };
 
