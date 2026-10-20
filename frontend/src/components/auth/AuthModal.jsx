@@ -10,7 +10,7 @@ export default function AuthModal({ isOpen, onClose, redirectPath = null }) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const { signInWithGoogle } = useAuth();
-  const { success, error } = useToast();
+  const { success } = useToast();
 
   if (!isOpen) return null;
 

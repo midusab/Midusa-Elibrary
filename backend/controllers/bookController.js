@@ -1,4 +1,5 @@
-const { prisma } = require('../config/database');
+const { prisma, supabase } = require('../config/database');
+const { getCache, setCache, delCachePattern, pushAsyncTask } = require('../config/redis');
 
 /**
  * Map a raw DB book row to the shape the frontend expects.

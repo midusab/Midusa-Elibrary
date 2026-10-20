@@ -33,7 +33,6 @@ export default function Navigation() {
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [cartAnimate, setCartAnimate] = useState(false);
 
-  const dropdownRef = useRef(null);
   const userMenuRef = useRef(null);
   const searchContainerRef = useRef(null);
 

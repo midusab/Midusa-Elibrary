@@ -421,7 +421,7 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user: sessionUser };
     } catch (err) {
       if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
-        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.');
+        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.', { cause: err });
       }
       throw err;
     }
