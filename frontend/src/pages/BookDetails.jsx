@@ -455,15 +455,15 @@ export default function BookDetails() {
                           />
                         </div>
                         <div className="p-3.5">
-                          <span className="text-[10px] font-semibold text-[#1E90FF] block truncate mb-0.5">
+                          <span className="text-[10px] font-extrabold text-[#1E90FF] uppercase tracking-wider block truncate mb-1">
                             {item.category}
                           </span>
-                          <h4 className="font-semibold text-xs sm:text-sm text-black line-clamp-1 group-hover:text-[#1E90FF] transition-colors">
+                          <h4 className="font-bold text-xs sm:text-sm text-black line-clamp-2 min-h-[2.2rem] group-hover:text-[#1E90FF] transition-colors leading-snug">
                             {item.title}
                           </h4>
-                          <p className="text-[11px] text-slate-500 mb-2 truncate">{item.author}</p>
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-xs sm:text-sm font-bold text-[#F40009]">
+                          <p className="text-[11px] text-slate-500 mb-2 truncate">by {item.author}</p>
+                          <div className="flex items-baseline gap-1.5 flex-wrap">
+                            <span className="text-xs sm:text-sm font-extrabold text-black">
                               {formatPrice(item.price)}
                             </span>
                             {item.discountPercent > 0 && item.originalPrice > item.price && (
@@ -471,8 +471,8 @@ export default function BookDetails() {
                                 <span className="text-[10px] text-slate-400 line-through">
                                   {formatPrice(item.originalPrice)}
                                 </span>
-                                <span className="text-[9px] font-bold text-[#F40009] bg-red-50 px-1 py-0.2 rounded-xl">
-                                  {item.discountPercent}% OFF
+                                <span className="text-[9px] font-black text-white bg-[#F40009] px-1.5 py-0.5 rounded-xl shadow-2xs">
+                                  -{item.discountPercent}%
                                 </span>
                               </>
                             )}

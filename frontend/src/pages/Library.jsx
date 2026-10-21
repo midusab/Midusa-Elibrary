@@ -574,10 +574,12 @@ export default function Library() {
                           {/* Star rating & sales */}
                           <div className="flex items-center gap-1 mt-1 text-[11px] text-[#1E90FF] font-bold">
                             <FiStar className="w-3 h-3 fill-[#1E90FF]" />
-                            <span>{book.rating ? Number(book.rating).toFixed(1) : '4.8'}</span>
-                            <span className="text-[10px] text-slate-400 font-normal">
-                              ({book.clicks || 18} sold)
-                            </span>
+                            <span>{book.rating ? Number(book.rating).toFixed(1) : '5.0'}</span>
+                            {book.clicks > 0 && (
+                              <span className="text-[10px] text-slate-400 font-normal">
+                                ({book.clicks} reads)
+                              </span>
+                            )}
                           </div>
 
                           {/* Price block */}

@@ -169,8 +169,8 @@ export default function Navigation() {
       <nav className="h-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-full gap-3 md:gap-6">
           
-          {/* 1. Left: Brand Logo & Shop link */}
-          <div className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
+          {/* 1. Left: Brand Logo */}
+          <div className="flex items-center justify-start flex-shrink-0 sm:min-w-[180px] md:min-w-[210px]">
             <Link to="/" className="flex items-center gap-2.5 group py-1">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-[#1E90FF] to-[#2563EB] flex items-center justify-center text-white shadow-md shadow-[#1E90FF]/25 border border-white/60 ring-2 ring-[#1E90FF]/15 group-hover:scale-105 transition-transform duration-200 overflow-hidden flex-shrink-0">
                 <img className="w-full h-full object-cover" src={Logo} alt="Midusa Elibrary" />
@@ -180,25 +180,28 @@ export default function Navigation() {
                 <span className="text-[#1E90FF]">Elibrary</span>
               </span>
             </Link>
-
-            <Link
-              to="/library"
-              className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 ${
-                isActive('/library')
-                  ? 'text-[#1E90FF] bg-blue-50'
-                  : 'text-slate-600 hover:text-black hover:bg-slate-100/70'
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5 text-[#1E90FF]" />
-              <span>Shop</span>
-            </Link>
           </div>
 
-          {/* 2. Center: Extended Width Search Bar with 12px rounded-xl radius */}
-          <div
-            className="flex-1 max-w-xl lg:max-w-2xl xl:max-w-3xl mx-auto relative hidden sm:flex"
-            ref={searchContainerRef}
-          >
+          {/* 2. Center: Centered Navigation Items (Shop + Extended Search Bar) */}
+          <div className="flex-1 flex items-center justify-center gap-3.5 max-w-xl lg:max-w-2xl xl:max-w-3xl mx-auto">
+            {/* Centered Shop Link */}
+            <Link
+              to="/library"
+              className={`hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 flex-shrink-0 ${
+                isActive('/library')
+                  ? 'text-white bg-[#1E90FF] shadow-xs shadow-[#1E90FF]/25'
+                  : 'text-slate-700 hover:text-[#1E90FF] hover:bg-blue-50/70 border border-slate-200/80 bg-white'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Shop</span>
+            </Link>
+
+            {/* Extended Width Search Bar with 12px rounded-xl radius */}
+            <div
+              className="flex-1 w-full relative hidden sm:flex"
+              ref={searchContainerRef}
+            >
             <form onSubmit={handleSearchSubmit} className="relative w-full flex items-center">
               <button
                 type="submit"
@@ -303,10 +306,11 @@ export default function Navigation() {
                 )}
               </div>
             )}
+            </div>
           </div>
 
           {/* 3. Right: Wishlist + Cart + User Profile / Sign In */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <div className="flex items-center justify-end gap-2 sm:gap-3 flex-shrink-0 sm:min-w-[180px] md:min-w-[210px]">
             {/* Wishlist */}
             <Link
               to="/wishlist"

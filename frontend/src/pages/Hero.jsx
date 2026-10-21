@@ -9,12 +9,14 @@ import {
   BookOpen,
   TrendingUp,
   Award,
-  Check
+  Check,
+  Heart
 } from 'lucide-react';
 import HeroCarousel from '../components/layout/HeroCarousel';
 import { getBooks } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 
 /* ─────────────────── Star Rating (Dodgerblue) ─────────────────── */
 function StarRating({ rating = 0, count }) {
@@ -40,6 +42,7 @@ function StarRating({ rating = 0, count }) {
 /* ─────────────────── Netflix-style Book Card ─────────────────── */
 function BookCard({ book, onAddToCart }) {
   const [added, setAdded] = useState(false);
+  const { toggleWishlist, isInWishlist } = useWishlist();
 
   const handleAdd = (e) => {
     e.preventDefault();
@@ -56,8 +59,7 @@ function BookCard({ book, onAddToCart }) {
     >
       {/* Cover Image Container */}
       <div
-        className="relative bg-slate-100 flex items-center justify-center overflow-hidden"
-        style={{ aspectRatio: '3/4', minHeight: 180 }}
+        className="relative bg-slate-100 flex items-center justify-center overflow-hidden aspect-[3/4]"
       >
         <img
           src={
@@ -69,19 +71,45 @@ function BookCard({ book, onAddToCart }) {
           loading="lazy"
         />
 
+        {/* Wishlist Heart Toggle */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWishlist(book);
+          }}
+          aria-label={isInWishlist(book.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+          className={`absolute top-2 right-2 p-1.5 rounded-xl backdrop-blur-md transition-all cursor-pointer z-10 ${
+            isInWishlist(book.id)
+              ? 'bg-white text-[#F40009] shadow-sm'
+              : 'bg-black/35 text-white hover:bg-white hover:text-[#F40009]'
+          }`}
+        >
+          <Heart
+            className={`w-3.5 h-3.5 ${
+              isInWishlist(book.id) ? 'fill-[#F40009]' : ''
+            }`}
+          />
+        </button>
+
         {/* Badges: Coca-Cola Red or Green only */}
         {book.bestseller && (
-          <span className="absolute top-2 left-2 bg-[#F40009] text-white text-[9px] font-black px-2 py-0.5 rounded-xl uppercase tracking-wider">
+          <span className="absolute top-2 left-2 bg-[#F40009] text-white text-[9px] font-black px-2 py-0.5 rounded-xl uppercase tracking-wider z-10 shadow-xs">
             #1 Best
           </span>
         )}
         {book.featured && !book.bestseller && (
-          <span className="absolute top-2 left-2 bg-[#00A651] text-white text-[9px] font-black px-2 py-0.5 rounded-xl uppercase tracking-wider">
+          <span className="absolute top-2 left-2 bg-[#00A651] text-white text-[9px] font-black px-2 py-0.5 rounded-xl uppercase tracking-wider z-10 shadow-xs">
             Featured
           </span>
         )}
         {book.discountPercent > 0 && (
-          <span className="absolute top-2 right-2 bg-[#F40009] text-white text-[9px] font-black px-1.5 py-0.5 rounded-xl">
+          <span
+            className={`absolute ${
+              book.bestseller || book.featured ? 'top-8' : 'top-2'
+            } left-2 bg-[#F40009] text-white text-[9px] font-black px-1.5 py-0.5 rounded-xl z-10 shadow-xs`}
+          >
             -{book.discountPercent}%
           </span>
         )}
@@ -94,8 +122,8 @@ function BookCard({ book, onAddToCart }) {
           {book.category}
         </p>
 
-        {/* Title */}
-        <h3 className="text-xs sm:text-sm font-bold text-black line-clamp-2 leading-snug group-hover:text-[#1E90FF] transition-colors">
+        {/* Title with consistent min-height */}
+        <h3 className="text-xs sm:text-sm font-bold text-black line-clamp-2 leading-snug group-hover:text-[#1E90FF] transition-colors min-h-[2.2rem] sm:min-h-[2.5rem]">
           {book.title}
         </h3>
 

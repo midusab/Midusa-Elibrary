@@ -257,6 +257,20 @@ const createBook = async (req, res) => {
       return res.status(400).json({ error: 'Title, author, and price are required.' });
     }
 
+    const cleanTitle = title.trim();
+
+    // Prevent duplicate books by title
+    const existingBook = await prisma.books.findFirst({
+      where: {
+        title: { equals: cleanTitle, mode: 'insensitive' }
+      }
+    });
+    if (existingBook) {
+      return res.status(409).json({
+        error: `A book titled "${cleanTitle}" already exists in the library. Duplicate books are not allowed.`
+      });
+    }
+
     // Resolve category name → UUID (upsert so new categories are created on the fly)
     let categoryId = null;
     if (category && category.trim()) {
@@ -336,7 +350,21 @@ const updateBook = async (req, res) => {
     } = req.body;
 
     const data = {};
-    if (title       !== undefined) data.title       = title.trim();
+    if (title !== undefined) {
+      const cleanTitle = title.trim();
+      const existingBook = await prisma.books.findFirst({
+        where: {
+          title: { equals: cleanTitle, mode: 'insensitive' },
+          id: { not: id }
+        }
+      });
+      if (existingBook) {
+        return res.status(409).json({
+          error: `Another book titled "${cleanTitle}" already exists in the library.`
+        });
+      }
+      data.title = cleanTitle;
+    }
     if (author      !== undefined) data.author      = author.trim();
     if (authorBio   !== undefined) data.author_bio  = String(authorBio).trim();
     if (description !== undefined) data.description = description.trim();
