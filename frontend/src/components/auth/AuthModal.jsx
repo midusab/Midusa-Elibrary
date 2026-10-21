@@ -1,14 +1,36 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShieldCheck, AlertCircle, Mail, Lock, User as UserIcon, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { ADMIN_EMAIL } from '../../constants/auth';
+import { storeOAuthRedirect, popOAuthRedirect } from '../../utils/redirectProtection';
 import Logo from '../../assets/logo.jpg';
 
-export default function AuthModal({ isOpen, onClose, redirectPath = null, initialMode = 'signin' }) {
-  const [mode, setMode] = useState(initialMode); // 'signin' | 'register'
+export default function AuthModal({
+  isOpen: propIsOpen,
+  onClose: propOnClose,
+  redirectPath: propRedirectPath,
+  initialMode: propInitialMode
+}) {
+  const {
+    authModalState,
+    closeAuthModal,
+    signInWithGoogle,
+    loginWithEmail,
+    registerWithEmail
+  } = useAuth();
+  const navigate = useNavigate();
+  const { success } = useToast();
+
+  const isOpen = propIsOpen !== undefined ? propIsOpen : (authModalState?.isOpen ?? false);
+  const onClose = propOnClose || closeAuthModal;
+  const redirectPath = propRedirectPath !== undefined ? propRedirectPath : (authModalState?.redirectPath || null);
+  const effectiveInitialMode = propInitialMode || authModalState?.initialMode || 'signin';
+
+  const [mode, setMode] = useState(effectiveInitialMode); // 'signin' | 'register'
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,14 +42,14 @@ export default function AuthModal({ isOpen, onClose, redirectPath = null, initia
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showEmailForm, setShowEmailForm] = useState(false);
 
-  const { signInWithGoogle, loginWithEmail, registerWithEmail } = useAuth();
-  const { success } = useToast();
-
-  // Reset error when switching mode or opening
+  // Reset error and sync mode when opening
   useEffect(() => {
     if (isOpen) {
       setErrorMessage('');
-      setMode(initialMode);
+      setMode(effectiveInitialMode);
+      if (effectiveInitialMode === 'register') {
+        setShowEmailForm(true);
+      }
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -35,7 +57,7 @@ export default function AuthModal({ isOpen, onClose, redirectPath = null, initia
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isOpen, initialMode]);
+  }, [isOpen, effectiveInitialMode]);
 
   // Escape key handler
   useEffect(() => {
@@ -59,14 +81,18 @@ export default function AuthModal({ isOpen, onClose, redirectPath = null, initia
       success(`Welcome, ${user.fullname || 'Reader'}! Signed in successfully.`);
     }
     onClose();
-    if (redirectPath && typeof window !== 'undefined') {
-      window.location.href = redirectPath;
+    const destination = redirectPath || popOAuthRedirect(null);
+    if (destination) {
+      navigate(destination, { replace: true });
     }
   };
 
   const handleGoogleSignIn = async () => {
     setErrorMessage('');
     setIsLoading(true);
+    if (redirectPath) {
+      storeOAuthRedirect(redirectPath);
+    }
     try {
       const result = await signInWithGoogle();
       if (result?.success) {
@@ -237,7 +263,7 @@ export default function AuthModal({ isOpen, onClose, redirectPath = null, initia
                   />
                 </svg>
               )}
-              <span>{isLoading && !showEmailForm ? 'Connecting…' : 'Continue with Google'}</span>
+              <span>{isLoading && !showEmailForm ? 'Connecting…' : (mode === 'register' ? 'Sign up with Google' : 'Continue with Google')}</span>
             </button>
 
             {/* Divider */}
@@ -354,6 +380,40 @@ export default function AuthModal({ isOpen, onClose, redirectPath = null, initia
                 </button>
               </form>
             )}
+
+            {/* Mode switch helper link */}
+            <div className="mt-4 text-center">
+              {mode === 'signin' ? (
+                <p className="text-xs text-slate-500">
+                  Don&apos;t have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('register');
+                      setShowEmailForm(true);
+                      setErrorMessage('');
+                    }}
+                    className="font-bold text-[#1E90FF] hover:underline cursor-pointer"
+                  >
+                    Create one now
+                  </button>
+                </p>
+              ) : (
+                <p className="text-xs text-slate-500">
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('signin');
+                      setErrorMessage('');
+                    }}
+                    className="font-bold text-[#1E90FF] hover:underline cursor-pointer"
+                  >
+                    Sign in here
+                  </button>
+                </p>
+              )}
+            </div>
 
             {/* Trust badge footer */}
             <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-center gap-2 text-[11px] text-slate-400">

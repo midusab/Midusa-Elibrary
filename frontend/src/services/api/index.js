@@ -6,4 +6,5 @@ export * from './ordersApi';
 export * from './paymentsApi';
 export * from './authApi';
 export * from './adminApi';
+export * from './flashSaleApi';
 

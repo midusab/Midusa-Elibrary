@@ -48,7 +48,6 @@ export default function UserFavoritesTab({
                   className="w-16 h-22 object-cover rounded-lg bg-slate-100 flex-shrink-0"
                 />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-semibold text-[#1E90FF] block truncate">{book.category}</span>
                   <h3 className="font-bold text-xs sm:text-sm text-slate-900 truncate">{book.title}</h3>
                   <p className="text-[11px] text-slate-500 truncate">By {book.author}</p>
                   <p className="text-xs font-bold text-slate-900 mt-1">{formatPrice(book.price)}</p>

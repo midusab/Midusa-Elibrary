@@ -17,16 +17,20 @@ import {
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Breadcrumb from '../components/common/Breadcrumb';
-import { getBookById, getBooks, recordBookClick } from '../services/api';
+import { getBookById, getBooks, getAuthorByName, recordBookClick } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
+import { useFlashSale } from '../context/FlashSaleContext';
+import { Flame, Clock } from 'lucide-react';
+import BookCard from '../components/books/BookCard';
 
 export default function BookDetails() {
   const { id } = useParams();
   const [book, setBook] = useState(null);
   const [relatedBooks, setRelatedBooks] = useState([]);
+  const [authorBooks, setAuthorBooks] = useState([]);
   const [reviewsList, setReviewsList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdded, setIsAdded] = useState(false);
@@ -40,8 +44,11 @@ export default function BookDetails() {
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { success, error } = useToast();
+  const { isBookInFlashSale, getDiscountedPrice, countdown: flashCountdown } = useFlashSale();
 
   const isFavorite = book ? isInWishlist(book.id) : false;
+  const flashPricing = book ? getDiscountedPrice(book) : null;
+  const effectivePrice = flashPricing ? flashPricing.salePrice : (book?.price || 0);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,13 +67,28 @@ export default function BookDetails() {
           // Set reviews
           setReviewsList(Array.isArray(item.reviews) ? item.reviews : []);
 
-          // Fetch related books in same category
+          // Fetch related books in same category & other books by this author
+          const promises = [];
           if (item.category) {
-            const all = await getBooks({ category: item.category });
-            if (!isMounted) return;
-            const list = Array.isArray(all?.books) ? all.books : [];
-            setRelatedBooks(list.filter(b => String(b.id) !== String(item.id)).slice(0, 4));
+            promises.push(getBooks({ category: item.category }));
+          } else {
+            promises.push(Promise.resolve({ books: [] }));
           }
+
+          if (item.author) {
+            promises.push(getAuthorByName(item.author).catch(() => null));
+          } else {
+            promises.push(Promise.resolve(null));
+          }
+
+          const [catRes, authorRes] = await Promise.all(promises);
+          if (!isMounted) return;
+
+          const catList = Array.isArray(catRes?.books) ? catRes.books : [];
+          setRelatedBooks(catList.filter(b => String(b.id) !== String(item.id)).slice(0, 4));
+
+          const authList = Array.isArray(authorRes?.author?.books) ? authorRes.author.books : [];
+          setAuthorBooks(authList.filter(b => String(b.id) !== String(item.id)));
         }
       } catch (err) {
         console.error('Error loading book details:', err);
@@ -95,7 +117,7 @@ export default function BookDetails() {
   if (!book) {
     return (
       <div className="min-h-[70vh] bg-white flex items-center justify-center p-4">
-        <Card className="p-8 text-center max-w-sm w-full bg-white border border-slate-200 shadow-sm rounded-2xl">
+        <Card hover={false} className="p-8 text-center max-w-sm w-full bg-white border border-slate-200 rounded-2xl">
           <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mx-auto mb-3">
             <FiBookOpen className="w-6 h-6" />
           </div>
@@ -111,7 +133,17 @@ export default function BookDetails() {
 
 
   const handleAddToCart = () => {
-    addToCart(book);
+    if (flashPricing) {
+      addToCart({
+        ...book,
+        price: flashPricing.salePrice,
+        originalPrice: flashPricing.originalPrice,
+        discountPercent: flashPricing.discountPercent,
+        isFlashSale: true
+      });
+    } else {
+      addToCart(book);
+    }
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2000);
   };
@@ -192,14 +224,14 @@ export default function BookDetails() {
           
           {/* Large Cover Image */}
           <div className="md:col-span-5 lg:col-span-5">
-            <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-md">
+            <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-slate-100 border border-slate-200/80">
               <img
                 src={book.coverImage}
                 alt={book.title}
                 className="w-full h-full object-cover"
                 loading="eager"
               />
-              <span className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-sm text-black text-xs font-bold px-3 py-1 rounded-xl shadow-sm border border-slate-200/50">
+              <span className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-sm text-black text-xs font-bold px-3 py-1 rounded-xl border border-slate-200/50">
                 {book.category}
               </span>
               {book.bestseller && (
@@ -246,15 +278,26 @@ export default function BookDetails() {
               </h1>
 
               {/* Author */}
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex flex-wrap items-center gap-2 mb-4">
                 <span className="text-sm sm:text-base text-slate-600">By</span>
-                <span className="text-sm sm:text-base font-bold text-black">{book.author}</span>
+                <Link
+                  to={`/author/${encodeURIComponent(book.author || '')}`}
+                  className="text-sm sm:text-base font-bold text-black hover:text-[#1E90FF] hover:underline transition-colors"
+                >
+                  {book.author}
+                </Link>
+                <Link
+                  to={`/author/${encodeURIComponent(book.author || '')}`}
+                  className="text-xs font-semibold text-[#1E90FF] hover:underline flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-2.5 py-0.5 rounded-full transition-colors"
+                >
+                  View author collection &rarr;
+                </Link>
               </div>
 
               {/* Rating */}
               <div className="flex items-center gap-3 py-3 border-y border-slate-100 mb-6">
-                <div className="flex items-center text-[#1E90FF] font-bold text-sm">
-                  <FiStar className="fill-[#1E90FF] w-4 h-4 mr-1.5" />
+                <div className="flex items-center text-amber-500 font-bold text-sm">
+                  <FiStar className="fill-amber-400 text-amber-400 w-4 h-4 mr-1.5" />
                   <span>{book.rating || 4.8}</span>
                 </div>
                 <span className="text-slate-300">|</span>
@@ -268,25 +311,42 @@ export default function BookDetails() {
               </div>
 
               {/* Price Display in Kenyan Shillings */}
-              <div className="p-6 rounded-xl bg-white border border-slate-200/80 shadow-sm mb-6">
+              <div className="p-6 rounded-xl bg-white border border-slate-200/80 mb-6">
                 <div className="flex items-baseline justify-between mb-4">
                   <div>
+                    {flashPricing && (
+                      <div className="mb-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 text-red-700 text-xs font-bold border border-red-200 animate-pulse">
+                        <Flame className="w-3.5 h-3.5 fill-red-600 text-red-600" />
+                        <span>FLASH SALE: -{flashPricing.discountPercent}% OFF • Ends in {flashCountdown.hours}h {flashCountdown.minutes}m {flashCountdown.seconds}s</span>
+                      </div>
+                    )}
                     <span className="text-xs font-semibold text-slate-500 block uppercase tracking-wider mb-1">
                       Price
                     </span>
                     <div className="flex flex-wrap items-baseline gap-3">
-                      <span className="text-3xl sm:text-4xl font-extrabold text-black tracking-tight">
-                        {formatPrice(book.price)}
+                      <span className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${flashPricing ? 'text-red-600' : 'text-black'}`}>
+                        {formatPrice(effectivePrice)}
                       </span>
-                      {book.discountPercent > 0 && book.originalPrice > book.price && (
+                      {flashPricing ? (
                         <>
                           <span className="text-lg sm:text-xl text-slate-400 line-through">
-                            {formatPrice(book.originalPrice)}
+                            {formatPrice(flashPricing.originalPrice)}
                           </span>
-                          <span className="text-xs font-extrabold text-[#F40009] bg-red-50 px-2 py-0.5 rounded-xl border border-red-200">
-                            {book.discountPercent}% OFF
+                          <span className="text-xs font-extrabold text-white bg-red-600 px-2 py-0.5 rounded-lg shadow-xs">
+                            SAVE {formatPrice(flashPricing.savings)}
                           </span>
                         </>
+                      ) : (
+                        book.discountPercent > 0 && book.originalPrice > book.price && (
+                          <>
+                            <span className="text-lg sm:text-xl text-slate-400 line-through">
+                              {formatPrice(book.originalPrice)}
+                            </span>
+                            <span className="text-xs font-extrabold text-[#F40009] bg-red-50 px-2 py-0.5 rounded-xl border border-red-200">
+                              {book.discountPercent}% OFF
+                            </span>
+                          </>
+                        )
                       )}
                     </div>
                   </div>
@@ -299,22 +359,22 @@ export default function BookDetails() {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     type="button"
-                    className={`flex-1 py-3.5 px-6 rounded-xl text-sm sm:text-base font-bold shadow-sm cursor-pointer transition-all flex items-center justify-center text-white ${
+                    className={`flex-1 py-3.5 px-6 rounded-xl text-sm sm:text-base font-bold cursor-pointer transition-all flex items-center justify-center text-white ${
                       isAdded
                         ? 'bg-[#00A651] hover:bg-[#008f45]'
-                        : 'bg-[#F40009] hover:bg-[#d00008] shadow-[#F40009]/20'
+                        : 'bg-[#F40009] hover:bg-[#d00008]'
                     }`}
                     onClick={handleAddToCart}
                   >
                     {isAdded ? (
                       <>
                         <FiCheck className="mr-2 w-5 h-5" />
-                        Added to Cart ({formatPrice(book.price)})
+                        Added to Cart ({formatPrice(effectivePrice)})
                       </>
                     ) : (
                       <>
                         <FiShoppingCart className="mr-2 w-5 h-5" />
-                        Add to Cart ({formatPrice(book.price)})
+                        Add to Cart ({formatPrice(effectivePrice)})
                       </>
                     )}
                   </button>
@@ -358,7 +418,7 @@ export default function BookDetails() {
                 Description &amp; Synopsis
               </h2>
             </div>
-            <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl shadow-sm">
+            <Card hover={false} className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl">
               <p className="text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-line">
                 {book.description}
               </p>
@@ -376,7 +436,7 @@ export default function BookDetails() {
                   Table of Contents
                 </h2>
               </div>
-              <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl shadow-sm">
+              <Card hover={false} className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl">
                 <div className="divide-y divide-slate-100">
                   {tableOfContents.map((chapter, index) => (
                     <div key={index} className="py-3 flex items-start gap-3">
@@ -395,29 +455,82 @@ export default function BookDetails() {
 
           {/* 3. Author Information Section */}
           <section>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center">
-                <FiUser className="w-4 h-4" />
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center">
+                  <FiUser className="w-4 h-4" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-black tracking-tight">
+                  About the Author
+                </h2>
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-black tracking-tight">
-                About the Author
-              </h2>
+              <Link
+                to={`/author/${encodeURIComponent(book.author || '')}`}
+                className="text-xs font-semibold text-[#1E90FF] hover:underline"
+              >
+                View Full Profile &rarr;
+              </Link>
             </div>
-            <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl shadow-sm flex flex-col sm:flex-row gap-5 items-start">
-              <div className="w-16 h-16 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center text-xl font-bold flex-shrink-0 border border-[#1E90FF]/20">
-                {(book.author || 'Author').trim().split(/\s+/).map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+            <Card hover={false} className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl">
+              <div className="flex flex-col sm:flex-row gap-5 items-start">
+                <Link
+                  to={`/author/${encodeURIComponent(book.author || '')}`}
+                  className="w-16 h-16 rounded-xl bg-blue-50 text-[#1E90FF] hover:bg-blue-100 flex items-center justify-center text-xl font-bold flex-shrink-0 border border-[#1E90FF]/20 transition-colors"
+                >
+                  {(book.author || 'Author').trim().split(/\s+/).map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                </Link>
+                <div className="flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
+                    <Link
+                      to={`/author/${encodeURIComponent(book.author || '')}`}
+                      className="text-base sm:text-lg font-bold text-black hover:text-[#1E90FF] hover:underline transition-colors"
+                    >
+                      {book.author}
+                    </Link>
+                    <Link
+                      to={`/author/${encodeURIComponent(book.author || '')}`}
+                      className="inline-flex items-center text-xs font-bold text-[#1E90FF] hover:underline"
+                    >
+                      Browse Author's Library &rarr;
+                    </Link>
+                  </div>
+                  <p className="text-xs font-semibold text-[#1E90FF] mb-3">
+                    Author • {book.category} Specialist
+                  </p>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-1">
+                    {authorBio}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="text-base sm:text-lg font-bold text-black mb-1">
-                  {book.author}
-                </h3>
-                <p className="text-xs font-semibold text-[#1E90FF] mb-3">
-                  Author • {book.category} Specialist
-                </p>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  {authorBio}
-                </p>
-              </div>
+
+              {/* More titles written by this author */}
+              {authorBooks.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-black tracking-tight">
+                        More titles written by {book.author}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Other publications available in our library
+                      </p>
+                    </div>
+                    <Link
+                      to={`/author/${encodeURIComponent(book.author || '')}`}
+                      className="text-xs font-semibold text-[#1E90FF] hover:underline"
+                    >
+                      See All ({authorBooks.length + 1}) &rarr;
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+                    {authorBooks.slice(0, 4).map((item) => (
+                      <div key={item.id} className="h-full">
+                        <BookCard book={item} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Card>
           </section>
 
@@ -441,46 +554,11 @@ export default function BookDetails() {
                 </Link>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
                 {relatedBooks.map((item) => (
-                  <Link key={item.id} to={`/book/${item.id}`} className="group block">
-                    <Card className="h-full flex flex-col justify-between overflow-hidden bg-white border border-slate-200/80 hover:border-slate-300 rounded-xl shadow-sm hover:shadow transition-all">
-                      <div>
-                        <div className="aspect-[3/4] bg-slate-100 overflow-hidden">
-                          <img
-                            src={item.coverImage}
-                            alt={item.title}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                            loading="lazy"
-                          />
-                        </div>
-                        <div className="p-3.5">
-                          <span className="text-[10px] font-extrabold text-[#1E90FF] uppercase tracking-wider block truncate mb-1">
-                            {item.category}
-                          </span>
-                          <h4 className="font-bold text-xs sm:text-sm text-black line-clamp-2 min-h-[2.2rem] group-hover:text-[#1E90FF] transition-colors leading-snug">
-                            {item.title}
-                          </h4>
-                          <p className="text-[11px] text-slate-500 mb-2 truncate">by {item.author}</p>
-                          <div className="flex items-baseline gap-1.5 flex-wrap">
-                            <span className="text-xs sm:text-sm font-extrabold text-black">
-                              {formatPrice(item.price)}
-                            </span>
-                            {item.discountPercent > 0 && item.originalPrice > item.price && (
-                              <>
-                                <span className="text-[10px] text-slate-400 line-through">
-                                  {formatPrice(item.originalPrice)}
-                                </span>
-                                <span className="text-[9px] font-black text-white bg-[#F40009] px-1.5 py-0.5 rounded-xl shadow-2xs">
-                                  -{item.discountPercent}%
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </Link>
+                  <div key={item.id} className="h-full">
+                    <BookCard book={item} />
+                  </div>
                 ))}
               </div>
             </section>
@@ -509,7 +587,7 @@ export default function BookDetails() {
 
             {/* Interactive Write Review Form */}
             {showReviewForm && (
-              <Card className="p-6 bg-white border border-slate-200/80 rounded-xl shadow-sm mb-6 animate-fadeIn">
+              <Card hover={false} className="p-6 bg-white border border-slate-200/80 rounded-xl mb-6 animate-fadeIn">
                 <h3 className="text-sm font-bold text-black mb-4">Write Your Review</h3>
                 <form onSubmit={handleSubmitReview} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -559,13 +637,13 @@ export default function BookDetails() {
 
             {/* Reviews List */}
             {reviewsList.length === 0 ? (
-              <Card className="p-6 text-center bg-white border border-dashed border-slate-200 rounded-xl">
+              <Card hover={false} className="p-6 text-center bg-white border border-dashed border-slate-200 rounded-xl">
                 <p className="text-xs text-slate-500">No reviews yet for this title. Be the first to share your thoughts!</p>
               </Card>
             ) : (
               <div className="space-y-3">
               {reviewsList.map((rev) => (
-                <Card key={rev.id} className="p-5 bg-white border border-slate-200/80 rounded-xl shadow-sm">
+                <Card hover={false} key={rev.id} className="p-5 bg-white border border-slate-200/80 rounded-xl">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center">
@@ -578,8 +656,8 @@ export default function BookDetails() {
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center text-[#1E90FF] text-xs font-bold">
-                      <FiStar className="fill-[#1E90FF] w-3.5 h-3.5 mr-1" />
+                    <div className="flex items-center text-amber-500 text-xs font-bold">
+                      <FiStar className="fill-amber-400 text-amber-400 w-3.5 h-3.5 mr-1" />
                       <span>{rev.rating}.0</span>
                     </div>
                   </div>

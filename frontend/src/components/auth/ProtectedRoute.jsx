@@ -1,13 +1,23 @@
+import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 /**
- * Route guard requiring an authenticated active session
- * Preserves the requested destination in location state for seamless redirect after login
+ * Route guard requiring an authenticated active session.
+ * Seamlessly triggers the auth popup and preserves destination.
  */
 export default function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, openAuthModal } = useAuth();
   const location = useLocation();
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      openAuthModal({
+        redirectPath: location.pathname + location.search,
+        initialMode: 'signin'
+      });
+    }
+  }, [loading, isAuthenticated, openAuthModal, location.pathname, location.search]);
 
   if (loading) {
     return (
@@ -19,14 +29,7 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (!isAuthenticated) {
-    const redirectParam = encodeURIComponent(location.pathname + location.search);
-    return (
-      <Navigate
-        to={`/login?redirect=${redirectParam}`}
-        state={{ from: location }}
-        replace
-      />
-    );
+    return <Navigate to="/" replace />;
   }
 
   return children;

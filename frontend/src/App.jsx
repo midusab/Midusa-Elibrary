@@ -1,4 +1,6 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -6,32 +8,39 @@ import { ToastProvider } from './context/ToastContext';
 import { CookieProvider } from './context/CookieContext';
 import { CategoryProvider } from './context/CategoryContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { FlashSaleProvider } from './context/FlashSaleContext';
 import Navigation from './components/Navigation';
 import Footer from './components/layout/Footer';
 import ScrollProgressBar from './components/common/ScrollProgressBar';
 import WhatsAppButton from './components/common/WhatsAppButton';
+import { PageSkeleton } from './components/ui/LoadingSkeleton';
+
+// Primary landing is eager for instant First Contentful Paint
 import Hero from './pages/Hero';
-import Categories from './pages/Categories';
-import Library from './pages/Library';
-import BookDetails from './pages/BookDetails';
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import Legal from './pages/Legal';
 
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+// Secondary views are lazily code-split to dramatically shrink initial bundle download
+const Categories = lazy(() => import('./pages/Categories'));
+const Library = lazy(() => import('./pages/Library'));
+const BookDetails = lazy(() => import('./pages/BookDetails'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AuthorPage = lazy(() => import('./pages/AuthorPage'));
+const Legal = lazy(() => import('./pages/Legal'));
+
 import { useAuth } from './context/AuthContext';
+import { useToast } from './context/ToastContext';
 import { recordSiteVisit } from './services/api';
+import { popOAuthRedirect } from './utils/redirectProtection';
 
-import { ProtectedRoute, AdminRoute, PublicOnlyRoute } from './components/auth';
+import { ProtectedRoute, AdminRoute, AuthModal } from './components/auth';
 
-function PageVisitTracker() {
+function AppLifecycleHandlers() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const { success } = useToast();
 
   useEffect(() => {
     let visitorId = localStorage.getItem('elibrary_visitor_id');
@@ -48,7 +57,46 @@ function PageVisitTracker() {
     });
   }, [location.pathname, user?.id]);
 
+  // Handle post-redirect OAuth welcome toast and navigation
+  useEffect(() => {
+    const pendingToast = sessionStorage.getItem('pending_login_toast');
+    if (pendingToast) {
+      try {
+        const data = JSON.parse(pendingToast);
+        if (data.isAdmin) {
+          success(`Welcome back, Administrator! Signed in as ${data.name}.`);
+        } else {
+          success(`Welcome, ${data.name}! Signed in successfully.`);
+        }
+      } catch {
+        // ignore
+      }
+      sessionStorage.removeItem('pending_login_toast');
+      const target = popOAuthRedirect(null);
+      if (target) {
+        navigate(target, { replace: true });
+      }
+    }
+  }, [success, navigate]);
+
   return null;
+}
+
+/**
+ * Fallback handler when users access /login or /register URLs directly.
+ * Instead of separate auth pages, opens the unified popup modal seamlessly.
+ */
+function AuthPopupRedirect({ mode = 'signin' }) {
+  const { openAuthModal } = useAuth();
+  const location = useLocation();
+
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const redirectTarget = queryParams.get('redirect') || null;
+    openAuthModal({ initialMode: mode, redirectPath: redirectTarget });
+  }, [openAuthModal, mode, location.search]);
+
+  return <Navigate to="/" replace />;
 }
 
 export default function App() {
@@ -61,75 +109,68 @@ export default function App() {
               <CookieProvider>
                 <CategoryProvider>
                   <WishlistProvider>
-                    <PageVisitTracker />
-                    {/* Global UI overlays */}
-                    <ScrollProgressBar />
-                    <WhatsAppButton />
+                    <FlashSaleProvider>
+                      <AppLifecycleHandlers />
+                      {/* Global UI overlays */}
+                      <ScrollProgressBar />
+                      <WhatsAppButton />
+                      <AuthModal />
                     <div className="min-h-screen flex flex-col bg-white text-slate-900 overflow-x-hidden w-full">
                       <Navigation />
                       <main className="flex-1 pt-20 bg-white">
-                        <Routes>
-                          <Route path="/" element={<Hero />} />
-                          <Route path="/categories" element={<Categories />} />
-                          <Route path="/library" element={<Library />} />
-                          <Route path="/book/:id" element={<BookDetails />} />
-                          <Route path="/cart" element={<Cart />} />
-                          <Route
-                            path="/checkout"
-                            element={
-                              <ProtectedRoute>
-                                <Checkout />
-                              </ProtectedRoute>
-                            }
-                          />
-                          <Route
-                            path="/login"
-                            element={
-                              <PublicOnlyRoute>
-                                <Login />
-                              </PublicOnlyRoute>
-                            }
-                          />
-                          <Route
-                            path="/register"
-                            element={
-                              <PublicOnlyRoute>
-                                <Register />
-                              </PublicOnlyRoute>
-                            }
-                          />
-                          <Route
-                            path="/dashboard"
-                            element={
-                              <ProtectedRoute>
-                                <Dashboard />
-                              </ProtectedRoute>
-                            }
-                          />
-                          <Route
-                            path="/wishlist"
-                            element={
-                              <ProtectedRoute>
-                                <Dashboard initialTab="favorites" />
-                              </ProtectedRoute>
-                            }
-                          />
-                          <Route
-                            path="/admin"
-                            element={
-                              <AdminRoute>
-                                <AdminDashboard />
-                              </AdminRoute>
-                            }
-                          />
-                          <Route path="/legal" element={<Legal />} />
-                          <Route path="/refund-policy" element={<Legal />} />
-                          <Route path="/privacy" element={<Legal />} />
-                          <Route path="/terms" element={<Legal />} />
-                        </Routes>
+                        <Suspense fallback={<PageSkeleton />}>
+                          <Routes>
+                            <Route path="/" element={<Hero />} />
+                            <Route path="/categories" element={<Categories />} />
+                            <Route path="/library" element={<Library />} />
+                            <Route path="/book/:id" element={<BookDetails />} />
+                            <Route path="/author/:name" element={<AuthorPage />} />
+                            <Route path="/cart" element={<Cart />} />
+                            <Route
+                              path="/checkout"
+                              element={
+                                <ProtectedRoute>
+                                  <Checkout />
+                                </ProtectedRoute>
+                              }
+                            />
+                            {/* Authentication is handled purely via modal popup */}
+                            <Route path="/login" element={<AuthPopupRedirect mode="signin" />} />
+                            <Route path="/register" element={<AuthPopupRedirect mode="register" />} />
+                            <Route
+                              path="/dashboard"
+                              element={
+                                <ProtectedRoute>
+                                  <Dashboard />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/wishlist"
+                              element={
+                                <ProtectedRoute>
+                                  <Dashboard initialTab="favorites" />
+                                </ProtectedRoute>
+                              }
+                            />
+                            <Route
+                              path="/admin"
+                              element={
+                                <AdminRoute>
+                                  <AdminDashboard />
+                                </AdminRoute>
+                              }
+                            />
+                            <Route path="/legal" element={<Legal />} />
+                            <Route path="/refund-policy" element={<Legal />} />
+                            <Route path="/privacy" element={<Legal />} />
+                            <Route path="/terms" element={<Legal />} />
+                          </Routes>
+                        </Suspense>
                       </main>
                       <Footer />
                     </div>
+                    </FlashSaleProvider>
                   </WishlistProvider>
                 </CategoryProvider>
               </CookieProvider>

@@ -32,9 +32,11 @@ import AdminCategoriesTab from '../components/admin/AdminCategoriesTab';
 import AdminAuthorsTab from '../components/admin/AdminAuthorsTab';
 import AdminOrdersTab from '../components/admin/AdminOrdersTab';
 import AdminUsersTab from '../components/admin/AdminUsersTab';
+import AdminFlashSaleTab from '../components/admin/AdminFlashSaleTab';
 import BookModal from '../components/admin/BookModal';
 import CategoryModal from '../components/admin/CategoryModal';
 import ReviewModal from '../components/admin/ReviewModal';
+import { Flame } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -106,12 +108,14 @@ export default function AdminDashboard() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [bookModalError, setBookModalError] = useState(null);
 
   // -------------------------------------------------------------
   // Book Actions
   // -------------------------------------------------------------
   const handleOpenAddBook = () => {
     setEditingBook(null);
+    setBookModalError(null);
     setBookForm({
       title: '',
       author: '',
@@ -133,6 +137,7 @@ export default function AdminDashboard() {
 
   const handleOpenEditBook = (book) => {
     setEditingBook(book);
+    setBookModalError(null);
     setBookForm({
       title: book.title || '',
       author: book.author || '',
@@ -154,8 +159,29 @@ export default function AdminDashboard() {
 
   const handleSaveBook = async (e) => {
     e.preventDefault();
+    setBookModalError(null);
+
     if (!bookForm.title || !bookForm.author || !bookForm.category || !bookForm.price) {
       toastError('Please fill in all required book details.');
+      return;
+    }
+
+    // Client-side instant duplicate check (prevents wasting time/bandwidth on PDF upload)
+    const cleanTitle = (bookForm.title || '').trim().toLowerCase();
+    const existingDuplicate = books.find(
+      (b) =>
+        b.title?.trim().toLowerCase() === cleanTitle &&
+        (!editingBook || b.id !== editingBook.id)
+    );
+    if (existingDuplicate) {
+      const duplicateMsg = `A book titled "${bookForm.title.trim()}" already exists in the library catalog. Duplicate books are not allowed.`;
+      setBookModalError({
+        type: 'duplicate',
+        field: 'title',
+        message: duplicateMsg,
+        existingBookTitle: existingDuplicate.title
+      });
+      toastError(duplicateMsg);
       return;
     }
 
@@ -186,7 +212,13 @@ export default function AdminDashboard() {
       }
 
       if (!editingBook && !pdfUrl && !pdfFile) {
-        toastError('Please select or upload a PDF file for this new eBook.');
+        const pdfErrorMsg = 'Please select or upload a PDF file for this new eBook.';
+        setBookModalError({
+          type: 'validation',
+          field: 'pdf',
+          message: pdfErrorMsg
+        });
+        toastError(pdfErrorMsg);
         setIsSaving(false);
         return;
       }
@@ -210,10 +242,30 @@ export default function AdminDashboard() {
       }
       setPdfFile(null);
       setCoverFile(null);
+      setBookModalError(null);
       setIsBookModalOpen(false);
       loadDashboardData(true);
     } catch (err) {
-      toastError(err.message || 'Failed to save book.');
+      const errMsg = err.message || 'Failed to save book.';
+      const isDuplicate =
+        err.status === 409 ||
+        err.code === 'DUPLICATE_BOOK' ||
+        errMsg.toLowerCase().includes('already exists') ||
+        errMsg.toLowerCase().includes('duplicate');
+
+      if (isDuplicate) {
+        setBookModalError({
+          type: 'duplicate',
+          field: 'title',
+          message: errMsg
+        });
+      } else {
+        setBookModalError({
+          type: 'error',
+          message: errMsg
+        });
+      }
+      toastError(errMsg);
     } finally {
       setIsSaving(false);
     }
@@ -463,6 +515,7 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-200 scrollbar-none">
           {[
             { id: 'overview', label: 'Overview & Trends', icon: FiTrendingUp },
+            { id: 'flashsale', label: 'Flash Sale', icon: Flame },
             { id: 'users', label: `Registered Customers (${usersList.length})`, icon: FiUsers },
             { id: 'books', label: `Books (${books.length})`, icon: FiBook },
             { id: 'authors', label: 'Authors & Bios', icon: FiFeather },
@@ -561,12 +614,22 @@ export default function AdminDashboard() {
           />
         )}
 
+        {activeTab === 'flashsale' && (
+          <AdminFlashSaleTab
+            token={token}
+            books={books}
+          />
+        )}
+
         {/* ========================================================= */}
         {/* MODULAR MODALS */}
         {/* ========================================================= */}
         <BookModal
           isOpen={isBookModalOpen}
-          onClose={() => setIsBookModalOpen(false)}
+          onClose={() => {
+            setIsBookModalOpen(false);
+            setBookModalError(null);
+          }}
           editingBook={editingBook}
           bookForm={bookForm}
           setBookForm={setBookForm}
@@ -581,6 +644,8 @@ export default function AdminDashboard() {
           coverUploadProgress={coverUploadProgress}
           isSaving={isSaving}
           handleSaveBook={handleSaveBook}
+          modalError={bookModalError}
+          setModalError={setBookModalError}
         />
 
         <CategoryModal

@@ -65,6 +65,25 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const expiryTimerRef = useRef(null);
 
+  // Global authentication popup modal state
+  const [authModalState, setAuthModalState] = useState({
+    isOpen: false,
+    initialMode: 'signin',
+    redirectPath: null
+  });
+
+  const openAuthModal = useCallback((options = {}) => {
+    setAuthModalState({
+      isOpen: true,
+      initialMode: options.initialMode || 'signin',
+      redirectPath: options.redirectPath || null
+    });
+  }, []);
+
+  const closeAuthModal = useCallback(() => {
+    setAuthModalState((prev) => ({ ...prev, isOpen: false }));
+  }, []);
+
   // Normalizes user object and ensures admin status consistency
   const processUser = useCallback((rawUser, token) => {
     const isAdmin = checkIsAdmin(rawUser.email);
@@ -464,6 +483,9 @@ export const AuthProvider = ({ children }) => {
       checkSessionValidity,
       requestPasswordReset,
       resetPasswordWithToken,
+      authModalState,
+      openAuthModal,
+      closeAuthModal,
       isAuthenticated: !!user,
       isAdmin: Boolean(user?.role === 'admin' || checkIsAdmin(user?.email)),
       adminEmail: ADMIN_EMAIL

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   ArrowRight,
   ShoppingCart,
@@ -13,173 +14,15 @@ import {
   Heart
 } from 'lucide-react';
 import HeroCarousel from '../components/layout/HeroCarousel';
+import FlashSaleBanner from '../components/layout/FlashSaleBanner';
+import LoadingSkeleton from '../components/ui/LoadingSkeleton';
+import BookCard from '../components/books/BookCard';
 import { getBooks } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 
-/* ─────────────────── Star Rating (Dodgerblue) ─────────────────── */
-function StarRating({ rating = 0, count }) {
-  const full = Math.floor(rating);
-  const half = rating % 1 >= 0.5;
-  const empty = 5 - full - (half ? 1 : 0);
-  return (
-    <div className="flex items-center gap-1">
-      <span className="flex text-[#1E90FF] text-xs">
-        {'★'.repeat(full)}
-        {half ? '½' : ''}
-        <span className="text-slate-200">{'★'.repeat(empty)}</span>
-      </span>
-      {count !== undefined && (
-        <span className="text-[10px] text-slate-500 hover:text-[#1E90FF] cursor-pointer">
-          ({count.toLocaleString()})
-        </span>
-      )}
-    </div>
-  );
-}
 
-/* ─────────────────── Netflix-style Book Card ─────────────────── */
-function BookCard({ book, onAddToCart }) {
-  const [added, setAdded] = useState(false);
-  const { toggleWishlist, isInWishlist } = useWishlist();
-
-  const handleAdd = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (onAddToCart) onAddToCart(book);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
-  };
-
-  return (
-    <Link
-      to={`/book/${book.id}`}
-      className="group flex flex-col bg-white border border-slate-200 hover:border-[#1E90FF] rounded-xl transition-all duration-300 overflow-hidden h-full hover:scale-[1.03] relative"
-    >
-      {/* Cover Image Container */}
-      <div
-        className="relative bg-slate-100 flex items-center justify-center overflow-hidden aspect-[3/4]"
-      >
-        <img
-          src={
-            book.coverImage ||
-            'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&auto=format&fit=crop&q=80'
-          }
-          alt={book.title}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          loading="lazy"
-        />
-
-        {/* Wishlist Heart Toggle */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleWishlist(book);
-          }}
-          aria-label={isInWishlist(book.id) ? 'Remove from wishlist' : 'Add to wishlist'}
-          className={`absolute top-2 right-2 p-1.5 rounded-xl backdrop-blur-md transition-all cursor-pointer z-10 ${
-            isInWishlist(book.id)
-              ? 'bg-white text-[#F40009] shadow-sm'
-              : 'bg-black/35 text-white hover:bg-white hover:text-[#F40009]'
-          }`}
-        >
-          <Heart
-            className={`w-3.5 h-3.5 ${
-              isInWishlist(book.id) ? 'fill-[#F40009]' : ''
-            }`}
-          />
-        </button>
-
-        {/* Badges: Coca-Cola Red or Green only */}
-        {book.bestseller && (
-          <span className="absolute top-2 left-2 bg-[#F40009] text-white text-[9px] font-black px-2 py-0.5 rounded-xl uppercase tracking-wider z-10 shadow-xs">
-            #1 Best
-          </span>
-        )}
-        {book.featured && !book.bestseller && (
-          <span className="absolute top-2 left-2 bg-[#00A651] text-white text-[9px] font-black px-2 py-0.5 rounded-xl uppercase tracking-wider z-10 shadow-xs">
-            Featured
-          </span>
-        )}
-        {book.discountPercent > 0 && (
-          <span
-            className={`absolute ${
-              book.bestseller || book.featured ? 'top-8' : 'top-2'
-            } left-2 bg-[#F40009] text-white text-[9px] font-black px-1.5 py-0.5 rounded-xl z-10 shadow-xs`}
-          >
-            -{book.discountPercent}%
-          </span>
-        )}
-      </div>
-
-      {/* Info Container */}
-      <div className="flex flex-col flex-1 p-3 gap-1">
-        {/* Category */}
-        <p className="text-[10px] font-extrabold text-[#1E90FF] uppercase tracking-wider truncate">
-          {book.category}
-        </p>
-
-        {/* Title with consistent min-height */}
-        <h3 className="text-xs sm:text-sm font-bold text-black line-clamp-2 leading-snug group-hover:text-[#1E90FF] transition-colors min-h-[2.2rem] sm:min-h-[2.5rem]">
-          {book.title}
-        </h3>
-
-        {/* Author */}
-        <p className="text-[11px] text-slate-500 font-medium truncate">by {book.author}</p>
-
-        {/* Stars */}
-        <div className="pt-0.5">
-          <StarRating rating={book.rating || 5} count={book.clicks ? `${book.clicks} reads` : undefined} />
-        </div>
-
-        {/* Price block */}
-        <div className="mt-auto pt-2">
-          <div className="flex items-baseline gap-1.5 flex-wrap">
-            <span className="text-xs sm:text-sm font-black text-black">
-              {formatPrice(book.price)}
-            </span>
-            {book.discountPercent > 0 && book.originalPrice > book.price && (
-              <span className="text-[10px] text-slate-400 line-through">
-                {formatPrice(book.originalPrice)}
-              </span>
-            )}
-          </div>
-          {book.discountPercent > 0 && book.originalPrice > book.price && (
-            <p className="text-[10px] text-[#F40009] font-bold">
-              Save {formatPrice(book.originalPrice - book.price)}
-            </p>
-          )}
-        </div>
-
-        {/* Add to Cart: Coca-Cola Red -> Green on Added */}
-        <button
-          type="button"
-          onClick={handleAdd}
-          className={`mt-2 w-full py-2 px-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${
-            added
-              ? 'bg-[#00A651] text-white border border-[#00A651]'
-              : 'bg-[#F40009] hover:bg-[#CC0007] text-white border border-[#F40009]'
-          }`}
-        >
-          {added ? (
-            <>
-              <Check className="w-3.5 h-3.5 stroke-[3]" />
-              <span>Added</span>
-            </>
-          ) : (
-            <>
-              <ShoppingCart className="w-3.5 h-3.5" />
-              <span>Add to Cart</span>
-            </>
-          )}
-        </button>
-      </div>
-    </Link>
-  );
-}
 
 /* ─────────────────── Netflix-style Horizontal Shelf ─────────────────── */
 function BookShelf({ title, icon: Icon, accentColor = '#1E90FF', books, loading, viewAllLink, onAddToCart }) {
@@ -191,7 +34,13 @@ function BookShelf({ title, icon: Icon, accentColor = '#1E90FF', books, loading,
   };
 
   return (
-    <section className="py-4 px-4 sm:px-6 bg-white rounded-xl border border-slate-200">
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-20px' }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      className="py-4 px-4 sm:px-6 bg-white rounded-xl border border-slate-200"
+    >
       <div className="max-w-[1500px] mx-auto">
         {/* Section header */}
         <div className="flex items-center justify-between mb-3.5">
@@ -228,11 +77,11 @@ function BookShelf({ title, icon: Icon, accentColor = '#1E90FF', books, loading,
           >
             {loading
               ? Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="flex-shrink-0 w-36 sm:w-44 animate-pulse">
-                    <div className="bg-slate-200 rounded-xl" style={{ aspectRatio: '3/4', height: 190 }} />
-                    <div className="mt-2 h-3 bg-slate-200 rounded-xl w-3/4" />
-                    <div className="mt-1 h-3 bg-slate-200 rounded-xl w-1/2" />
-                    <div className="mt-2 h-7 bg-slate-200 rounded-xl" />
+                  <div key={i} className="flex-shrink-0 w-36 sm:w-44">
+                    <LoadingSkeleton className="w-full aspect-[3/4] rounded-xl mb-2" />
+                    <LoadingSkeleton className="h-3.5 w-3/4 rounded-md mb-1.5" />
+                    <LoadingSkeleton className="h-3 w-1/2 rounded-md mb-2" />
+                    <LoadingSkeleton className="h-7 w-full rounded-xl" />
                   </div>
                 ))
               : books.map((book) => (
@@ -252,7 +101,7 @@ function BookShelf({ title, icon: Icon, accentColor = '#1E90FF', books, loading,
           </button>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -317,7 +166,9 @@ export default function Hero() {
           MAIN CONTENT — Clean Netflix Rows (No UI Redundancy)
       ════════════════════════════════════════════════════════ */}
       <div className="max-w-[1500px] mx-auto px-3 sm:px-6 py-6 space-y-6">
-        
+        {/* ── Active Flash Sale Promotional Banner ── */}
+        <FlashSaleBanner books={allBooks} />
+
         {/* ── Shelf 1: Trending Bestsellers ── */}
         {(loading || bestsellers.length > 0) && (
           <BookShelf
@@ -355,6 +206,26 @@ export default function Hero() {
             viewAllLink="/library?sortBy=created_at"
             onAddToCart={addToCart}
           />
+        )}
+
+        {/* ── Empty State when no books exist ── */}
+        {!loading && allBooks.length === 0 && (
+          <div className="py-20 text-center border border-dashed border-slate-200 rounded-2xl bg-white p-8">
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#1E90FF] flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mb-1">No Books in Catalog</h3>
+            <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto mb-6">
+              The library is currently empty. All dummy data has been removed. Books added by publishers or admins will appear here.
+            </p>
+            <Link
+              to="/library"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-black text-white text-xs sm:text-sm font-semibold hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <span>Explore Library</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         )}
 
         {/* ── Genre Shelves ── */}

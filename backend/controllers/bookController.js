@@ -199,12 +199,27 @@ const getAuthorByName = async (req, res) => {
       return res.status(400).json({ error: 'Author name is required' });
     }
 
-    const rows = await prisma.$queryRawUnsafe(`
-      SELECT id, name, COALESCE(bio, '') as bio, COALESCE(avatar, '') as avatar
-      FROM public.authors
-      WHERE LOWER(TRIM(name)) = LOWER(TRIM($1))
-      LIMIT 1
-    `, authorName);
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=120, stale-while-revalidate=600');
+
+    let authorId = null;
+    let bio = '';
+    let avatar = '';
+
+    try {
+      const rows = await prisma.$queryRawUnsafe(`
+        SELECT id, name, COALESCE(bio, '') as bio, COALESCE(avatar, '') as avatar
+        FROM public.authors
+        WHERE LOWER(TRIM(name)) = LOWER(TRIM($1))
+        LIMIT 1
+      `, authorName);
+      if (rows && rows.length > 0) {
+        authorId = rows[0].id || null;
+        bio = rows[0].bio || '';
+        avatar = rows[0].avatar || '';
+      }
+    } catch (_authorQueryErr) {
+      // Authors table optional or empty, ignore
+    }
 
     // Get all books written by this author
     const authorBooks = await prisma.books.findMany({
@@ -215,17 +230,25 @@ const getAuthorByName = async (req, res) => {
       orderBy: { created_at: 'desc' }
     });
 
-    const bio = rows.length > 0 && rows[0].bio
-      ? rows[0].bio
-      : `${authorName} is an accomplished specialist and writer known for delivering research-driven insights and timeless guidance.`;
+    // If bio still blank, check if any book has author_bio
+    if (!bio) {
+      const bookWithBio = authorBooks.find((b) => b.author_bio && b.author_bio.trim().length > 0);
+      if (bookWithBio) {
+        bio = bookWithBio.author_bio.trim();
+      }
+    }
+
+    if (!bio) {
+      bio = `${authorName} is an accomplished author and specialist featured in MidusaElibrary. Browse their collection of published digital eBooks below.`;
+    }
 
     res.json({
       success: true,
       author: {
-        id: rows[0]?.id || null,
+        id: authorId,
         name: authorName,
         bio,
-        avatar: rows[0]?.avatar || '',
+        avatar,
         books: authorBooks.map(formatBook)
       }
     });
@@ -267,7 +290,8 @@ const createBook = async (req, res) => {
     });
     if (existingBook) {
       return res.status(409).json({
-        error: `A book titled "${cleanTitle}" already exists in the library. Duplicate books are not allowed.`
+        error: `A book titled "${cleanTitle}" already exists in the library. Duplicate books are not allowed.`,
+        code: 'DUPLICATE_BOOK'
       });
     }
 
@@ -360,7 +384,8 @@ const updateBook = async (req, res) => {
       });
       if (existingBook) {
         return res.status(409).json({
-          error: `Another book titled "${cleanTitle}" already exists in the library.`
+          error: `Another book titled "${cleanTitle}" already exists in the library.`,
+          code: 'DUPLICATE_BOOK'
         });
       }
       data.title = cleanTitle;

@@ -10,4 +10,5 @@ export * from './api/ordersApi';
 export * from './api/paymentsApi';
 export * from './api/authApi';
 export * from './api/adminApi';
+export * from './api/flashSaleApi';
 

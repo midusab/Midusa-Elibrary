@@ -7,8 +7,12 @@ const getCategories = async (req, res) => {
     const cacheKey = 'categories:all';
     const cached = await getCache(cacheKey);
     if (cached) {
+      res.set('X-Cache', 'HIT');
+      res.set('Cache-Control', 'public, max-age=60, s-maxage=120, stale-while-revalidate=1800');
       return res.status(200).json(cached);
     }
+    res.set('X-Cache', 'MISS');
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=120, stale-while-revalidate=1800');
 
     let categories = await prisma.categories.findMany({
       include: {
@@ -25,12 +29,12 @@ const getCategories = async (req, res) => {
 
     if (!categories || categories.length === 0) {
       categories = [
-        { id: 'c1', name: 'Self Development', _count: { books: 4 } },
-        { id: 'c2', name: 'Psychology', _count: { books: 2 } },
-        { id: 'c3', name: 'Finance & Business', _count: { books: 3 } },
-        { id: 'c4', name: 'Christianity', _count: { books: 2 } },
-        { id: 'c5', name: 'Programming', _count: { books: 2 } },
-        { id: 'c6', name: 'Marketing', _count: { books: 1 } },
+        { id: 'c1', name: 'Self Development', _count: { books: 0 } },
+        { id: 'c2', name: 'Psychology', _count: { books: 0 } },
+        { id: 'c3', name: 'Finance & Business', _count: { books: 0 } },
+        { id: 'c4', name: 'Christianity', _count: { books: 0 } },
+        { id: 'c5', name: 'Programming', _count: { books: 0 } },
+        { id: 'c6', name: 'Marketing', _count: { books: 0 } },
       ];
     }
 
@@ -41,12 +45,12 @@ const getCategories = async (req, res) => {
   } catch (error) {
     console.error('Error fetching categories:', error);
     res.status(200).json([
-      { id: 'c1', name: 'Self Development', _count: { books: 4 } },
-      { id: 'c2', name: 'Psychology', _count: { books: 2 } },
-      { id: 'c3', name: 'Finance & Business', _count: { books: 3 } },
-      { id: 'c4', name: 'Christianity', _count: { books: 2 } },
-      { id: 'c5', name: 'Programming', _count: { books: 2 } },
-      { id: 'c6', name: 'Marketing', _count: { books: 1 } },
+      { id: 'c1', name: 'Self Development', _count: { books: 0 } },
+      { id: 'c2', name: 'Psychology', _count: { books: 0 } },
+      { id: 'c3', name: 'Finance & Business', _count: { books: 0 } },
+      { id: 'c4', name: 'Christianity', _count: { books: 0 } },
+      { id: 'c5', name: 'Programming', _count: { books: 0 } },
+      { id: 'c6', name: 'Marketing', _count: { books: 0 } },
     ]);
   }
 };
@@ -58,8 +62,12 @@ const getCategoryById = async (req, res) => {
     const cacheKey = `categories:id:${id}`;
     const cached = await getCache(cacheKey);
     if (cached) {
+      res.set('X-Cache', 'HIT');
+      res.set('Cache-Control', 'public, max-age=60, s-maxage=120, stale-while-revalidate=1800');
       return res.status(200).json(cached);
     }
+    res.set('X-Cache', 'MISS');
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=120, stale-while-revalidate=1800');
 
     const category = await prisma.categories.findUnique({
       where: { id },

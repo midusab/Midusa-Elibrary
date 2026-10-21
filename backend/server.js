@@ -5,6 +5,7 @@ if (dns.setDefaultResultOrder) {
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
 
@@ -17,6 +18,9 @@ const PORT = process.env.PORT || 5000;
 // headers (X-Forwarded-Proto, X-Forwarded-Host) are recognised by Express.
 // Without this, Safaricom's callback to your ngrok URL can be rejected.
 app.set('trust proxy', 1);
+
+// Enable Gzip/Deflate response compression for ultra-fast response transmission
+app.use(compression());
 
 // Middleware
 app.use(helmet({
@@ -57,6 +61,7 @@ const routes = [
   { path: '/payments',       module: './payment/payment.routes' },
   { path: '/api/admin',      module: './routes/adminRoutes' },
   { path: '/api/upload',     module: './routes/uploadRoutes' },
+  { path: '/api/flashsale',  module: './routes/flashSaleRoutes' },
 ];
 
 routes.forEach(({ path, module }) => {

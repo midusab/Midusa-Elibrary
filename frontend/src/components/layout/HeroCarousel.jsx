@@ -10,6 +10,7 @@ import {
   Flame
 } from 'lucide-react';
 import { formatPrice } from '../../utils/currency';
+import { HeroCarouselSkeleton } from '../ui/LoadingSkeleton';
 
 export default function HeroCarousel({ books = [], loading = false, onAddToCart }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -46,15 +47,12 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
     }, 1800);
   };
 
-  if (loading || carouselBooks.length === 0) {
-    return (
-      <div className="relative bg-black min-h-[380px] sm:min-h-[440px] flex items-center justify-center overflow-hidden border-b border-black">
-        <div className="max-w-7xl mx-auto px-4 py-12 flex flex-col items-center text-center">
-          <div className="w-10 h-10 border-3 border-[#1E90FF] border-t-transparent rounded-full animate-spin mb-3" />
-          <p className="text-white text-xs font-bold uppercase tracking-wider">Loading new arrivals…</p>
-        </div>
-      </div>
-    );
+  if (loading) {
+    return <HeroCarouselSkeleton />;
+  }
+
+  if (carouselBooks.length === 0) {
+    return null;
   }
 
   const currentBook = carouselBooks[currentIndex] || carouselBooks[0];
@@ -76,13 +74,15 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
                 isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
               }`}
             >
-              {/* Full-bleed book cover image */}
+              {/* Full-bleed book cover image — first slide is LCP, load eagerly */}
               <img
                 src={
                   b.coverImage ||
                   'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=1600&auto=format&fit=crop&q=85'
                 }
                 alt=""
+                loading={idx === 0 ? 'eager' : 'lazy'}
+                decoding="async"
                 className={`w-full h-full object-cover object-center md:object-right transition-transform duration-7000 ease-out ${
                   isActive ? 'scale-105' : 'scale-100'
                 }`}
@@ -155,9 +155,9 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
                 </span>
               )}
 
-              {/* Dodgerblue Star Rating */}
+              {/* Yellow Star Rating */}
               <div className="flex items-center gap-1.5 text-xs bg-white/10 backdrop-blur-md border border-white/20 px-2.5 py-1 rounded-xl">
-                <Star className="w-3.5 h-3.5 fill-[#1E90FF] text-[#1E90FF]" />
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                 <span className="font-bold text-white">{currentBook.rating || 4.9}</span>
                 <span className="text-slate-400">/ 5.0</span>
               </div>
@@ -220,6 +220,8 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
                     'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80'
                   }
                   alt={currentBook.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-56 sm:w-64 md:w-72 aspect-[3/4] object-cover rounded-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] transition-all duration-700 animate-in fade-in zoom-in-95"
                 />
 

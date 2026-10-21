@@ -231,7 +231,7 @@ function validateKenyanPhone(input) {
 // ── Main Checkout Component ───────────────────────────────────────────────────
 export default function Checkout() {
   const { cart, cartTotal, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, openAuthModal } = useAuth();
   const { success, error } = useToast();
   const navigate = useNavigate();
 
@@ -336,7 +336,7 @@ export default function Checkout() {
 
     if (!user) {
       error('Please sign in to complete your purchase');
-      navigate('/login', { state: { from: { pathname: '/checkout' } } });
+      openAuthModal({ redirectPath: '/checkout' });
       return;
     }
 

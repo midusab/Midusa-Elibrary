@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX } from 'react-icons/fi';
+import { FiX, FiAlertCircle } from 'react-icons/fi';
 
 export default function BookModal({
   isOpen,
@@ -17,7 +17,9 @@ export default function BookModal({
   isUploadingCover,
   coverUploadProgress,
   isSaving,
-  handleSaveBook
+  handleSaveBook,
+  modalError,
+  setModalError
 }) {
   return (
     <AnimatePresence>
@@ -29,7 +31,7 @@ export default function BookModal({
             exit={{ opacity: 0, scale: 0.95 }}
             className="bg-white rounded-lg p-6 sm:p-8 max-w-xl w-full border border-slate-200 max-h-[90vh] overflow-y-auto"
           >
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">
                   {editingBook ? 'Edit Book Details' : 'Publish New eBook'}
@@ -46,19 +48,94 @@ export default function BookModal({
               </button>
             </div>
 
+            {/* Error Banner: Highlights duplicate book titles or validation issues */}
+            {modalError && (
+              <div
+                role="alert"
+                className={`mb-5 p-4 rounded-xl border flex items-start gap-3 transition-all animate-in fade-in slide-in-from-top-2 ${
+                  modalError.type === 'duplicate'
+                    ? 'bg-red-50/90 border-[#F40009]/30 text-red-950 shadow-xs'
+                    : 'bg-amber-50 border-amber-200 text-amber-950'
+                }`}
+              >
+                <div
+                  className={`p-1.5 rounded-lg flex-shrink-0 mt-0.5 ${
+                    modalError.type === 'duplicate'
+                      ? 'bg-[#F40009] text-white shadow-xs'
+                      : 'bg-amber-500 text-white'
+                  }`}
+                >
+                  <FiAlertCircle className="w-4 h-4" />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                      <span>{modalError.type === 'duplicate' ? 'Book Already Exists' : 'Unable to Save Book'}</span>
+                      {modalError.type === 'duplicate' && (
+                        <span className="text-[10px] uppercase font-black tracking-wider bg-[#F40009] text-white px-1.5 py-0.5 rounded-md">
+                          Duplicate Title
+                        </span>
+                      )}
+                    </h4>
+                    {setModalError && (
+                      <button
+                        type="button"
+                        onClick={() => setModalError(null)}
+                        className="text-slate-400 hover:text-slate-700 cursor-pointer p-0.5 rounded-md hover:bg-slate-200/50 transition-colors"
+                        aria-label="Dismiss error"
+                      >
+                        <FiX className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-slate-700 mt-1 leading-relaxed">
+                    {modalError.message}
+                  </p>
+
+                  {modalError.type === 'duplicate' && (
+                    <div className="mt-2.5 pt-2 border-t border-red-200/60 text-[11px] text-[#F40009] font-semibold">
+                      Tip: Please choose a unique title, or search for the existing book in the catalogue to edit it.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSaveBook} className="space-y-4 text-xs sm:text-sm">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Book Title *
+                <label className="block font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Book Title *</span>
+                  {modalError?.field === 'title' && (
+                    <span className="text-[11px] text-[#F40009] font-bold flex items-center gap-1">
+                      <FiAlertCircle className="w-3.5 h-3.5" />
+                      Title already exists
+                    </span>
+                  )}
                 </label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Master Your Mindset"
                   value={bookForm.title}
-                  onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
+                  onChange={(e) => {
+                    setBookForm({ ...bookForm, title: e.target.value });
+                    if (modalError && modalError.field === 'title' && setModalError) {
+                      setModalError(null);
+                    }
+                  }}
+                  className={`w-full px-3.5 py-2.5 border rounded-md transition-all focus:outline-none ${
+                    modalError?.field === 'title'
+                      ? 'border-[#F40009] bg-red-50/20 ring-2 ring-[#F40009]/20 focus:border-[#F40009]'
+                      : 'border-slate-200 focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]'
+                  }`}
                 />
+                {modalError?.field === 'title' && (
+                  <p className="mt-1 text-xs text-[#F40009] font-medium leading-tight">
+                    A book with this exact title already exists in the library. Duplicate titles are not allowed.
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

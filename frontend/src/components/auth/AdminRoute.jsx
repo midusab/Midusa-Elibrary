@@ -7,15 +7,20 @@ import { useToast } from '../../context/ToastContext';
  * Route guard requiring both authenticated session AND administrator privileges
  */
 export default function AdminRoute({ children }) {
-  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const { isAuthenticated, isAdmin, loading, openAuthModal } = useAuth();
   const { error: toastError } = useToast();
   const location = useLocation();
 
   useEffect(() => {
     if (!loading && isAuthenticated && !isAdmin) {
       toastError('Access denied. Administrator privileges required.');
+    } else if (!loading && !isAuthenticated) {
+      openAuthModal({
+        redirectPath: location.pathname + location.search,
+        initialMode: 'signin'
+      });
     }
-  }, [loading, isAuthenticated, isAdmin, toastError]);
+  }, [loading, isAuthenticated, isAdmin, toastError, openAuthModal, location.pathname, location.search]);
 
   if (loading) {
     return (
@@ -27,14 +32,7 @@ export default function AdminRoute({ children }) {
   }
 
   if (!isAuthenticated) {
-    const redirectParam = encodeURIComponent(location.pathname + location.search);
-    return (
-      <Navigate
-        to={`/login?redirect=${redirectParam}`}
-        state={{ from: location }}
-        replace
-      />
-    );
+    return <Navigate to="/" replace />;
   }
 
   if (!isAdmin) {

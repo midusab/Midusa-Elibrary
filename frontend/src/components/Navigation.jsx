@@ -12,19 +12,19 @@ import {
   ArrowRight,
   FileText,
   Heart,
-  BookOpen
+  BookOpen,
+  Flame
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { useFlashSale } from '../context/FlashSaleContext';
 import { getBooks } from '../services/api';
 import { formatPrice } from '../utils/currency';
-import AuthModal from './auth/AuthModal';
 import Logo from '../assets/logo.jpg';
 
 export default function Navigation() {
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,8 +41,9 @@ export default function Navigation() {
 
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, openAuthModal } = useAuth();
   const { success } = useToast();
+  const { isLive: isFlashSaleLive, flashSale, countdown: flashCountdown } = useFlashSale();
 
   // Trigger subtle visual pulse on cart badge whenever cart count changes
   const prevCountRef = useRef(cartCount);
@@ -165,6 +166,15 @@ export default function Navigation() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-xs">
+      {/* ── Optional Flash Sale Top Ticker ── */}
+      {isFlashSaleLive && flashSale && (
+        <div className="bg-red-600 text-white text-[11px] sm:text-xs font-bold py-1 px-4 text-center flex items-center justify-center gap-2 tracking-wide shadow-inner">
+          <Flame className="w-3.5 h-3.5 fill-white animate-pulse" />
+          <span>FLASH SALE: {flashSale.discountPercent}% OFF • Ends in {flashCountdown.hours}h {flashCountdown.minutes}m {flashCountdown.seconds}s</span>
+          <Link to="/" className="underline hover:text-white/80 ml-1 font-semibold">View Deals →</Link>
+        </div>
+      )}
+
       {/* ── Top Main Navbar (80px height) ── */}
       <nav className="h-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-full gap-3 md:gap-6">
@@ -438,7 +448,7 @@ export default function Navigation() {
             ) : (
               <button
                 type="button"
-                onClick={() => setIsAuthModalOpen(true)}
+                onClick={() => openAuthModal()}
                 className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-[#1E90FF] hover:bg-blue-600 text-white text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition-all cursor-pointer"
               >
                 <User className="w-3.5 h-3.5" />
@@ -503,7 +513,7 @@ export default function Navigation() {
                 type="button"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
-                  setIsAuthModalOpen(true);
+                  openAuthModal();
                 }}
                 className="w-full mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#1E90FF] text-white text-xs font-bold shadow-xs cursor-pointer"
               >
@@ -514,12 +524,6 @@ export default function Navigation() {
           </div>
         </div>
       )}
-
-      {/* ── Google Sign In Pop-up Modal ── */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-      />
     </header>
   );
 }

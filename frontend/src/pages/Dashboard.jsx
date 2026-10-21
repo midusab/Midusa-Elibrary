@@ -19,7 +19,7 @@ import UserOrdersTab from '../components/dashboard/UserOrdersTab';
 import UserAdminTab from '../components/dashboard/UserAdminTab';
 
 export default function Dashboard({ initialTab }) {
-  const { user, logout, updateProfile, isAdmin } = useAuth();
+  const { user, logout, updateProfile, isAdmin, openAuthModal } = useAuth();
   const { categories } = useCategories();
   const { wishlist } = useWishlist();
   const { success, error } = useToast();
@@ -149,6 +149,15 @@ export default function Dashboard({ initialTab }) {
       error('Please provide book title, author, and price in KSh');
       return;
     }
+
+    // Duplicate check
+    const cleanTitle = newBook.title.trim().toLowerCase();
+    const existingDuplicate = books.find((b) => b.title?.trim().toLowerCase() === cleanTitle);
+    if (existingDuplicate) {
+      error(`A book titled "${newBook.title.trim()}" already exists in the library catalog. Duplicate books are not allowed.`);
+      return;
+    }
+
     if (!pdfFile && !newBook.pdfUrl) {
       error('Please upload a PDF file for this book.');
       return;
@@ -208,12 +217,13 @@ export default function Dashboard({ initialTab }) {
           <p className="text-xs text-slate-500 mb-5">
             Sign in to view your profile, purchased library, and personal dashboard.
           </p>
-          <Link
-            to="/login"
-            className="block w-full text-center text-sm font-semibold py-2.5 px-4 rounded-xl bg-[#1E90FF] hover:bg-[#1C86EE] text-white transition-colors duration-200"
+          <button
+            type="button"
+            onClick={() => openAuthModal({ redirectPath: '/dashboard' })}
+            className="block w-full text-center text-sm font-semibold py-2.5 px-4 rounded-xl bg-[#1E90FF] hover:bg-[#1C86EE] text-white transition-colors duration-200 cursor-pointer shadow-xs"
           >
             Sign In to Your Account
-          </Link>
+          </button>
         </Card>
       </div>
     );

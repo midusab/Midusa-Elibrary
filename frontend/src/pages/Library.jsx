@@ -3,13 +3,9 @@ import { motion } from 'framer-motion';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   FiSearch,
-  FiStar,
-  FiShoppingCart,
   FiX,
-  FiHeart,
   FiChevronLeft,
   FiChevronRight,
-  FiCheck,
 } from 'react-icons/fi';
 import CategoryIcon from '../components/ui/CategoryIcon';
 import Breadcrumb from '../components/common/Breadcrumb';
@@ -19,9 +15,11 @@ import { PRICE_RANGES, SORT_OPTIONS } from '../constants/categories';
 import { useCategories } from '../context/CategoryContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { BookCardSkeleton } from '../components/ui/LoadingSkeleton';
+import BookCard from '../components/books/BookCard';
 
-// Number of books displayed per page (10 guarantees even rows in 2 and 5 column layouts)
-const ITEMS_PER_PAGE = 10;
+// Number of books displayed per page (12 guarantees even rows in 2, 3, 4, and 6 column layouts)
+const ITEMS_PER_PAGE = 12;
 
 export default function Library() {
   const [allBooks, setAllBooks] = useState([]);
@@ -38,6 +36,7 @@ export default function Library() {
 
   // Derive filters and page directly from URL searchParams
   const selectedCategory = searchParams.get('category') || 'all';
+  const selectedAuthor = searchParams.get('author') || '';
   const sortBy = searchParams.get('sortBy') || 'featured';
   const urlSearch = searchParams.get('search') || '';
   const pageParam = parseInt(searchParams.get('page') || '1', 10);
@@ -129,6 +128,12 @@ export default function Library() {
       );
     }
 
+    // Author filter
+    if (selectedAuthor.trim()) {
+      const a = selectedAuthor.toLowerCase().trim();
+      list = list.filter((b) => b.author?.toLowerCase().trim() === a);
+    }
+
     // Bestseller filter
     if (searchParams.get('bestseller') === 'true') {
       list = list.filter((b) => Boolean(b.bestseller));
@@ -158,7 +163,7 @@ export default function Library() {
     }
 
     return list;
-  }, [allBooks, searchQuery, selectedCategory, selectedPriceRange, sortBy, searchParams]);
+  }, [allBooks, searchQuery, selectedCategory, selectedAuthor, selectedPriceRange, sortBy, searchParams]);
 
   // Pagination calculation
   const totalItems = filteredBooks.length;
@@ -406,23 +411,11 @@ export default function Library() {
               }`}
             >
               <span>All Titles</span>
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-xl font-semibold ${
-                  selectedCategory === 'all'
-                    ? 'bg-white/20 text-white'
-                    : 'bg-slate-100 text-slate-600'
-                }`}
-              >
-                {allBooks.length}
-              </span>
             </button>
 
             {/* Dynamic Category Pills */}
             {categories.map((cat) => {
               const isSelected = selectedCategory.toLowerCase() === cat.name.toLowerCase();
-              const bookCount = allBooks.filter(
-                (b) => b.category?.toLowerCase() === cat.name?.toLowerCase()
-              ).length;
 
               return (
                 <button
@@ -439,17 +432,6 @@ export default function Library() {
                     className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-white' : 'text-[#1E90FF]'}`}
                   />
                   <span>{cat.name}</span>
-                  {bookCount > 0 && (
-                    <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded-xl font-semibold ${
-                        isSelected
-                          ? 'bg-white/25 text-white'
-                          : 'bg-slate-100 text-slate-500'
-                      }`}
-                    >
-                      {bookCount}
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -467,11 +449,12 @@ export default function Library() {
           )}
         </div>
 
-        {/* ── BOOKS GRID (MOBILE 2-COLUMN RESPONSIVE LIKE KILIMALL) ── */}
+        {/* ── BOOKS GRID (RESPONSIVE GRID MATCHING DISPLAYED CARDS) ── */}
         {isLoading ? (
-          <div className="py-24 text-center">
-            <div className="w-9 h-9 border-3 border-[#1E90FF] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-sm font-medium text-slate-500">Loading catalog...</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <BookCardSkeleton key={i} />
+            ))}
           </div>
         ) : filteredBooks.length === 0 ? (
           <div className="py-16 text-center border border-dashed border-slate-200 rounded-xl p-8 bg-white shadow-xs">
@@ -491,137 +474,17 @@ export default function Library() {
           </div>
         ) : (
           <div>
-            {/* Responsive Grid: 2 cols on mobile (Kilimall style), 3 on tablet, 4 on small laptop, 5 on desktop */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4 md:gap-5">
-              {paginatedBooks.map((book) => (
+            {/* Responsive Grid matching Homepage Shelves: 2 cols on mobile, 3 on tablet, 4 on md, 5 on lg, 6 on xl */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+              {paginatedBooks.map((book, index) => (
                 <motion.div
                   key={book.id}
-                  initial={{ opacity: 0, y: 6 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.25, delay: (index % 12) * 0.025 }}
+                  className="h-full"
                 >
-                  <Link
-                    to={`/book/${book.id}`}
-                    onClick={() => recordBookClick(book.id)}
-                    className="group block h-full select-none"
-                  >
-                    <div className="h-full bg-white border border-slate-200/90 hover:border-slate-300 rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
-                      <div>
-                        {/* Cover image container */}
-                        <div className="relative aspect-[3/4] overflow-hidden bg-slate-100">
-                          <img
-                            src={book.coverImage}
-                            alt={book.title}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            loading="lazy"
-                          />
-
-                          {/* Discount tag (signature Coca-Cola red pill) */}
-                          {book.discountPercent > 0 && (
-                            <span className="absolute top-1.5 left-1.5 bg-[#F40009] text-white text-[10px] sm:text-xs font-black px-1.5 py-0.5 rounded-xl tracking-wide z-10 shadow-xs">
-                              -{book.discountPercent}%
-                            </span>
-                          )}
-
-                          {/* Bestseller / Hot Tag */}
-                          {book.bestseller && (
-                            <span
-                              className={`absolute ${
-                                book.discountPercent > 0 ? 'top-6 sm:top-7' : 'top-1.5'
-                              } left-1.5 bg-[#00A651] text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-xl z-10`}
-                            >
-                              HOT
-                            </span>
-                          )}
-
-                          {/* Wishlist Heart */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              toggleWishlist(book);
-                            }}
-                            aria-label={isInWishlist(book.id) ? 'Remove from wishlist' : 'Add to wishlist'}
-                            className={`absolute top-1.5 right-1.5 p-1.5 rounded-xl backdrop-blur-md transition-all cursor-pointer z-10 ${
-                              isInWishlist(book.id)
-                                ? 'bg-white text-[#F40009] shadow-sm'
-                                : 'bg-black/30 text-white hover:bg-white hover:text-[#F40009]'
-                            }`}
-                          >
-                            <FiHeart
-                              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
-                                isInWishlist(book.id) ? 'fill-[#F40009]' : ''
-                              }`}
-                            />
-                          </button>
-
-                          {/* Category pill */}
-                          <span className="absolute bottom-1.5 left-1.5 bg-black/80 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-medium px-1.5 py-0.5 rounded-xl truncate max-w-[80%]">
-                            {book.category || 'eBook'}
-                          </span>
-                        </div>
-
-                        {/* Card Info */}
-                        <div className="p-2.5 sm:p-3">
-                          <h3 className="text-xs sm:text-sm font-bold text-black line-clamp-2 leading-snug group-hover:text-[#1E90FF] transition-colors min-h-[2.1rem] sm:min-h-[2.5rem]">
-                            {book.title}
-                          </h3>
-                          <p className="text-[10px] sm:text-xs text-slate-500 truncate mt-0.5">
-                            {book.author}
-                          </p>
-
-                          {/* Star rating & sales */}
-                          <div className="flex items-center gap-1 mt-1 text-[11px] text-[#1E90FF] font-bold">
-                            <FiStar className="w-3 h-3 fill-[#1E90FF]" />
-                            <span>{book.rating ? Number(book.rating).toFixed(1) : '5.0'}</span>
-                            {book.clicks > 0 && (
-                              <span className="text-[10px] text-slate-400 font-normal">
-                                ({book.clicks} reads)
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Price block */}
-                          <div className="mt-2 flex items-baseline flex-wrap gap-1">
-                            <span className="text-sm sm:text-base font-extrabold text-[#F40009]">
-                              {formatPrice(book.price)}
-                            </span>
-                            {book.discountPercent > 0 && book.originalPrice > book.price && (
-                              <span className="text-[10px] sm:text-xs text-slate-400 line-through">
-                                {formatPrice(book.originalPrice)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Add to Cart button */}
-                      <div className="p-2.5 sm:p-3 pt-0">
-                        <button
-                          type="button"
-                          onClick={(e) => handleAddToCart(e, book)}
-                          className={`w-full flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all active:scale-95 cursor-pointer shadow-xs ${
-                            addedIds[book.id]
-                              ? 'bg-[#00A651] text-white'
-                              : 'bg-[#F40009] hover:bg-[#d00008] text-white shadow-sm shadow-[#F40009]/20'
-                          }`}
-                        >
-                          {addedIds[book.id] ? (
-                            <>
-                              <FiCheck className="w-3.5 h-3.5" />
-                              <span>Added</span>
-                            </>
-                          ) : (
-                            <>
-                              <FiShoppingCart className="w-3.5 h-3.5" />
-                              <span>Add to Cart</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </Link>
+                  <BookCard book={book} onAddToCart={handleAddToCart} />
                 </motion.div>
               ))}
             </div>

@@ -1,0 +1,21 @@
+{
+  "title": "Random Special",
+  "description": "Save upto 60 % cash back",
+  "discountPercent": 60,
+  "startTime": "2026-10-21T20:29:09.673Z",
+  "endTime": "2026-10-22T20:29:00.000Z",
+  "isActive": true,
+  "bookIds": [
+    "793f4753-57ad-4acd-9cdf-c712fb01c956",
+    "976d2296-a72a-48f7-86df-98c5aebdfbc5",
+    "42d812bf-483a-413f-bdd0-d4dba87f7051",
+    "8803b5c4-dc5d-4a7d-b571-603445cd614a",
+    "237a0f19-69a9-4c6c-b25e-8fbd986edf9b",
+    "cfdb85c5-00cb-4d9b-8f2c-d851ab3be823",
+    "c9a1fd07-bcdc-4b1a-8ad2-9eb3e335bce8",
+    "541984c4-8d9f-445b-af04-1d88dc1694bb",
+    "23c21268-a1be-4717-92f2-d7ae7f9851fc",
+    "0691d91c-229f-42c0-9dde-7e307484bdcf"
+  ],
+  "id": "dfa6a878-f85a-45df-ada7-707dfc43f198"
+}
