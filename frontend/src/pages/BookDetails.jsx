@@ -195,7 +195,7 @@ export default function BookDetails() {
   const authorBio = book.authorBio || book.authorInfo || (book.author ? `${book.author} is an accomplished specialist and writer known for delivering research-driven insights and timeless guidance in the field of ${book.category || 'literature'}.` : '');
 
   return (
-    <div className="min-h-screen bg-white py-6 sm:py-10">
+    <div className="min-h-screen py-6 sm:py-10">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Navigation Breadcrumb */}
@@ -220,22 +220,22 @@ export default function BookDetails() {
         {/* ABOVE THE FOLD SECTION                                   */}
         {/* Large Cover Image | Title | Author | Price | Rating | Purchase Button */}
         {/* ======================================================== */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 pb-12 border-b border-slate-100">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 pb-12 border-b border-slate-100/80">
           
           {/* Large Cover Image */}
           <div className="md:col-span-5 lg:col-span-5">
-            <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-slate-100 border border-slate-200/80">
+            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-slate-100/70 border border-white/80 shadow-md">
               <img
                 src={book.coverImage}
                 alt={book.title}
                 className="w-full h-full object-cover"
                 loading="eager"
               />
-              <span className="absolute top-3.5 left-3.5 bg-white/95 backdrop-blur-sm text-black text-xs font-bold px-3 py-1 rounded-xl border border-slate-200/50">
+              <span className="absolute top-3.5 left-3.5 liquid-glass-pill text-black text-xs font-bold px-3 py-1 rounded-xl border border-white/80">
                 {book.category}
               </span>
               {book.bestseller && (
-                <span className="absolute top-3.5 right-3.5 bg-[#F40009] text-white text-xs font-bold px-3 py-1 rounded-xl">
+                <span className="absolute top-3.5 right-3.5 bg-[#F40009] text-white text-xs font-bold px-3 py-1 rounded-xl shadow-xs">
                   Bestseller
                 </span>
               )}
@@ -268,7 +268,7 @@ export default function BookDetails() {
           <div className="md:col-span-7 lg:col-span-7 flex flex-col justify-between">
             <div>
               {/* Category Pill */}
-              <div className="inline-block text-xs font-bold text-[#1E90FF] uppercase tracking-wider bg-blue-50 px-3 py-1 rounded-xl mb-3">
+              <div className="inline-block text-xs font-bold text-[#1E90FF] uppercase tracking-wider liquid-glass-pill px-3 py-1 rounded-xl mb-3 border border-white/80">
                 {book.category}
               </div>
 
@@ -278,24 +278,13 @@ export default function BookDetails() {
               </h1>
 
               {/* Author */}
-              <div className="flex flex-wrap items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-4">
                 <span className="text-sm sm:text-base text-slate-600">By</span>
-                <Link
-                  to={`/author/${encodeURIComponent(book.author || '')}`}
-                  className="text-sm sm:text-base font-bold text-black hover:text-[#1E90FF] hover:underline transition-colors"
-                >
-                  {book.author}
-                </Link>
-                <Link
-                  to={`/author/${encodeURIComponent(book.author || '')}`}
-                  className="text-xs font-semibold text-[#1E90FF] hover:underline flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-2.5 py-0.5 rounded-full transition-colors"
-                >
-                  View author collection &rarr;
-                </Link>
+                <span className="text-sm sm:text-base font-bold text-black">{book.author}</span>
               </div>
 
               {/* Rating */}
-              <div className="flex items-center gap-3 py-3 border-y border-slate-100 mb-6">
+              <div className="flex items-center gap-3 py-3 border-y border-slate-100/80 mb-6">
                 <div className="flex items-center text-amber-500 font-bold text-sm">
                   <FiStar className="fill-amber-400 text-amber-400 w-4 h-4 mr-1.5" />
                   <span>{book.rating || 4.8}</span>
@@ -310,8 +299,8 @@ export default function BookDetails() {
                 </span>
               </div>
 
-              {/* Price Display in Kenyan Shillings */}
-              <div className="p-6 rounded-xl bg-white border border-slate-200/80 mb-6">
+              {/* Price Display in Kenyan Shillings — Liquid Glass */}
+              <div className="p-6 rounded-2xl liquid-glass specular-sheen mb-6 border border-white/70 shadow-sm">
                 <div className="flex items-baseline justify-between mb-4">
                   <div>
                     {flashPricing && (
@@ -455,82 +444,29 @@ export default function BookDetails() {
 
           {/* 3. Author Information Section */}
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center">
-                  <FiUser className="w-4 h-4" />
-                </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-black tracking-tight">
-                  About the Author
-                </h2>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center">
+                <FiUser className="w-4 h-4" />
               </div>
-              <Link
-                to={`/author/${encodeURIComponent(book.author || '')}`}
-                className="text-xs font-semibold text-[#1E90FF] hover:underline"
-              >
-                View Full Profile &rarr;
-              </Link>
+              <h2 className="text-xl sm:text-2xl font-bold text-black tracking-tight">
+                About the Author
+              </h2>
             </div>
-            <Card hover={false} className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl">
-              <div className="flex flex-col sm:flex-row gap-5 items-start">
-                <Link
-                  to={`/author/${encodeURIComponent(book.author || '')}`}
-                  className="w-16 h-16 rounded-xl bg-blue-50 text-[#1E90FF] hover:bg-blue-100 flex items-center justify-center text-xl font-bold flex-shrink-0 border border-[#1E90FF]/20 transition-colors"
-                >
-                  {(book.author || 'Author').trim().split(/\s+/).map(n => n[0]).slice(0, 2).join('').toUpperCase()}
-                </Link>
-                <div className="flex-1">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
-                    <Link
-                      to={`/author/${encodeURIComponent(book.author || '')}`}
-                      className="text-base sm:text-lg font-bold text-black hover:text-[#1E90FF] hover:underline transition-colors"
-                    >
-                      {book.author}
-                    </Link>
-                    <Link
-                      to={`/author/${encodeURIComponent(book.author || '')}`}
-                      className="inline-flex items-center text-xs font-bold text-[#1E90FF] hover:underline"
-                    >
-                      Browse Author's Library &rarr;
-                    </Link>
-                  </div>
-                  <p className="text-xs font-semibold text-[#1E90FF] mb-3">
-                    Author • {book.category} Specialist
-                  </p>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-1">
-                    {authorBio}
-                  </p>
-                </div>
+            <Card hover={false} className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl flex flex-col sm:flex-row gap-5 items-start">
+              <div className="w-16 h-16 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center text-xl font-bold flex-shrink-0 border border-[#1E90FF]/20">
+                {(book.author || 'Author').trim().split(/\s+/).map(n => n[0]).slice(0, 2).join('').toUpperCase()}
               </div>
-
-              {/* More titles written by this author */}
-              {authorBooks.length > 0 && (
-                <div className="mt-6 pt-6 border-t border-slate-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-sm sm:text-base font-bold text-black tracking-tight">
-                        More titles written by {book.author}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Other publications available in our library
-                      </p>
-                    </div>
-                    <Link
-                      to={`/author/${encodeURIComponent(book.author || '')}`}
-                      className="text-xs font-semibold text-[#1E90FF] hover:underline"
-                    >
-                      See All ({authorBooks.length + 1}) &rarr;
-                    </Link>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-                    {authorBooks.slice(0, 4).map((item) => (
-                      <div key={item.id} className="h-full">
-                        <BookCard book={item} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="flex-1">
+                <h3 className="text-base sm:text-lg font-bold text-black mb-1">
+                  {book.author}
+                </h3>
+                <p className="text-xs font-semibold text-[#1E90FF] mb-3">
+                  Author • {book.category} Specialist
+                </p>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  {authorBio}
+                </p>
+              </div>
             </Card>
           </section>
 

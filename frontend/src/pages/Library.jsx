@@ -272,7 +272,7 @@ export default function Library() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 py-6 sm:py-10">
+    <div className="min-h-screen py-6 sm:py-10">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         {/* Anchor for smooth scroll on page change */}
         <div id="catalog-top" className="scroll-mt-6" />
@@ -298,8 +298,8 @@ export default function Library() {
           </div>
         </div>
 
-        {/* Search & Filter Controls Bar */}
-        <div className="bg-white p-3 sm:p-4 rounded-xl border border-slate-200/90 shadow-xs mb-5 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+        {/* Search & Filter Controls Bar — Liquid Glass */}
+        <div className="liquid-glass specular-sheen p-3 sm:p-4 rounded-2xl shadow-sm mb-5 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
           {/* Search bar */}
           <div className="relative flex-1">
             <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -318,7 +318,7 @@ export default function Library() {
                 setSearchParams(next);
               }}
               placeholder="Search by book title, author, or keyword..."
-              className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-black placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] transition-all"
+              className="w-full pl-10 pr-9 py-2 bg-white/70 hover:bg-white/90 focus:bg-white border border-white/70 rounded-xl text-sm text-black placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-md"
             />
             {searchQuery && (
               <button
@@ -345,7 +345,7 @@ export default function Library() {
               <select
                 value={selectedPriceRange}
                 onChange={(e) => handlePriceRangeChange(e.target.value)}
-                className="w-full sm:w-auto px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-black focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] cursor-pointer font-medium"
+                className="w-full sm:w-auto px-2.5 py-2 bg-white/70 hover:bg-white/90 border border-white/70 rounded-xl text-xs sm:text-sm text-black focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] cursor-pointer font-medium backdrop-blur-md"
               >
                 {PRICE_RANGES.map((range) => (
                   <option key={range.id} value={range.id}>
@@ -361,7 +361,7 @@ export default function Library() {
               <select
                 value={sortBy}
                 onChange={(e) => handleSortChange(e.target.value)}
-                className="w-full sm:w-auto px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-black focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] cursor-pointer font-medium"
+                className="w-full sm:w-auto px-2.5 py-2 bg-white/70 hover:bg-white/90 border border-white/70 rounded-xl text-xs sm:text-sm text-black focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] cursor-pointer font-medium backdrop-blur-md"
               >
                 {SORT_OPTIONS.map((opt) => (
                   <option key={opt.id} value={opt.id}>
@@ -407,7 +407,7 @@ export default function Library() {
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer flex-shrink-0 flex items-center gap-2 ${
                 selectedCategory === 'all'
                   ? 'bg-black text-white shadow-sm'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                  : 'liquid-glass-pill hover:bg-white text-slate-700 border border-white/80'
               }`}
             >
               <span>All Titles</span>
@@ -423,8 +423,8 @@ export default function Library() {
                   onClick={() => handleCategoryChange(cat.name)}
                   className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all cursor-pointer flex-shrink-0 flex items-center gap-2 ${
                     isSelected
-                      ? 'bg-[#1E90FF] text-white shadow-sm font-bold'
-                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                      ? 'bg-[#1E90FF] text-white shadow-md shadow-[#1E90FF]/25 font-bold border border-[#1E90FF]'
+                      : 'liquid-glass-pill hover:bg-white text-slate-700 border border-white/80'
                   }`}
                 >
                   <CategoryIcon
@@ -441,7 +441,7 @@ export default function Library() {
           {canScrollRight && (
             <button
               onClick={() => scrollCategories('right')}
-              className="hidden md:flex absolute -right-3.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-xl bg-white border border-slate-200 shadow-md items-center justify-center text-slate-700 hover:text-black hover:bg-slate-50 transition-all cursor-pointer"
+              className="hidden md:flex absolute -right-3.5 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-xl liquid-glass-pill border border-white/80 shadow-md items-center justify-center text-slate-700 hover:text-black hover:bg-white transition-all cursor-pointer"
               aria-label="Scroll right"
             >
               <FiChevronRight className="w-4 h-4" />

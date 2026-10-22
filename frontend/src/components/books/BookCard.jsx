@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Heart, Star, ShoppingCart, Check, Flame } from 'lucide-react';
 import { formatPrice } from '../../utils/currency';
 import { useCart } from '../../context/CartContext';
@@ -45,7 +45,6 @@ function StarRating({ rating = 5, count }) {
  * Hero carousels, and related books shelves.
  */
 export default function BookCard({ book, onAddToCart }) {
-  const navigate = useNavigate();
   const [added, setAdded] = useState(false);
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { addToCart } = useCart();
@@ -95,7 +94,7 @@ export default function BookCard({ book, onAddToCart }) {
       onClick={() => {
         if (book.id) recordBookClick(book.id);
       }}
-      className="group flex flex-col bg-white border border-slate-200 hover:border-[#1E90FF] rounded-xl transition-all duration-300 overflow-hidden h-full hover:scale-[1.02] hover:shadow-md relative select-none"
+      className="group flex flex-col liquid-glass-card specular-sheen rounded-2xl overflow-hidden h-full relative select-none"
     >
       {/* Cover Image Container */}
       <div className="relative bg-slate-100 flex items-center justify-center overflow-hidden aspect-[3/4]">
@@ -168,28 +167,9 @@ export default function BookCard({ book, onAddToCart }) {
           {book.title}
         </h3>
 
-        {/* Author link */}
+        {/* Author */}
         <p className="text-[11px] text-slate-500 font-medium truncate">
-          by{' '}
-          <span
-            role="link"
-            tabIndex={0}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              navigate(`/author/${encodeURIComponent(book.author)}`);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                e.stopPropagation();
-                navigate(`/author/${encodeURIComponent(book.author)}`);
-              }
-            }}
-            className="hover:text-[#1E90FF] hover:underline cursor-pointer transition-colors"
-          >
-            {book.author}
-          </span>
+          by {book.author}
         </p>
 
         {/* Stars */}

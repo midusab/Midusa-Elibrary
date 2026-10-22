@@ -4,14 +4,13 @@ const Card = ({
   children, 
   className = '', 
   hover = true,
-  glassmorphism = false 
+  glassmorphism = true 
 }) => {
-  const baseStyles = 'rounded-lg';
-  //const baseWidth = 'w-60';
-  const hoverStyles = hover ? 'hover:border-slate-300 transition-all duration-200' : '';
+  const baseStyles = 'rounded-2xl';
+  const hoverStyles = hover ? 'hover-lift' : '';
   const surfaceStyles = glassmorphism 
-    ? 'liquid-glass' 
-    : 'bg-white border border-slate-200/90';
+    ? 'liquid-glass specular-sheen' 
+    : 'bg-white/90 backdrop-blur-xl border border-white/60 shadow-sm';
   
   return (
     <motion.div

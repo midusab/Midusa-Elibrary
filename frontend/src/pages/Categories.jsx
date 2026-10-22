@@ -29,7 +29,7 @@ export default function Categories() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white py-10 sm:py-16">
+    <div className="min-h-screen py-10 sm:py-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -38,7 +38,7 @@ export default function Categories() {
           transition={{ duration: 0.35 }}
           className="text-center mb-10 sm:mb-14"
         >
-          <span className="text-xs font-bold text-primary uppercase tracking-wider bg-primary-50 px-3 py-1 rounded-full">
+          <span className="text-xs font-bold text-primary uppercase tracking-wider liquid-glass-pill px-3.5 py-1.5 rounded-full border border-white/80">
             Explore Niches
           </span>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mt-3 mb-2 tracking-tight">

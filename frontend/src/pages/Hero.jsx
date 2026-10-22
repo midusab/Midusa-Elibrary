@@ -39,7 +39,7 @@ function BookShelf({ title, icon: Icon, accentColor = '#1E90FF', books, loading,
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-20px' }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
-      className="py-4 px-4 sm:px-6 bg-white rounded-xl border border-slate-200"
+      className="py-5 px-4 sm:px-6 liquid-glass specular-sheen rounded-2xl border border-white/70 shadow-sm"
     >
       <div className="max-w-[1500px] mx-auto">
         {/* Section header */}
@@ -65,7 +65,7 @@ function BookShelf({ title, icon: Icon, accentColor = '#1E90FF', books, loading,
             type="button"
             onClick={() => scroll(-1)}
             aria-label="Scroll left"
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-20 w-9 h-16 bg-black/80 hover:bg-black text-white rounded-xl flex items-center justify-center opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer border border-white/20"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-20 w-9 h-16 bg-black/60 backdrop-blur-xl hover:bg-black/80 text-white rounded-xl flex items-center justify-center opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer border border-white/20 shadow-lg"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -95,7 +95,7 @@ function BookShelf({ title, icon: Icon, accentColor = '#1E90FF', books, loading,
             type="button"
             onClick={() => scroll(1)}
             aria-label="Scroll right"
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-20 w-9 h-16 bg-black/80 hover:bg-black text-white rounded-xl flex items-center justify-center opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer border border-white/20"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-20 w-9 h-16 bg-black/60 backdrop-blur-xl hover:bg-black/80 text-white rounded-xl flex items-center justify-center opacity-0 group-hover/shelf:opacity-100 transition-opacity cursor-pointer border border-white/20 shadow-lg"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -152,7 +152,7 @@ export default function Hero() {
   const categoryShelfEntries = Object.entries(categoryMap).filter(([, books]) => books.length >= 2);
 
   return (
-    <div className="bg-white min-h-screen text-black pb-16">
+    <div className="min-h-screen text-black pb-16">
       {/* ════════════════════════════════════════════════════════
           NETFLIX HERO CAROUSEL — High-Impact Cinematic Banner
       ════════════════════════════════════════════════════════ */}

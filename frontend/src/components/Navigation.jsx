@@ -165,10 +165,10 @@ export default function Navigation() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-xs">
+    <header className="fixed top-0 left-0 right-0 w-full z-50 liquid-glass-nav">
       {/* ── Optional Flash Sale Top Ticker ── */}
       {isFlashSaleLive && flashSale && (
-        <div className="bg-red-600 text-white text-[11px] sm:text-xs font-bold py-1 px-4 text-center flex items-center justify-center gap-2 tracking-wide shadow-inner">
+        <div className="bg-red-600/90 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold py-1 px-4 text-center flex items-center justify-center gap-2 tracking-wide shadow-inner border-b border-red-500/30">
           <Flame className="w-3.5 h-3.5 fill-white animate-pulse" />
           <span>FLASH SALE: {flashSale.discountPercent}% OFF • Ends in {flashCountdown.hours}h {flashCountdown.minutes}m {flashCountdown.seconds}s</span>
           <Link to="/" className="underline hover:text-white/80 ml-1 font-semibold">View Deals →</Link>
@@ -176,16 +176,16 @@ export default function Navigation() {
       )}
 
       {/* ── Top Main Navbar (80px height) ── */}
-      <nav className="h-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-full gap-3 md:gap-6">
+      <nav className="h-20 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-full gap-2 sm:gap-4 md:gap-6">
           
-          {/* 1. Left: Brand Logo */}
+          {/* 1. Left: Brand Logo (Only Icon on mobile; text shown sm and above) */}
           <div className="flex items-center justify-start flex-shrink-0 sm:min-w-[180px] md:min-w-[210px]">
-            <Link to="/" className="flex items-center gap-2.5 group py-1">
+            <Link to="/" className="flex items-center gap-2.5 group py-1" title="Midusa Elibrary Home">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-[#1E90FF] to-[#2563EB] flex items-center justify-center text-white shadow-md shadow-[#1E90FF]/25 border border-white/60 ring-2 ring-[#1E90FF]/15 group-hover:scale-105 transition-transform duration-200 overflow-hidden flex-shrink-0">
                 <img className="w-full h-full object-cover" src={Logo} alt="Midusa Elibrary" />
               </div>
-              <span className="text-lg sm:text-xl font-black tracking-tight select-none">
+              <span className="hidden sm:inline text-lg sm:text-xl font-black tracking-tight select-none">
                 <span className="text-black">Midusa</span>
                 <span className="text-[#1E90FF]">Elibrary</span>
               </span>
@@ -199,15 +199,15 @@ export default function Navigation() {
               to="/library"
               className={`hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 flex-shrink-0 ${
                 isActive('/library')
-                  ? 'text-white bg-[#1E90FF] shadow-xs shadow-[#1E90FF]/25'
-                  : 'text-slate-700 hover:text-[#1E90FF] hover:bg-blue-50/70 border border-slate-200/80 bg-white'
+                  ? 'text-white bg-[#1E90FF] shadow-md shadow-[#1E90FF]/25 border border-[#1E90FF]'
+                  : 'text-slate-700 hover:text-[#1E90FF] hover:bg-white/90 border border-white/80 liquid-glass-pill'
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
               <span>Shop</span>
             </Link>
 
-            {/* Extended Width Search Bar with 12px rounded-xl radius */}
+            {/* Extended Width Search Bar with Liquid Glass High Refraction */}
             <div
               className="flex-1 w-full relative hidden sm:flex"
               ref={searchContainerRef}
@@ -237,7 +237,7 @@ export default function Navigation() {
                   }
                 }}
                 placeholder="Search thousands of books, authors, or genres..."
-                className="w-full pl-11 pr-10 py-2.5 bg-slate-100/80 hover:bg-slate-100 focus:bg-white border border-slate-200/90 focus:border-[#1E90FF] rounded-xl text-sm text-black placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-[#1E90FF]/15 transition-all shadow-xs"
+                className="w-full pl-11 pr-10 py-2.5 bg-white/70 hover:bg-white/85 focus:bg-white/95 border border-white/70 focus:border-[#1E90FF]/60 rounded-xl text-sm text-black placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-[#1E90FF]/15 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-md"
               />
 
               {searchQuery && (
@@ -253,9 +253,9 @@ export default function Navigation() {
               )}
             </form>
 
-            {/* Instant Live Search Suggestions Dropdown */}
+            {/* Instant Live Search Suggestions Dropdown with 32px Blur */}
             {isSuggestionsOpen && searchQuery.trim().length >= 2 && (
-              <div className="absolute left-0 right-0 top-full mt-2 bg-white backdrop-blur-2xl rounded-xl p-2.5 border border-slate-200 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute left-0 right-0 top-full mt-2 liquid-glass rounded-2xl p-2.5 border border-white/80 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
                 {suggestions.length > 0 ? (
                   <div className="space-y-1">
                     <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
@@ -324,7 +324,7 @@ export default function Navigation() {
             {/* Wishlist */}
             <Link
               to="/wishlist"
-              className="relative p-2.5 rounded-xl text-slate-700 hover:text-[#F40009] hover:bg-red-50/70 border border-slate-200/80 transition-all focus:outline-none cursor-pointer"
+              className="relative p-2.5 rounded-xl text-slate-700 hover:text-[#F40009] hover:bg-white/90 border border-white/80 liquid-glass-pill transition-all focus:outline-none cursor-pointer"
               aria-label={`Wishlist with ${wishlistCount} items`}
               title="Your Wishlist"
             >
@@ -339,7 +339,7 @@ export default function Navigation() {
             {/* Cart with smooth visual counter badge update */}
             <Link
               to="/cart"
-              className={`relative p-2.5 rounded-xl text-slate-700 hover:text-[#1E90FF] hover:bg-blue-50/70 border border-slate-200/80 transition-all focus:outline-none cursor-pointer ${
+              className={`relative p-2.5 rounded-xl text-slate-700 hover:text-[#1E90FF] hover:bg-white/90 border border-white/80 liquid-glass-pill transition-all focus:outline-none cursor-pointer ${
                 cartAnimate ? 'scale-110 border-[#1E90FF]' : ''
               }`}
               aria-label={`Shopping cart with ${cartCount} items`}
@@ -382,7 +382,7 @@ export default function Navigation() {
 
                 {/* User Dropdown */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-60 bg-white rounded-xl p-2 border border-slate-200 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute right-0 mt-2 w-60 liquid-glass rounded-2xl p-2 border border-white/80 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
                     <div className="px-3.5 py-2.5 border-b border-slate-100">
                       <div className="flex items-center justify-between gap-1 mb-0.5">
                         <p className="font-bold text-black text-sm truncate">{user.fullname}</p>
@@ -460,23 +460,24 @@ export default function Navigation() {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 sm:hidden rounded-xl text-slate-700 hover:bg-slate-100"
+              className="p-2 sm:hidden rounded-xl text-slate-700 hover:bg-white/90 border border-white/80 liquid-glass-pill transition-all cursor-pointer flex items-center justify-center"
               aria-label="Toggle menu"
             >
-              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {isMobileMenuOpen ? <X className="w-5 h-5 text-black" /> : <Menu className="w-5 h-5 text-slate-700" />}
             </button>
           </div>
         </div>
       </nav>
 
-      {/* ── Mobile Menu Dropdown ── */}
+      {/* ── Mobile Menu Dropdown with Liquid Glass ── */}
       {isMobileMenuOpen && (
-        <div className="sm:hidden bg-white border-b border-slate-200 px-4 py-4 space-y-4 animate-in slide-in-from-top-2">
+        <div className="sm:hidden liquid-glass border-b border-white/80 px-4 py-4 space-y-3.5 animate-in slide-in-from-top-2 shadow-2xl backdrop-blur-2xl">
           {/* Mobile Search */}
           <form onSubmit={handleSearchSubmit} className="relative w-full">
             <button
               type="submit"
               className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              aria-label="Search"
             >
               <Search className="w-4 h-4" />
             </button>
@@ -485,7 +486,7 @@ export default function Navigation() {
               value={searchQuery}
               onChange={handleQueryChange}
               placeholder="Search books, authors, genres..."
-              className="w-full pl-9 pr-8 py-2 bg-slate-100 rounded-xl text-xs text-black focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
+              className="w-full pl-9 pr-8 py-2.5 bg-white/70 hover:bg-white/90 focus:bg-white border border-white/80 rounded-xl text-xs text-black placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/30 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)]"
             />
           </form>
 
@@ -494,28 +495,96 @@ export default function Navigation() {
             <Link
               to="/library"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/80 transition-colors"
             >
-              <span>Shop</span>
+              <span className="flex items-center gap-2.5">
+                <BookOpen className="w-4 h-4 text-[#1E90FF]" />
+                <span>Shop Catalog</span>
+              </span>
+              <ArrowRight className="w-4 h-4 text-slate-400" />
+            </Link>
+            <Link
+              to="/categories"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/80 transition-colors"
+            >
+              <span className="flex items-center gap-2.5">
+                <FileText className="w-4 h-4 text-[#1E90FF]" />
+                <span>Categories</span>
+              </span>
               <ArrowRight className="w-4 h-4 text-slate-400" />
             </Link>
             <Link
               to="/wishlist"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-50"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/80 transition-colors"
             >
-              <span>Wishlist ({wishlistCount})</span>
-              <Heart className="w-4 h-4 text-[#F40009]" />
+              <span className="flex items-center gap-2.5">
+                <Heart className={`w-4 h-4 ${wishlistCount > 0 ? 'text-[#F40009] fill-[#F40009]' : 'text-slate-400'}`} />
+                <span>Wishlist ({wishlistCount})</span>
+              </span>
+              <ArrowRight className="w-4 h-4 text-slate-400" />
             </Link>
 
-            {!user && (
+            {user ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  state={{ tab: 'library' }}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/80 transition-colors"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <User className="w-4 h-4 text-slate-400" />
+                    <span>My Library</span>
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-slate-400" />
+                </Link>
+                <Link
+                  to="/dashboard"
+                  state={{ tab: 'orders' }}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/80 transition-colors"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <FileText className="w-4 h-4 text-slate-400" />
+                    <span>Orders &amp; Payments</span>
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-slate-400" />
+                </Link>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-blue-50/70 text-[#1E90FF] font-bold transition-colors"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <ShieldCheck className="w-4 h-4 text-[#1E90FF]" />
+                      <span>Admin Dashboard</span>
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-[#1E90FF]" />
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-200 bg-red-50/80 text-[#F40009] text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4 text-[#F40009]" />
+                  <span>Sign Out</span>
+                </button>
+              </>
+            ) : (
               <button
                 type="button"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   openAuthModal();
                 }}
-                className="w-full mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#1E90FF] text-white text-xs font-bold shadow-xs cursor-pointer"
+                className="w-full mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#1E90FF] text-white text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer"
               >
                 <User className="w-4 h-4" />
                 <span>Sign In</span>

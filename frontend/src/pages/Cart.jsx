@@ -18,9 +18,9 @@ export default function Cart() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-[75vh] bg-white py-12 sm:py-20 flex items-center justify-center">
-        <div className="max-w-md mx-auto px-4 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-[75vh] py-12 sm:py-20 flex items-center justify-center">
+        <div className="max-w-md mx-auto px-4 text-center liquid-glass specular-sheen p-8 rounded-3xl border border-white/80 shadow-lg">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#1E90FF] flex items-center justify-center mx-auto mb-4 border border-blue-100">
             <FiShoppingCart className="w-7 h-7" />
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">
@@ -30,7 +30,7 @@ export default function Cart() {
             Explore our curated collection across Self Development, Psychology, Finance, and Christianity.
           </p>
           <Link to="/library">
-            <Button size="md" className="px-6 text-xs sm:text-sm font-semibold">
+            <Button size="md" className="px-6 text-xs sm:text-sm font-semibold rounded-xl">
               Browse Library
             </Button>
           </Link>
@@ -40,7 +40,7 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-white py-8 sm:py-12">
+    <div className="min-h-screen py-8 sm:py-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-6 sm:mb-8">

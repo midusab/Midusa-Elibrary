@@ -26,7 +26,6 @@ const Cart = lazy(() => import('./pages/Cart'));
 const Checkout = lazy(() => import('./pages/Checkout'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const AuthorPage = lazy(() => import('./pages/AuthorPage'));
 const Legal = lazy(() => import('./pages/Legal'));
 
 import { useAuth } from './context/AuthContext';
@@ -115,16 +114,23 @@ export default function App() {
                       <ScrollProgressBar />
                       <WhatsAppButton />
                       <AuthModal />
-                    <div className="min-h-screen flex flex-col bg-white text-slate-900 overflow-x-hidden w-full">
+                    <div className="min-h-screen flex flex-col text-slate-900 overflow-x-hidden w-full relative">
+                      {/* ── Apple Liquid Glass Ambient Mesh Gradient Canvas (Cobalt Blue, Deep Violet, Soft Amber) ── */}
+                      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden bg-[#fafbfe]" aria-hidden="true">
+                        <div className="liquid-mesh-orb-1" />
+                        <div className="liquid-mesh-orb-2" />
+                        <div className="liquid-mesh-orb-3" />
+                        <div className="absolute inset-0 bg-white/35 backdrop-blur-[1px]" />
+                      </div>
+
                       <Navigation />
-                      <main className="flex-1 pt-20 bg-white">
+                      <main className="flex-1 pt-20 bg-transparent">
                         <Suspense fallback={<PageSkeleton />}>
                           <Routes>
                             <Route path="/" element={<Hero />} />
                             <Route path="/categories" element={<Categories />} />
                             <Route path="/library" element={<Library />} />
                             <Route path="/book/:id" element={<BookDetails />} />
-                            <Route path="/author/:name" element={<AuthorPage />} />
                             <Route path="/cart" element={<Cart />} />
                             <Route
                               path="/checkout"
