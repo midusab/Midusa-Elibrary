@@ -1,5 +1,6 @@
 const { prisma } = require('../config/database');
 const paymentService = require('../payment/payment.service');
+const { getDiscountedPriceForBook } = require('./flashSaleController');
 
 const isUuid = (str) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
@@ -62,23 +63,32 @@ const createOrder = async (req, res) => {
         return res.status(400).json({ error: `Invalid book id format: ${bookId}` });
       }
 
-      const book = await prisma.books.findUnique({
-        where: { id: bookId }
-      });
+      const book = await prisma.books.findUnique({ where: { id: bookId } });
 
       if (!book) {
         return res.status(404).json({ error: `Book with id ${bookId} not found` });
       }
 
       const qty = parseInt(item.quantity, 10) || 1;
-      const price = Number(book.price) || 0;
-      const itemTotal = price * qty;
+      const originalPrice = Number(book.price) || 0;
+
+      // ── Flash Sale: server-side discount check ──────────────────────────────
+      // We NEVER mutate books.price. Discount is applied only to the order_item.
+      let finalPrice = originalPrice;
+      const saleInfo = await getDiscountedPriceForBook(bookId);
+      if (saleInfo.inSale && saleInfo.discountPercent > 0) {
+        const discount = Math.round(originalPrice * (saleInfo.discountPercent / 100));
+        finalPrice = Math.max(1, originalPrice - discount);
+      }
+      // ───────────────────────────────────────────────────────────────────────
+
+      const itemTotal = finalPrice * qty;
       totalAmount += itemTotal;
 
       orderItemsToCreate.push({
         book_id: bookId,
         quantity: qty,
-        price: price
+        price: finalPrice        // stores the price actually charged (discounted if on sale)
       });
     }
 

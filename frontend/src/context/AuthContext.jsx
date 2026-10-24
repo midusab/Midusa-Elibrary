@@ -5,6 +5,7 @@ import {
   getRedirectResult,
   signOut as firebaseSignOut,
   getIdToken,
+  onAuthStateChanged,
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { ADMIN_EMAIL, checkIsAdmin } from '../constants/auth';
@@ -14,6 +15,10 @@ import {
   requestPasswordReset as apiRequestPasswordReset,
   resetPasswordWithToken as apiResetPasswordWithToken
 } from '../services/api';
+
+/** 5 Hours of Inactivity Timeout in milliseconds */
+const INACTIVITY_TIMEOUT_MS = 5 * 60 * 60 * 1000; // 5 hours (18,000,000 ms)
+const LAST_ACTIVITY_KEY = 'elib_last_activity_time';
 
 /** Safely decode JWT payload without external libraries */
 function getJwtPayload(token) {
@@ -42,11 +47,24 @@ function isTokenExpired(token) {
   return payload.exp * 1000 <= Date.now();
 }
 
-/** Returns true if string looks like a signed JWT */
-function isRealJwt(token) {
-  if (!token || typeof token !== 'string') return false;
-  const parts = token.split('.');
-  return parts.length === 3 && token.startsWith('eyJ');
+/** Record user activity timestamp */
+function recordActivity() {
+  try {
+    localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
+  } catch {
+    // LocalStorage quota or restricted mode
+  }
+}
+
+/** Get last activity timestamp */
+function getLastActivity() {
+  try {
+    const val = localStorage.getItem(LAST_ACTIVITY_KEY);
+    const parsed = parseInt(val, 10);
+    return isNaN(parsed) ? Date.now() : parsed;
+  } catch {
+    return Date.now();
+  }
 }
 
 const AuthContext = createContext();
@@ -63,7 +81,8 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const expiryTimerRef = useRef(null);
+  const inactivityTimerRef = useRef(null);
+  const lastThrottleRef = useRef(0);
 
   // Global authentication popup modal state
   const [authModalState, setAuthModalState] = useState({
@@ -86,9 +105,11 @@ export const AuthProvider = ({ children }) => {
 
   // Normalizes user object and ensures admin status consistency
   const processUser = useCallback((rawUser, token) => {
-    const isAdmin = checkIsAdmin(rawUser.email);
+    const email = (rawUser.email || '').trim().toLowerCase();
+    const isAdmin = checkIsAdmin(email) || rawUser.role === 'admin';
     return {
       ...rawUser,
+      email,
       token: token || rawUser.token || 'jwt-token-' + Date.now(),
       role: isAdmin ? 'admin' : (rawUser.role || 'user'),
       isAdmin: isAdmin,
@@ -97,14 +118,15 @@ export const AuthProvider = ({ children }) => {
 
   /** Sign out and clear stored session */
   const logout = useCallback(async (reasonMessage) => {
-    if (expiryTimerRef.current) {
-      clearTimeout(expiryTimerRef.current);
-      expiryTimerRef.current = null;
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
     }
 
     try { await firebaseSignOut(auth); } catch { /* ignore */ }
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem(LAST_ACTIVITY_KEY);
     sessionStorage.removeItem('pending_login_toast');
 
     if (reasonMessage) {
@@ -112,56 +134,54 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const scheduleInactivityCheckRef = useRef(null);
+
   /**
-   * Keep session persistent until user signs out
+   * Evaluates 5-hour inactivity timeout.
+   * If inactive >= 5 hours: logs out.
+   * Else: schedules next check at remaining time.
    */
-  const scheduleTokenExpiration = useCallback((token) => {
-    if (expiryTimerRef.current) {
-      clearTimeout(expiryTimerRef.current);
-      expiryTimerRef.current = null;
+  const scheduleInactivityCheck = useCallback(() => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
     }
 
-    const payload = getJwtPayload(token);
-    if (payload && payload.exp) {
-      const remaining = payload.exp * 1000 - Date.now();
-      if (remaining <= 0) {
-        logout('Session expired. Please sign in again.');
-        return;
-      }
-      expiryTimerRef.current = setTimeout(() => {
-        logout('Session expired. Please sign in again.');
-      }, remaining);
+    const lastActive = getLastActivity();
+    const elapsed = Date.now() - lastActive;
+
+    if (elapsed >= INACTIVITY_TIMEOUT_MS) {
+      logout('You were signed out due to 5 hours of inactivity.');
+      return;
     }
+
+    const remaining = Math.max(1000, INACTIVITY_TIMEOUT_MS - elapsed);
+    inactivityTimerRef.current = setTimeout(() => {
+      const currentElapsed = Date.now() - getLastActivity();
+      if (currentElapsed >= INACTIVITY_TIMEOUT_MS) {
+        logout('You were signed out due to 5 hours of inactivity.');
+      } else if (scheduleInactivityCheckRef.current) {
+        scheduleInactivityCheckRef.current();
+      }
+    }, remaining);
   }, [logout]);
+
+  useEffect(() => {
+    scheduleInactivityCheckRef.current = scheduleInactivityCheck;
+  }, [scheduleInactivityCheck]);
 
   const saveUserSession = useCallback((sessionUser) => {
     const processed = processUser(sessionUser, sessionUser.token);
     setUser(processed);
-    localStorage.setItem('user', JSON.stringify(processed));
-    scheduleTokenExpiration(processed.token);
-    return processed;
-  }, [processUser, scheduleTokenExpiration]);
-
-  /**
-   * Refresh the active session token
-   */
-  const refreshSessionToken = useCallback(async () => {
-    if (!user?.token) return null;
+    recordActivity();
     try {
-      const data = await refreshTokenApi(user.token);
-      if (data?.token) {
-        const refreshed = processUser(data.user || user, data.token);
-        saveUserSession(refreshed);
-        scheduleTokenExpiration(data.token);
-        return refreshed;
-      }
-    } catch (err) {
-      if (err.code === 'TOKEN_EXPIRED') {
-        logout('Session expired. Please log in again.');
-      }
-      throw err;
+      localStorage.setItem('user', JSON.stringify(processed));
+    } catch {
+      // LocalStorage error ignore
     }
-  }, [user, processUser, saveUserSession, scheduleTokenExpiration, logout]);
+    scheduleInactivityCheck();
+    return processed;
+  }, [processUser, scheduleInactivityCheck]);
 
   /**
    * Check if current session is still valid on backend
@@ -171,7 +191,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await checkSessionApi(user.token);
       if (res?.active === false) {
-        logout('Your session is no longer active. Please sign in.');
+        logout('Your session is no longer active. Please sign in again.');
         return false;
       }
       return true;
@@ -181,12 +201,50 @@ export const AuthProvider = ({ children }) => {
   }, [user?.token, logout]);
 
   /**
+   * Refresh the active session token
+   */
+  const refreshSessionToken = useCallback(async () => {
+    if (!user?.token) return null;
+    try {
+      // 1. If Firebase Auth is active, get a fresh ID token directly
+      const fbUser = auth.currentUser;
+      if (fbUser) {
+        const freshIdToken = await getIdToken(fbUser, false);
+        const res = await fetch(`${API_BASE}/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: freshIdToken }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const refreshed = processUser(data.user || user, data.token);
+          saveUserSession(refreshed);
+          return refreshed;
+        }
+      }
+
+      // 2. Fallback to API refresh token
+      const data = await refreshTokenApi(user.token);
+      if (data?.token) {
+        const refreshed = processUser(data.user || user, data.token);
+        saveUserSession(refreshed);
+        return refreshed;
+      }
+    } catch (err) {
+      if (err.code === 'TOKEN_EXPIRED') {
+        logout('Your session has expired. Please sign in again.');
+      }
+      throw err;
+    }
+  }, [user, processUser, saveUserSession, logout]);
+
+  /**
    * Exchange Firebase credential for backend JWT
    */
   async function exchangeFirebaseToken(result) {
     const idToken = await result.user.getIdToken();
-    const email = result.user.email;
-    const name = result.user.displayName || email?.split('@')[0] || 'User';
+    const email = (result.user.email || '').trim().toLowerCase();
+    const name = result.user.displayName || email.split('@')[0] || 'User';
     const avatar = result.user.photoURL || '';
     const isAdmin = checkIsAdmin(email);
 
@@ -200,7 +258,6 @@ export const AuthProvider = ({ children }) => {
       if (res.ok) {
         const data = await res.json();
         const sessionUser = processUser(data.user, data.token);
-        scheduleTokenExpiration(data.token);
         return saveUserSession(sessionUser);
       }
     } catch (apiErr) {
@@ -213,25 +270,28 @@ export const AuthProvider = ({ children }) => {
       fullname: name,
       avatar: avatar,
       role: isAdmin ? 'admin' : 'user',
+      isAdmin: isAdmin,
       token: idToken || ('firebase-' + Date.now())
     };
     return saveUserSession(sessionUser);
   }
 
-  // ─── 1. Rehydrate session on mount & set up expiry timer ─────────────────
+  // ─── 1. Rehydrate session on mount & check 5-hour inactivity ─────────────
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
       const saved = localStorage.getItem('user');
-      let restoredUser = null;
 
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (parsed && parsed.token && isTokenExpired(parsed.token)) {
-            // Stored token is expired
+          const lastActive = getLastActivity();
+
+          // Check if 5 hours have passed since last action
+          if (Date.now() - lastActive >= INACTIVITY_TIMEOUT_MS) {
             localStorage.removeItem('user');
+            localStorage.removeItem(LAST_ACTIVITY_KEY);
             if (!cancelled) {
               setUser(null);
               setLoading(false);
@@ -239,10 +299,10 @@ export const AuthProvider = ({ children }) => {
             return;
           }
 
-          restoredUser = processUser(parsed, parsed.token);
+          const activeUser = processUser(parsed, parsed.token);
           if (!cancelled) {
-            setUser(restoredUser);
-            scheduleTokenExpiration(parsed.token);
+            setUser(activeUser);
+            scheduleInactivityCheck();
           }
         } catch {
           localStorage.removeItem('user');
@@ -258,7 +318,6 @@ export const AuthProvider = ({ children }) => {
             name: loggedInUser.fullname || loggedInUser.email,
             isAdmin: loggedInUser.role === 'admin'
           }));
-          restoredUser = loggedInUser;
         }
       } catch (err) {
         if (err?.code !== 'auth/no-auth-event') {
@@ -267,55 +326,51 @@ export const AuthProvider = ({ children }) => {
       } finally {
         if (!cancelled) setLoading(false);
       }
-
-      // Silent Firebase refresh if token is placeholder
-      if (restoredUser && !isRealJwt(restoredUser.token) && !cancelled) {
-        const firebaseUser = auth.currentUser;
-        if (firebaseUser) {
-          try {
-            const freshIdToken = await getIdToken(firebaseUser, true);
-            const res = await fetch(`${API_BASE}/auth/google`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ idToken: freshIdToken }),
-            });
-            if (res.ok) {
-              const data = await res.json();
-              const refreshed = processUser(data.user, data.token);
-              if (!cancelled) {
-                setUser(refreshed);
-                localStorage.setItem('user', JSON.stringify(refreshed));
-                scheduleTokenExpiration(data.token);
-              }
-            }
-          } catch (refreshErr) {
-            console.warn('Silent token refresh failed:', refreshErr.message);
-          }
-        }
-      }
     }
 
     init();
     return () => {
       cancelled = true;
-      if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     };
-  }, [processUser, scheduleTokenExpiration]);
+  }, [processUser, scheduleInactivityCheck]);
 
-  // ─── 2. Multi-tab Session Synchronization ────────────────────────────────
+  // ─── 2. User Activity Tracker (Resets 5-hour inactivity window) ───────────
+  useEffect(() => {
+    if (!user) return;
+
+    const handleUserAction = () => {
+      const now = Date.now();
+      // Throttle localStorage writes to once every 15 seconds for peak performance
+      if (now - lastThrottleRef.current > 15_000) {
+        lastThrottleRef.current = now;
+        recordActivity();
+        scheduleInactivityCheck();
+      }
+    };
+
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+    events.forEach((ev) => window.addEventListener(ev, handleUserAction, { passive: true }));
+
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, handleUserAction));
+    };
+  }, [user, scheduleInactivityCheck]);
+
+  // ─── 3. Multi-tab Session Synchronization ────────────────────────────────
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'user') {
         if (!e.newValue) {
           // Logged out in another tab
           setUser(null);
-          if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
+          if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
         } else {
           // Logged in or updated in another tab
           try {
             const newUser = JSON.parse(e.newValue);
             setUser(newUser);
-            scheduleTokenExpiration(newUser.token);
+            scheduleInactivityCheck();
           } catch {
             // Ignore parse error
           }
@@ -325,23 +380,48 @@ export const AuthProvider = ({ children }) => {
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [scheduleTokenExpiration]);
+  }, [scheduleInactivityCheck]);
 
-  // ─── 3. Session Heartbeat on Window Focus ────────────────────────────────
+  // ─── 4. Window Focus Heartbeat & Inactivity Check ────────────────────────
   useEffect(() => {
     const handleFocus = () => {
-      if (user?.token) {
-        if (isTokenExpired(user.token, user.sessionStartedAt)) {
-          logout('Your 2-hour session has expired. Please sign in again with Google.');
+      if (user) {
+        const elapsed = Date.now() - getLastActivity();
+        if (elapsed >= INACTIVITY_TIMEOUT_MS) {
+          logout('You were signed out due to 5 hours of inactivity.');
         } else {
-          checkSessionValidity();
+          scheduleInactivityCheck();
         }
       }
     };
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, [user?.token, logout, checkSessionValidity]);
+  }, [user, logout, scheduleInactivityCheck]);
+
+  // ─── 5. Firebase Auth State Listener (Silent refresh token) ──────────────
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser && user) {
+        try {
+          const freshToken = await getIdToken(fbUser, false);
+          if (freshToken && freshToken !== user.token) {
+            const updated = { ...user, token: freshToken };
+            setUser(updated);
+            try {
+              localStorage.setItem('user', JSON.stringify(updated));
+            } catch {
+              // Ignore storage errors in restricted environments (e.g. private browsing)
+            }
+          }
+        } catch (e) {
+          // Silent ignore
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   /**
    * Sign in with Google
@@ -354,7 +434,6 @@ export const AuthProvider = ({ children }) => {
         return { success: true, user: sessionUser };
       }
     } catch (popupErr) {
-      console.warn('Popup closed or blocked, falling back to redirect:', popupErr.message);
       if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request') {
         await signInWithRedirect(auth, googleProvider);
         return { redirecting: true };
@@ -378,23 +457,22 @@ export const AuthProvider = ({ children }) => {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Invalid email or password');
+        throw new Error(data.error || 'Incorrect email or password. Please try again.');
       }
 
       const sessionUser = processUser(data.user, data.token);
       saveUserSession(sessionUser);
-      scheduleTokenExpiration(data.token);
       return { success: true, user: sessionUser };
     } catch (err) {
       if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
-        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.', { cause: err });
+        throw new Error('Unable to connect to the server. Please check your internet connection.', { cause: err });
       }
       throw err;
     }
   };
 
   /**
-   * Register with Email, Full Name and Password
+   * Register with Email
    */
   const registerWithEmail = async (fullname, email, password, confirmPassword) => {
     const normalizedEmail = (email || '').trim().toLowerCase();
@@ -408,16 +486,15 @@ export const AuthProvider = ({ children }) => {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to create account');
+        throw new Error(data.error || 'Failed to create account. Please try again.');
       }
 
       const sessionUser = processUser(data.user, data.token);
       saveUserSession(sessionUser);
-      scheduleTokenExpiration(data.token);
       return { success: true, user: sessionUser };
     } catch (err) {
       if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
-        throw new Error('Cannot connect to the server. Please make sure the backend is running and try again.', { cause: err });
+        throw new Error('Unable to connect to the server. Please check your internet connection.', { cause: err });
       }
       throw err;
     }
@@ -427,7 +504,7 @@ export const AuthProvider = ({ children }) => {
    * Update Profile
    */
   const updateProfile = async (updatedData) => {
-    if (!user) throw new Error('Not authenticated');
+    if (!user) throw new Error('Please sign in to update your profile.');
 
     const newUserData = {
       ...user,
@@ -466,7 +543,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = (userData) => {
     saveUserSession(userData);
-    if (userData?.token) scheduleTokenExpiration(userData.token);
   };
 
   return (

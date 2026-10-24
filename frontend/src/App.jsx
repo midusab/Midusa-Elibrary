@@ -56,25 +56,35 @@ function AppLifecycleHandlers() {
     });
   }, [location.pathname, user?.id]);
 
-  // Handle post-redirect OAuth welcome toast and navigation
+  // Handle post-redirect OAuth welcome toast and navigation.
+  // This only runs after a full-page Google OAuth redirect (not popup).
+  // The 'pending_login_toast' key is set by AuthContext after getRedirectResult() resolves.
+  // We check for a 'oauth_redirect_handled' sentinel to prevent double navigation
+  // if the AuthModal's handlePostAuth already navigated the user.
   useEffect(() => {
     const pendingToast = sessionStorage.getItem('pending_login_toast');
-    if (pendingToast) {
-      try {
-        const data = JSON.parse(pendingToast);
+    if (!pendingToast) return;
+
+    // If AuthModal already handled post-auth navigation, skip navigating again
+    const alreadyHandled = sessionStorage.getItem('oauth_redirect_handled');
+    sessionStorage.removeItem('pending_login_toast');
+    sessionStorage.removeItem('oauth_redirect_handled');
+
+    try {
+      const data = JSON.parse(pendingToast);
+      if (!alreadyHandled) {
         if (data.isAdmin) {
           success(`Welcome back, Administrator! Signed in as ${data.name}.`);
         } else {
           success(`Welcome, ${data.name}! Signed in successfully.`);
         }
-      } catch {
-        // ignore
+        const target = popOAuthRedirect(null);
+        if (target) {
+          navigate(target, { replace: true });
+        }
       }
-      sessionStorage.removeItem('pending_login_toast');
-      const target = popOAuthRedirect(null);
-      if (target) {
-        navigate(target, { replace: true });
-      }
+    } catch {
+      // ignore parse errors
     }
   }, [success, navigate]);
 
@@ -124,7 +134,7 @@ export default function App() {
                       </div>
 
                       <Navigation />
-                      <main className="flex-1 pt-20 bg-transparent">
+                      <main className="flex-1 pt-24 sm:pt-28 bg-transparent">
                         <Suspense fallback={<PageSkeleton />}>
                           <Routes>
                             <Route path="/" element={<Hero />} />

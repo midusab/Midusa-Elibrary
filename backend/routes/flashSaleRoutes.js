@@ -7,9 +7,9 @@ const { adminAuth } = require('../middleware/auth');
 router.get('/', flashSaleController.getActiveFlashSale);
 
 // Admin routes
-router.get('/admin', adminAuth, flashSaleController.getAdminFlashSale);
+router.get('/admin', adminAuth, flashSaleController.getAllFlashSales);
 router.post('/admin', adminAuth, flashSaleController.saveFlashSale);
-router.post('/admin/toggle', adminAuth, flashSaleController.toggleFlashSale);
-router.delete('/admin', adminAuth, flashSaleController.deleteFlashSale);
+router.patch('/admin/:id/toggle', adminAuth, flashSaleController.toggleFlashSale);
+router.delete('/admin/:id', adminAuth, flashSaleController.deleteFlashSale);
 
 module.exports = router;

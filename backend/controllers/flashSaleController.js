@@ -1,338 +1,335 @@
-const fs = require('fs');
-const path = require('path');
+/**
+ * Flash Sale Controller
+ *
+ * Architecture:
+ *  - flash_sales  : stores sale metadata (title, discount_percent, start/end times, is_active)
+ *  - sale_books   : junction table linking sales → books (UNIQUE on sale_id + book_id)
+ *  - books.price  : NEVER modified — original price is always preserved
+ *  - Discounts are calculated by the backend at checkout time
+ */
 const { prisma } = require('../config/database');
-const { getCache, setCache, delCachePattern } = require('../config/redis');
 
-const FALLBACK_FILE = path.join(__dirname, '../data/flashsale.json');
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+const isUuid = (str) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str || ''));
 
-// Ensure fallback file exists
-function readFallback() {
-  try {
-    if (fs.existsSync(FALLBACK_FILE)) {
-      const raw = fs.readFileSync(FALLBACK_FILE, 'utf8');
-      return JSON.parse(raw);
-    }
-  } catch (e) {
-    console.warn('Error reading flashsale fallback file:', e.message);
-  }
+/**
+ * Check whether a flash sale is currently active (within its time window).
+ */
+function isSaleLive(sale) {
+  if (!sale || !sale.is_active) return false;
+  const now = new Date();
+  return now >= new Date(sale.start_time) && now <= new Date(sale.end_time);
+}
+
+/**
+ * Format a flash_sales row + its sale_books into the shape the frontend expects.
+ */
+function formatSale(sale) {
+  const bookIds = (sale.sale_books || []).map((sb) => sb.book_id);
   return {
-    id: 'default-flashsale',
-    title: '',
-    description: '',
-    discountPercent: 20,
-    startTime: new Date().toISOString(),
-    endTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    isActive: false,
-    bookIds: []
+    id: sale.id,
+    title: sale.title,
+    description: sale.description || '',
+    discountPercent: sale.discount_percent,
+    startTime: sale.start_time,
+    endTime: sale.end_time,
+    isActive: sale.is_active,
+    status: sale.status,
+    bookIds,           // array of UUIDs — frontend uses this to check eligibility
+    createdAt: sale.created_at,
+    updatedAt: sale.updated_at,
   };
 }
 
-function writeFallback(data) {
-  try {
-    const dir = path.dirname(FALLBACK_FILE);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(FALLBACK_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (e) {
-    console.warn('Error saving flashsale fallback file:', e.message);
-  }
-}
-
-// Ensure DB table exists
-let tableEnsured = false;
-async function ensureTable() {
-  if (tableEnsured) return;
-  try {
-    await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS public.flash_sales (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        title TEXT NOT NULL,
-        description TEXT DEFAULT '',
-        discount_percent INT NOT NULL DEFAULT 20,
-        start_time TIMESTAMPTZ NOT NULL DEFAULT now(),
-        end_time TIMESTAMPTZ NOT NULL,
-        is_active BOOLEAN NOT NULL DEFAULT true,
-        book_ids JSONB DEFAULT '[]'::jsonb,
-        created_at TIMESTAMPTZ DEFAULT now(),
-        updated_at TIMESTAMPTZ DEFAULT now()
-      );
-    `);
-    tableEnsured = true;
-  } catch (err) {
-    // DB offline or permission issue, fallback file will be used
-  }
-}
-
-/**
- * Public: Get current active flash sale
- */
+// ─────────────────────────────────────────────
+// PUBLIC: Get active flash sale
+// GET /api/flashsale
+// ─────────────────────────────────────────────
 const getActiveFlashSale = async (req, res) => {
   try {
-    const cacheKey = 'flashsale:active';
-    const cached = await getCache(cacheKey);
-    if (cached !== null && cached !== undefined) {
-      return res.json(cached);
-    }
+    // Prevent browsers and CDNs from caching this response —
+    // sale status can change at any moment.
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
 
-    let sale = null;
-    await ensureTable();
+    const now = new Date();
 
-    try {
-      const rows = await prisma.$queryRawUnsafe(`
-        SELECT * FROM public.flash_sales
-        WHERE is_active = true AND end_time > now()
-        ORDER BY created_at DESC
-        LIMIT 1
-      `);
-      if (rows && rows.length > 0) {
-        const r = rows[0];
-        sale = {
-          id: r.id,
-          title: r.title,
-          description: r.description || '',
-          discountPercent: Number(r.discount_percent) || 20,
-          startTime: r.start_time,
-          endTime: r.end_time,
-          isActive: r.is_active,
-          bookIds: Array.isArray(r.book_ids) ? r.book_ids : (typeof r.book_ids === 'string' ? JSON.parse(r.book_ids || '[]') : [])
-        };
-      }
-    } catch {
-      // DB query failed, use file
-    }
-
-    if (!sale) {
-      const fileData = readFallback();
-      if (fileData && fileData.isActive && new Date(fileData.endTime) > new Date()) {
-        sale = fileData;
-      }
-    }
-
-    if (!sale) {
-      const response = { active: false, flashSale: null };
-      await setCache(cacheKey, response, 30);
-      return res.json(response);
-    }
-
-    const now = Date.now();
-    const end = new Date(sale.endTime).getTime();
-    const remainingMs = Math.max(0, end - now);
-
-    const result = {
-      active: remainingMs > 0,
-      flashSale: {
-        ...sale,
-        remainingMs,
-        remainingSeconds: Math.floor(remainingMs / 1000)
-      }
-    };
-
-    await setCache(cacheKey, result, 15);
-    res.json(result);
-  } catch (error) {
-    console.error('Error fetching active flash sale:', error);
-    res.json({ active: false, flashSale: null });
-  }
-};
-
-/**
- * Admin: Get flash sale configuration
- */
-const getAdminFlashSale = async (req, res) => {
-  try {
-    await ensureTable();
-    let currentSale = null;
-
-    try {
-      const rows = await prisma.$queryRawUnsafe(`
-        SELECT * FROM public.flash_sales
-        ORDER BY created_at DESC
-        LIMIT 1
-      `);
-      if (rows && rows.length > 0) {
-        const r = rows[0];
-        currentSale = {
-          id: r.id,
-          title: r.title,
-          description: r.description || '',
-          discountPercent: Number(r.discount_percent) || 20,
-          startTime: r.start_time,
-          endTime: r.end_time,
-          isActive: r.is_active,
-          bookIds: Array.isArray(r.book_ids) ? r.book_ids : (typeof r.book_ids === 'string' ? JSON.parse(r.book_ids || '[]') : [])
-        };
-      }
-    } catch (e) {
-      // DB query fallback
-    }
-
-    if (!currentSale) {
-      currentSale = readFallback();
-    }
-
-    const now = Date.now();
-    const end = new Date(currentSale.endTime).getTime();
-    const isExpired = end <= now;
-
-    res.json({
-      flashSale: currentSale,
-      isExpired,
-      isLive: currentSale.isActive && !isExpired
+    const sale = await prisma.flash_sales.findFirst({
+      where: {
+        is_active: true,
+        start_time: { lte: now },
+        end_time: { gte: now },
+      },
+      include: {
+        sale_books: {
+          select: { book_id: true },
+        },
+      },
+      orderBy: { created_at: 'desc' },
     });
+
+    if (!sale) {
+      return res.json({ active: false, flashSale: null });
+    }
+
+    return res.json({ active: true, flashSale: formatSale(sale) });
   } catch (error) {
-    console.error('Error fetching admin flash sale:', error);
-    res.status(500).json({ error: 'Failed to fetch flash sale settings' });
+    console.error('getActiveFlashSale error:', error);
+    return res.status(500).json({ error: 'Failed to fetch flash sale' });
   }
 };
 
-/**
- * Admin: Create or update flash sale
- */
+// ─────────────────────────────────────────────
+// ADMIN: Get all flash sales
+// GET /api/flashsale/admin
+// ─────────────────────────────────────────────
+const getAllFlashSales = async (req, res) => {
+  try {
+    const sales = await prisma.flash_sales.findMany({
+      include: {
+        sale_books: {
+          select: { book_id: true },
+        },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    return res.json(sales.map(formatSale));
+  } catch (error) {
+    console.error('getAllFlashSales error:', error);
+    return res.status(500).json({ error: 'Failed to fetch flash sales' });
+  }
+};
+
+// ─────────────────────────────────────────────
+// ADMIN: Create or update a flash sale
+// POST /api/flashsale/admin
+// ─────────────────────────────────────────────
 const saveFlashSale = async (req, res) => {
   try {
     const {
+      id,
       title,
-      description = '',
-      discountPercent = 20,
-      startTime = new Date().toISOString(),
+      description,
+      discountPercent,
+      discount_percent,
+      startTime,
+      start_time,
       endTime,
-      isActive = true,
-      bookIds = []
+      end_time,
+      isActive,
+      is_active,
+      status,
+      bookIds,
     } = req.body;
 
-    if (!title || !title.trim()) {
-      return res.status(400).json({ error: 'Flash sale title is required' });
+    // Normalize field names (accept camelCase from frontend or snake_case)
+    const normalizedDiscount = parseInt(discountPercent ?? discount_percent ?? 20, 10);
+    const normalizedStart = new Date(startTime ?? start_time);
+    const normalizedEnd = new Date(endTime ?? end_time);
+    const normalizedActive = isActive ?? is_active ?? true;
+
+    if (!title?.trim()) {
+      return res.status(400).json({ error: 'Sale title is required' });
+    }
+    if (isNaN(normalizedStart) || isNaN(normalizedEnd)) {
+      return res.status(400).json({ error: 'Valid start_time and end_time are required' });
+    }
+    if (normalizedEnd <= normalizedStart) {
+      return res.status(400).json({ error: 'end_time must be after start_time' });
+    }
+    if (normalizedDiscount < 1 || normalizedDiscount > 100) {
+      return res.status(400).json({ error: 'discount_percent must be between 1 and 100' });
     }
 
-    const discount = parseInt(discountPercent, 10);
-    if (isNaN(discount) || discount < 1 || discount > 95) {
-      return res.status(400).json({ error: 'Discount percent must be between 1 and 95' });
-    }
+    // Validate bookIds array
+    const rawBookIds = Array.isArray(bookIds) ? bookIds : [];
+    const validBookIds = rawBookIds.filter(isUuid);
 
-    if (!endTime || new Date(endTime).getTime() <= Date.now()) {
-      return res.status(400).json({ error: 'End time must be in the future' });
-    }
+    let sale;
 
-    await ensureTable();
+    if (id && isUuid(id)) {
+      // ── UPDATE existing sale ──
+      sale = await prisma.flash_sales.update({
+        where: { id },
+        data: {
+          title: title.trim(),
+          description: description?.trim() || '',
+          discount_percent: normalizedDiscount,
+          start_time: normalizedStart,
+          end_time: normalizedEnd,
+          is_active: Boolean(normalizedActive),
+          status: status || 'scheduled',
+          updated_at: new Date(),
+        },
+      });
 
-    const saleRecord = {
-      title: title.trim(),
-      description: (description || '').trim(),
-      discountPercent: discount,
-      startTime: new Date(startTime).toISOString(),
-      endTime: new Date(endTime).toISOString(),
-      isActive: Boolean(isActive),
-      bookIds: Array.isArray(bookIds) ? bookIds : []
-    };
-
-    // Save to PostgreSQL if available
-    try {
-      await prisma.$executeRawUnsafe(`
-        UPDATE public.flash_sales SET is_active = false WHERE is_active = true;
-      `);
-      const inserted = await prisma.$queryRawUnsafe(`
-        INSERT INTO public.flash_sales (title, description, discount_percent, start_time, end_time, is_active, book_ids)
-        VALUES ($1, $2, $3, $4::timestamptz, $5::timestamptz, $6, $7::jsonb)
-        RETURNING *;
-      `,
-        saleRecord.title,
-        saleRecord.description,
-        saleRecord.discountPercent,
-        saleRecord.startTime,
-        saleRecord.endTime,
-        saleRecord.isActive,
-        JSON.stringify(saleRecord.bookIds)
-      );
-      if (inserted && inserted.length > 0) {
-        saleRecord.id = inserted[0].id;
+      // Replace all sale_books for this sale
+      await prisma.sale_books.deleteMany({ where: { sale_id: id } });
+    } else {
+      // ── CREATE new sale ──
+      // If setting as active, deactivate all others first
+      if (Boolean(normalizedActive)) {
+        await prisma.flash_sales.updateMany({
+          where: { is_active: true },
+          data: { is_active: false, status: 'ended' },
+        });
       }
-    } catch (dbErr) {
-      console.warn('DB flash sale insert notice, using file storage:', dbErr.message);
-      saleRecord.id = 'fs_' + Date.now();
+
+      sale = await prisma.flash_sales.create({
+        data: {
+          title: title.trim(),
+          description: description?.trim() || '',
+          discount_percent: normalizedDiscount,
+          start_time: normalizedStart,
+          end_time: normalizedEnd,
+          is_active: Boolean(normalizedActive),
+          status: status || 'scheduled',
+        },
+      });
     }
 
-    // Always update fallback file
-    writeFallback(saleRecord);
+    // Insert sale_books with skipDuplicates for safety (unique constraint: sale_id + book_id)
+    if (validBookIds.length > 0) {
+      await prisma.sale_books.createMany({
+        data: validBookIds.map((bookId) => ({
+          sale_id: sale.id,
+          book_id: bookId,
+        })),
+        skipDuplicates: true,
+      });
+    }
 
-    // Clear caches
-    await delCachePattern('flashsale:*');
-    await delCachePattern('books:*');
+    // Fetch the final sale with its books
+    const result = await prisma.flash_sales.findUnique({
+      where: { id: sale.id },
+      include: { sale_books: { select: { book_id: true } } },
+    });
 
-    res.json({
+    return res.status(id ? 200 : 201).json({
       success: true,
-      message: 'Flash sale saved and activated successfully',
-      flashSale: saleRecord
+      flashSale: formatSale(result),
     });
   } catch (error) {
-    console.error('Error saving flash sale:', error);
-    res.status(500).json({ error: error.message || 'Failed to save flash sale' });
+    console.error('saveFlashSale error:', error);
+    return res.status(500).json({ error: 'Failed to save flash sale' });
   }
 };
 
-/**
- * Admin: Toggle flash sale on/off
- */
-const toggleFlashSale = async (req, res) => {
-  try {
-    const { isActive } = req.body;
-    await ensureTable();
-
-    try {
-      await prisma.$executeRawUnsafe(`
-        UPDATE public.flash_sales 
-        SET is_active = $1, updated_at = now()
-        WHERE id = (SELECT id FROM public.flash_sales ORDER BY created_at DESC LIMIT 1)
-      `, Boolean(isActive));
-    } catch {}
-
-    const fileData = readFallback();
-    fileData.isActive = Boolean(isActive);
-    writeFallback(fileData);
-
-    await delCachePattern('flashsale:*');
-    await delCachePattern('books:*');
-
-    res.json({
-      success: true,
-      message: `Flash sale ${isActive ? 'enabled' : 'disabled'} successfully`,
-      isActive: Boolean(isActive)
-    });
-  } catch (error) {
-    console.error('Error toggling flash sale:', error);
-    res.status(500).json({ error: 'Failed to toggle flash sale' });
-  }
-};
-
-/**
- * Admin: Delete or stop active flash sale
- */
+// ─────────────────────────────────────────────
+// ADMIN: Delete a flash sale
+// DELETE /api/flashsale/admin/:id
+// ─────────────────────────────────────────────
 const deleteFlashSale = async (req, res) => {
   try {
-    await ensureTable();
+    const { id } = req.params;
 
-    try {
-      await prisma.$executeRawUnsafe(`
-        UPDATE public.flash_sales SET is_active = false;
-      `);
-    } catch {}
+    if (!id || !isUuid(id)) {
+      return res.status(400).json({ error: 'Valid sale ID is required' });
+    }
 
-    const fileData = readFallback();
-    fileData.isActive = false;
-    writeFallback(fileData);
+    // sale_books rows are deleted automatically via onDelete: Cascade
+    await prisma.flash_sales.delete({ where: { id } });
 
-    await delCachePattern('flashsale:*');
-    await delCachePattern('books:*');
-
-    res.json({ success: true, message: 'Flash sale ended successfully' });
+    return res.json({ success: true, message: 'Flash sale deleted' });
   } catch (error) {
-    console.error('Error ending flash sale:', error);
-    res.status(500).json({ error: 'Failed to end flash sale' });
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Flash sale not found' });
+    }
+    console.error('deleteFlashSale error:', error);
+    return res.status(500).json({ error: 'Failed to delete flash sale' });
+  }
+};
+
+// ─────────────────────────────────────────────
+// ADMIN: Toggle active status of a sale
+// PATCH /api/flashsale/admin/:id/toggle
+// ─────────────────────────────────────────────
+const toggleFlashSale = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id || !isUuid(id)) {
+      return res.status(400).json({ error: 'Valid sale ID is required' });
+    }
+
+    const sale = await prisma.flash_sales.findUnique({ where: { id } });
+    if (!sale) {
+      return res.status(404).json({ error: 'Flash sale not found' });
+    }
+
+    // If activating, deactivate all others
+    if (!sale.is_active) {
+      await prisma.flash_sales.updateMany({
+        where: { is_active: true },
+        data: { is_active: false, status: 'ended' },
+      });
+    }
+
+    const updated = await prisma.flash_sales.update({
+      where: { id },
+      data: {
+        is_active: !sale.is_active,
+        status: !sale.is_active ? 'active' : 'ended',
+        updated_at: new Date(),
+      },
+      include: { sale_books: { select: { book_id: true } } },
+    });
+
+    return res.json({ success: true, flashSale: formatSale(updated) });
+  } catch (error) {
+    console.error('toggleFlashSale error:', error);
+    return res.status(500).json({ error: 'Failed to toggle flash sale' });
+  }
+};
+
+// ─────────────────────────────────────────────
+// BACKEND PRICE VERIFIER (used by orderController)
+// Returns { inSale: bool, discountedPrice: number, originalPrice: number }
+// ─────────────────────────────────────────────
+const getDiscountedPriceForBook = async (bookId) => {
+  try {
+    const now = new Date();
+
+    const activeSale = await prisma.flash_sales.findFirst({
+      where: {
+        is_active: true,
+        start_time: { lte: now },
+        end_time: { gte: now },
+      },
+      include: {
+        sale_books: {
+          where: { book_id: bookId },
+          select: { book_id: true },
+        },
+      },
+    });
+
+    if (!activeSale) return { inSale: false };
+
+    // If bookIds is empty → ALL books are eligible; otherwise check the junction
+    const bookIds = activeSale.sale_books.map((sb) => sb.book_id);
+    const eligible = bookIds.length === 0 || bookIds.includes(bookId);
+
+    if (!eligible) return { inSale: false };
+
+    return {
+      inSale: true,
+      discountPercent: activeSale.discount_percent,
+      saleId: activeSale.id,
+    };
+  } catch {
+    return { inSale: false };
   }
 };
 
 module.exports = {
   getActiveFlashSale,
-  getAdminFlashSale,
+  getAllFlashSales,
   saveFlashSale,
+  deleteFlashSale,
   toggleFlashSale,
-  deleteFlashSale
+  getDiscountedPriceForBook,   // exported for orderController
 };

@@ -200,7 +200,19 @@ export default function Dashboard({ initialTab }) {
       });
       setPdfFile(null);
     } catch (_err) {
-      error(_err.message || 'Failed to create book in database');
+      const raw = _err.message || '';
+      const lower = raw.toLowerCase();
+      let userFriendly = raw || 'Failed to add book. Please try again.';
+      if (lower.includes('duplicate') || lower.includes('already exists')) {
+        userFriendly = `A book titled "${newBook.title.trim()}" already exists. Duplicate titles are not allowed.`;
+      } else if (lower.includes('401') || lower.includes('token') || lower.includes('session')) {
+        userFriendly = 'Your session has expired. Please sign in again.';
+      } else if (lower.includes('403') || lower.includes('forbidden') || lower.includes('administrator')) {
+        userFriendly = 'Administrator privileges required to add books.';
+      } else if (lower.includes('size') || lower.includes('150 mb')) {
+        userFriendly = 'The PDF file is too large. Maximum size allowed is 150 MB.';
+      }
+      error(userFriendly);
     } finally {
       setIsSubmitting(false);
     }

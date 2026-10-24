@@ -11,6 +11,7 @@ export function clearFlashSaleCache() {
 
 /**
  * Public: Fetch currently active flash sale
+ * Returns { active: bool, flashSale: { id, title, discountPercent, bookIds, ... } | null }
  */
 export async function getActiveFlashSale() {
   if (cachedFlashSale && Date.now() - cacheTimestamp < CACHE_TTL_MS) {
@@ -33,7 +34,7 @@ export async function getActiveFlashSale() {
 }
 
 /**
- * Admin: Get flash sale settings and history
+ * Admin: Get all flash sales (returns array of sale objects)
  */
 export async function getAdminFlashSale(token) {
   try {
@@ -41,17 +42,31 @@ export async function getAdminFlashSale(token) {
       headers: { ...authHeader(token) }
     });
     if (res.ok) {
-      return await res.json();
+      const data = await res.json();
+      // New API returns an array; find the most recent active or first sale for the form
+      const sales = Array.isArray(data) ? data : [];
+      const activeSale = sales.find((s) => s.isActive) || sales[0] || null;
+      return {
+        flashSale: activeSale,
+        allSales: sales,
+        isLive: activeSale
+          ? activeSale.isActive && new Date() <= new Date(activeSale.endTime)
+          : false,
+        isExpired: activeSale
+          ? !activeSale.isActive || new Date() > new Date(activeSale.endTime)
+          : false,
+      };
     }
-    return null;
+    return { flashSale: null, allSales: [], isLive: false, isExpired: false };
   } catch (err) {
     console.error('Error fetching admin flash sale:', err);
-    return null;
+    return { flashSale: null, allSales: [], isLive: false, isExpired: false };
   }
 }
 
 /**
  * Admin: Create or update flash sale
+ * Pass { id } in saleData to update an existing sale.
  */
 export async function saveFlashSale(saleData, token) {
   clearFlashSaleCache();
@@ -72,17 +87,18 @@ export async function saveFlashSale(saleData, token) {
 }
 
 /**
- * Admin: Toggle flash sale on/off
+ * Admin: Toggle flash sale on/off by its ID
+ * @param {string} saleId  - UUID of the flash sale
+ * @param {string} token   - Admin auth token
  */
-export async function toggleFlashSale(isActive, token) {
+export async function toggleFlashSale(saleId, token) {
   clearFlashSaleCache();
-  const res = await fetch(`${API_BASE_URL}/flashsale/admin/toggle`, {
-    method: 'POST',
+  const res = await fetch(`${API_BASE_URL}/flashsale/admin/${saleId}/toggle`, {
+    method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       ...authHeader(token)
-    },
-    body: JSON.stringify({ isActive })
+    }
   });
 
   const data = await res.json().catch(() => ({}));
@@ -93,18 +109,20 @@ export async function toggleFlashSale(isActive, token) {
 }
 
 /**
- * Admin: End / delete active flash sale
+ * Admin: Delete a flash sale by its ID
+ * @param {string} saleId  - UUID of the flash sale
+ * @param {string} token   - Admin auth token
  */
-export async function deleteFlashSale(token) {
+export async function deleteFlashSale(saleId, token) {
   clearFlashSaleCache();
-  const res = await fetch(`${API_BASE_URL}/flashsale/admin`, {
+  const res = await fetch(`${API_BASE_URL}/flashsale/admin/${saleId}`, {
     method: 'DELETE',
     headers: { ...authHeader(token) }
   });
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.error || 'Failed to end flash sale');
+    throw new Error(data.error || 'Failed to delete flash sale');
   }
   return data;
 }

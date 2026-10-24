@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ShieldCheck, AlertCircle, Mail, Lock, User as UserIcon, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { X, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { ADMIN_EMAIL } from '../../constants/auth';
@@ -13,14 +13,11 @@ export default function AuthModal({
   isOpen: propIsOpen,
   onClose: propOnClose,
   redirectPath: propRedirectPath,
-  initialMode: propInitialMode
 }) {
   const {
     authModalState,
     closeAuthModal,
     signInWithGoogle,
-    loginWithEmail,
-    registerWithEmail
   } = useAuth();
   const navigate = useNavigate();
   const { success } = useToast();
@@ -28,28 +25,14 @@ export default function AuthModal({
   const isOpen = propIsOpen !== undefined ? propIsOpen : (authModalState?.isOpen ?? false);
   const onClose = propOnClose || closeAuthModal;
   const redirectPath = propRedirectPath !== undefined ? propRedirectPath : (authModalState?.redirectPath || null);
-  const effectiveInitialMode = propInitialMode || authModalState?.initialMode || 'signin';
 
-  const [mode, setMode] = useState(effectiveInitialMode); // 'signin' | 'register'
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
 
-  // Form states
-  const [fullname, setFullname] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showEmailForm, setShowEmailForm] = useState(false);
-
-  // Reset error and sync mode when opening
+  // Reset error when modal opens
   useEffect(() => {
     if (isOpen) {
       setErrorMessage('');
-      setMode(effectiveInitialMode);
-      if (effectiveInitialMode === 'register') {
-        setShowEmailForm(true);
-      }
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -57,7 +40,7 @@ export default function AuthModal({
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isOpen, effectiveInitialMode]);
+  }, [isOpen]);
 
   // Escape key handler
   useEffect(() => {
@@ -83,8 +66,39 @@ export default function AuthModal({
     onClose();
     const destination = redirectPath || popOAuthRedirect(null);
     if (destination) {
+      // Mark as handled so App.jsx doesn't also navigate (prevents double redirect)
+      sessionStorage.setItem('oauth_redirect_handled', '1');
       navigate(destination, { replace: true });
     }
+  };
+
+  /**
+   * Translates technical Firebase/OAuth error codes into clear, user-friendly language.
+   */
+  const getFriendlyErrorMessage = (err) => {
+    if (!err) return 'An error occurred during sign-in. Please try again.';
+    const code = err.code || '';
+    const msg = (err.message || '').toLowerCase();
+
+    if (code === 'auth/popup-closed-by-user') {
+      return 'Sign-in was cancelled because the Google window was closed. Click below to try again.';
+    }
+    if (code === 'auth/popup-blocked') {
+      return 'The Google sign-in window was blocked by your browser. Please allow popups for this site and try again.';
+    }
+    if (code === 'auth/cancelled-popup-request') {
+      return 'Sign-in was cancelled. Please click the button below to continue.';
+    }
+    if (code === 'auth/network-request-failed' || msg.includes('network') || msg.includes('failed to fetch')) {
+      return 'Unable to connect to Google authentication. Please check your internet connection and try again.';
+    }
+    if (code === 'auth/unauthorized-domain') {
+      return 'This website domain is not authorized in Google authentication settings. Please contact the administrator.';
+    }
+    if (code === 'auth/operation-not-allowed') {
+      return 'Google sign-in is currently undergoing maintenance. Please try again shortly.';
+    }
+    return 'Google sign-in could not be completed. Please check your internet connection and try again.';
   };
 
   const handleGoogleSignIn = async () => {
@@ -98,55 +112,12 @@ export default function AuthModal({
       if (result?.success) {
         handlePostAuth(result.user);
       } else if (result?.redirecting) {
-        // Redirect flow started
+        // Redirect flow in progress
       } else {
-        setErrorMessage(result?.error || 'Google sign-in could not be completed.');
+        setErrorMessage(result?.error || 'Google sign-in could not be completed. Please try again.');
       }
     } catch (err) {
-      if (err.code === 'auth/popup-closed-by-user') {
-        setErrorMessage('Sign-in cancelled. You closed the Google popup.');
-      } else {
-        setErrorMessage(err.message || 'An error occurred during Google sign-in.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEmailSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMessage('');
-
-    if (!email.trim() || !password) {
-      setErrorMessage('Please fill in all required fields.');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      if (mode === 'signin') {
-        const result = await loginWithEmail(email, password);
-        if (result?.success) {
-          handlePostAuth(result.user);
-        }
-      } else {
-        if (!fullname.trim()) {
-          setErrorMessage('Full name is required.');
-          setIsLoading(false);
-          return;
-        }
-        if (password !== confirmPassword) {
-          setErrorMessage('Passwords do not match.');
-          setIsLoading(false);
-          return;
-        }
-        const result = await registerWithEmail(fullname, email, password, confirmPassword);
-        if (result?.success) {
-          handlePostAuth(result.user);
-        }
-      }
-    } catch (err) {
-      setErrorMessage(err.message || 'Authentication failed. Please verify your credentials.');
+      setErrorMessage(getFriendlyErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -174,7 +145,7 @@ export default function AuthModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 15 }}
             transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-            className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 sm:p-8 overflow-hidden z-10 text-center my-auto"
+            className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 sm:p-8 overflow-hidden z-10 text-center my-auto"
           >
             {/* Close button */}
             <button
@@ -187,61 +158,34 @@ export default function AuthModal({
             </button>
 
             {/* Logo & Brand Header */}
-            <div className="flex flex-col items-center mb-5">
-              <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-[#1E90FF] to-[#2563EB] flex items-center justify-center text-white shadow-lg shadow-[#1E90FF]/25 border border-white/60 mb-2.5 overflow-hidden">
+            <div className="flex flex-col items-center mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#1E90FF] to-[#2563EB] flex items-center justify-center text-white shadow-lg shadow-[#1E90FF]/25 border border-white/60 mb-3 overflow-hidden">
                 <img src={Logo} alt="Midusa Elibrary" className="w-full h-full object-cover" />
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-black tracking-tight">
-                {mode === 'signin' ? 'Sign In to ' : 'Join '}
-                Midusa <span className="text-[#1E90FF]">eLibrary</span>
+                Sign In to Midusa <span className="text-[#1E90FF]">eLibrary</span>
               </h2>
-              <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                Instant access to your digital library, reader downloads, and direct M-PESA checkout.
+              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed max-w-xs">
+                Sign in with your Google account to access your eBooks, manage downloads, and read instantly.
               </p>
             </div>
 
-            {/* Mode Switcher Tabs */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl mb-5">
-              <button
-                type="button"
-                onClick={() => { setMode('signin'); setErrorMessage(''); }}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                  mode === 'signin'
-                    ? 'bg-white text-black shadow-xs'
-                    : 'text-slate-500 hover:text-black'
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => { setMode('register'); setErrorMessage(''); }}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                  mode === 'register'
-                    ? 'bg-white text-black shadow-xs'
-                    : 'text-slate-500 hover:text-black'
-                }`}
-              >
-                Create Account
-              </button>
-            </div>
-
-            {/* Error Banner */}
+            {/* Error Banner with User-Friendly Message */}
             {errorMessage && (
-              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2 text-left animate-in fade-in">
+              <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2 text-left animate-in fade-in">
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-[#F40009]" />
-                <span className="flex-1">{errorMessage}</span>
+                <span className="flex-1 leading-relaxed">{errorMessage}</span>
               </div>
             )}
 
-            {/* Google Sign In Button (Primary 1-Click Action) */}
+            {/* Google Sign In Button (Single One-Click Sign In) */}
             <button
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 hover:border-[#1E90FF] text-slate-800 text-sm font-bold transition-all duration-200 active:scale-[0.98] cursor-pointer disabled:opacity-60 shadow-xs"
+              className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 hover:border-[#1E90FF] text-slate-800 text-sm font-bold transition-all duration-200 active:scale-[0.98] cursor-pointer disabled:opacity-60 shadow-xs hover:shadow-md"
             >
-              {isLoading && !showEmailForm ? (
+              {isLoading ? (
                 <div className="w-5 h-5 border-2 border-[#1E90FF] border-t-transparent rounded-full animate-spin" />
               ) : (
                 <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
@@ -263,157 +207,13 @@ export default function AuthModal({
                   />
                 </svg>
               )}
-              <span>{isLoading && !showEmailForm ? 'Connecting…' : (mode === 'register' ? 'Sign up with Google' : 'Continue with Google')}</span>
+              <span>{isLoading ? 'Connecting to Google…' : 'Sign in with Google'}</span>
             </button>
 
-            {/* Divider */}
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200" />
-              </div>
-              <div className="relative flex justify-center text-[11px] uppercase tracking-wider">
-                <button
-                  type="button"
-                  onClick={() => setShowEmailForm(!showEmailForm)}
-                  className="bg-white px-2.5 text-slate-400 hover:text-[#1E90FF] font-bold cursor-pointer transition-colors"
-                >
-                  {showEmailForm ? 'Hide Email Form' : 'Or with Email'}
-                </button>
-              </div>
-            </div>
-
-            {/* Email / Password Form (Collapsible) */}
-            {showEmailForm && (
-              <form onSubmit={handleEmailSubmit} className="space-y-3 text-left animate-in fade-in duration-200">
-                {mode === 'register' && (
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Full Name
-                    </label>
-                    <div className="relative">
-                      <UserIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        required
-                        value={fullname}
-                        onChange={(e) => setFullname(e.target.value)}
-                        placeholder="John Doe"
-                        className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-[#1E90FF] focus:ring-1 focus:ring-[#1E90FF]"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@example.com"
-                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-[#1E90FF] focus:ring-1 focus:ring-[#1E90FF]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full pl-9 pr-9 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-[#1E90FF] focus:ring-1 focus:ring-[#1E90FF]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-black cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                </div>
-
-                {mode === 'register' && (
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Confirm Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-[#1E90FF] focus:ring-1 focus:ring-[#1E90FF]"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full mt-2 py-2.5 px-4 rounded-xl bg-[#1E90FF] hover:bg-blue-600 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 shadow-xs"
-                >
-                  {isLoading && showEmailForm ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <span>{mode === 'signin' ? 'Sign In with Email' : 'Create My Account'}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </>
-                  )}
-                </button>
-              </form>
-            )}
-
-            {/* Mode switch helper link */}
-            <div className="mt-4 text-center">
-              {mode === 'signin' ? (
-                <p className="text-xs text-slate-500">
-                  Don&apos;t have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('register');
-                      setShowEmailForm(true);
-                      setErrorMessage('');
-                    }}
-                    className="font-bold text-[#1E90FF] hover:underline cursor-pointer"
-                  >
-                    Create one now
-                  </button>
-                </p>
-              ) : (
-                <p className="text-xs text-slate-500">
-                  Already have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode('signin');
-                      setErrorMessage('');
-                    }}
-                    className="font-bold text-[#1E90FF] hover:underline cursor-pointer"
-                  >
-                    Sign in here
-                  </button>
-                </p>
-              )}
-            </div>
+            {/* Reassurance text */}
+            <p className="text-[11px] text-slate-400 mt-4 leading-relaxed">
+              Fast, secure one-click sign-in. No separate password or account creation needed.
+            </p>
 
             {/* Trust badge footer */}
             <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-center gap-2 text-[11px] text-slate-400">

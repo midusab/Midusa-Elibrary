@@ -56,6 +56,16 @@ export default function Navigation() {
     prevCountRef.current = cartCount;
   }, [cartCount]);
 
+  // Detect scroll position to dynamically adapt floating navbar height and elevation
+  const [isScrolled, setIsScrolled] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Keep search input in sync with URL search param on /library page during render
   const currentUrlSearch = location.pathname === '/library'
     ? (new URLSearchParams(location.search).get('search') || '')
@@ -110,7 +120,7 @@ export default function Navigation() {
       } finally {
         if (isMounted) setIsSearching(false);
       }
-    }, 220);
+    }, 100);
 
     return () => {
       isMounted = false;
@@ -165,18 +175,27 @@ export default function Navigation() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="fixed top-0 left-0 right-0 w-full z-50 liquid-glass-nav">
-      {/* ── Optional Flash Sale Top Ticker ── */}
+    <header className="fixed top-0 inset-x-0 z-50 pointer-events-none px-3 sm:px-6 lg:px-8 pt-2.5 sm:pt-4 transition-all duration-300">
+      {/* ── Optional Flash Sale Top Ticker (Floating Pill) ── */}
       {isFlashSaleLive && flashSale && (
-        <div className="bg-red-600/90 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold py-1 px-4 text-center flex items-center justify-center gap-2 tracking-wide shadow-inner border-b border-red-500/30">
-          <Flame className="w-3.5 h-3.5 fill-white animate-pulse" />
-          <span>FLASH SALE: {flashSale.discountPercent}% OFF • Ends in {flashCountdown.hours}h {flashCountdown.minutes}m {flashCountdown.seconds}s</span>
-          <Link to="/" className="underline hover:text-white/80 ml-1 font-semibold">View Deals →</Link>
+        <div className="max-w-4xl mx-auto mb-2 pointer-events-auto">
+          <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white text-[11px] sm:text-xs font-bold py-1.5 px-4 rounded-full text-center flex items-center justify-center gap-2 tracking-wide shadow-lg shadow-red-500/25 border border-red-400/40 backdrop-blur-md">
+            <Flame className="w-3.5 h-3.5 fill-white animate-pulse" />
+            <span>FLASH SALE: {flashSale.discountPercent}% OFF • Ends in {flashCountdown.hours}h {flashCountdown.minutes}m {flashCountdown.seconds}s</span>
+            <Link to="/" className="underline hover:text-white/80 ml-1 font-semibold">View Deals →</Link>
+          </div>
         </div>
       )}
 
-      {/* ── Top Main Navbar (80px height) ── */}
-      <nav className="h-20 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+      {/* ── Floating Capsule Navbar Island ── */}
+      <div className="max-w-7xl mx-auto pointer-events-auto">
+        <nav
+          className={`liquid-glass-floating rounded-2xl px-3.5 sm:px-6 transition-all duration-300 ${
+            isScrolled
+              ? 'h-16 sm:h-[68px] shadow-2xl scrolled'
+              : 'h-[68px] sm:h-20 shadow-xl'
+          }`}
+        >
         <div className="flex items-center justify-between h-full gap-2 sm:gap-4 md:gap-6">
           
           {/* 1. Left: Brand Logo (Only Icon on mobile; text shown sm and above) */}
@@ -237,7 +256,7 @@ export default function Navigation() {
                   }
                 }}
                 placeholder="Search thousands of books, authors, or genres..."
-                className="w-full pl-11 pr-10 py-2.5 bg-white/70 hover:bg-white/85 focus:bg-white/95 border border-white/70 focus:border-[#1E90FF]/60 rounded-xl text-sm text-black placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-[#1E90FF]/15 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-md"
+                className="w-full pl-11 pr-10 py-2.5 bg-white/80 hover:bg-white/90 focus:bg-white border border-slate-200 hover:border-slate-300 focus:border-[#1E90FF] rounded-xl text-sm text-black placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 transition-all shadow-[inset_0_1px_3px_rgba(0,0,0,0.04)] backdrop-blur-md"
               />
 
               {searchQuery && (
@@ -469,9 +488,9 @@ export default function Navigation() {
         </div>
       </nav>
 
-      {/* ── Mobile Menu Dropdown with Liquid Glass ── */}
+      {/* ── Mobile Menu Floating Island Card ── */}
       {isMobileMenuOpen && (
-        <div className="sm:hidden liquid-glass border-b border-white/80 px-4 py-4 space-y-3.5 animate-in slide-in-from-top-2 shadow-2xl backdrop-blur-2xl">
+        <div className="sm:hidden mt-2.5 liquid-glass-floating rounded-2xl p-4 space-y-3.5 animate-in slide-in-from-top-2 shadow-2xl backdrop-blur-2xl border border-white/90 bg-white/95">
           {/* Mobile Search */}
           <form onSubmit={handleSearchSubmit} className="relative w-full">
             <button
@@ -593,6 +612,7 @@ export default function Navigation() {
           </div>
         </div>
       )}
+      </div>
     </header>
   );
 }

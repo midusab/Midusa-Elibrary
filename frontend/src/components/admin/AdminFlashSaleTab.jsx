@@ -32,6 +32,7 @@ export default function AdminFlashSaleTab({ token, books = [] }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [discountPercent, setDiscountPercent] = useState(25);
+  const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [scope, setScope] = useState('all'); // 'all' or 'specific'
   const [selectedBookIds, setSelectedBookIds] = useState([]);
@@ -56,6 +57,11 @@ export default function AdminFlashSaleTab({ token, books = [] }) {
         setDescription(s.description || '');
         setDiscountPercent(s.discountPercent || 25);
         
+        if (s.startTime) {
+          const ds = new Date(s.startTime);
+          setStartTime(new Date(ds.getTime() - ds.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
+        }
+
         if (s.endTime) {
           // Format for datetime-local input: YYYY-MM-DDTHH:mm
           const d = new Date(s.endTime);
@@ -120,9 +126,14 @@ export default function AdminFlashSaleTab({ token, books = [] }) {
       return;
     }
 
+    const startTimestamp = startTime ? new Date(startTime).getTime() : Date.now();
     const endTimestamp = new Date(endTime).getTime();
     if (isNaN(endTimestamp) || endTimestamp <= Date.now()) {
       toastError('The flash sale end date and time must be in the future.');
+      return;
+    }
+    if (startTime && startTimestamp >= endTimestamp) {
+      toastError('Start time must be before end time.');
       return;
     }
 
@@ -134,10 +145,11 @@ export default function AdminFlashSaleTab({ token, books = [] }) {
     setIsSaving(true);
     try {
       const payload = {
+        ...(saleStatus.sale?.id ? { id: saleStatus.sale.id } : {}),
         title: title.trim(),
         description: description.trim(),
         discountPercent: parseInt(discountPercent, 10),
-        startTime: new Date().toISOString(),
+        startTime: startTime ? new Date(startTime).toISOString() : new Date().toISOString(),
         endTime: new Date(endTime).toISOString(),
         isActive: true,
         bookIds: scope === 'all' ? [] : selectedBookIds
@@ -156,12 +168,11 @@ export default function AdminFlashSaleTab({ token, books = [] }) {
 
   // Toggle On / Off
   const handleToggle = async () => {
-    if (!saleStatus.sale) return;
+    if (!saleStatus.sale?.id) return;
     setIsToggling(true);
     try {
-      const nextState = !saleStatus.isActive;
-      await toggleFlashSale(nextState, token);
-      success(`Flash sale has been ${nextState ? 'enabled' : 'disabled'}.`);
+      await toggleFlashSale(saleStatus.sale.id, token);
+      success(`Flash sale has been ${saleStatus.isActive ? 'disabled' : 'enabled'}.`);
       await loadSaleData();
       globalRefresh();
     } catch (err) {
@@ -173,15 +184,18 @@ export default function AdminFlashSaleTab({ token, books = [] }) {
 
   // End / Delete Flash Sale
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to end this flash sale immediately?')) return;
+    if (!saleStatus.sale?.id) return;
+    if (!window.confirm('Are you sure you want to delete this flash sale?')) return;
     setIsToggling(true);
     try {
-      await deleteFlashSale(token);
-      success('Flash sale ended successfully.');
-      await loadSaleData();
+      await deleteFlashSale(saleStatus.sale.id, token);
+      success('Flash sale deleted successfully.');
+      setSaleStatus({ isActive: false, isExpired: false, isLive: false, sale: null });
+      setTitle(''); setDescription(''); setStartTime(''); setEndTime('');
+      setSelectedBookIds([]); setScope('all');
       globalRefresh();
     } catch (err) {
-      toastError(err.message || 'Failed to end flash sale');
+      toastError(err.message || 'Failed to delete flash sale');
     } finally {
       setIsToggling(false);
     }
@@ -346,60 +360,66 @@ export default function AdminFlashSaleTab({ token, books = [] }) {
             />
           </div>
 
-          {/* Row 3: End Time & Quick Presets */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              <span>Sale Expiration Date &amp; Time *</span>
-            </label>
+          {/* Row 3: Start Time & End Time */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Start Time */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span>Sale Start Time</span>
+                <span className="text-slate-400 font-normal">(leave blank to start now)</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="datetime-local"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="flex-1 px-3.5 py-2.5 border border-slate-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setStartTime('')}
+                  className="px-2.5 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap"
+                >
+                  Now
+                </button>
+              </div>
+            </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <input
-                type="datetime-local"
-                required
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="px-3.5 py-2.5 border border-slate-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 font-mono"
-              />
+            {/* End Time */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span>Sale End Time *</span>
+              </label>
 
-              {/* Quick Presets */}
-              <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                <span className="text-slate-400 mr-1">Quick Presets:</span>
-                <button
-                  type="button"
-                  onClick={() => setQuickDuration(6)}
-                  className="px-2.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer transition-colors"
-                >
-                  +6h
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickDuration(12)}
-                  className="px-2.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer transition-colors"
-                >
-                  +12h
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickDuration(24)}
-                  className="px-2.5 py-1.5 rounded-md bg-red-50 hover:bg-red-100 text-red-700 font-bold cursor-pointer transition-colors border border-red-200"
-                >
-                  +24h (1 Day)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickDuration(48)}
-                  className="px-2.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer transition-colors"
-                >
-                  +48h (2 Days)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickDuration(72)}
-                  className="px-2.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold cursor-pointer transition-colors"
-                >
-                  +72h (3 Days)
-                </button>
+              <div className="flex flex-col gap-2">
+                <input
+                  type="datetime-local"
+                  required
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="px-3.5 py-2.5 border border-slate-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 font-mono"
+                />
+
+                {/* Quick Presets */}
+                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <span className="text-slate-400 mr-1">Quick:</span>
+                  {[6, 12, 24, 48, 72].map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => setQuickDuration(h)}
+                      className={`px-2.5 py-1.5 rounded-md font-semibold cursor-pointer transition-colors ${
+                        h === 24
+                          ? 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      +{h}h{h >= 24 ? ` (${h / 24}d)` : ''}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

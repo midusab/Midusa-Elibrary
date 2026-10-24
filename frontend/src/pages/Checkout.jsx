@@ -182,7 +182,7 @@ export default function Checkout() {
           setPurchasedBooks(books || []);
           setOrderComplete(true);
           clearCart();
-          success('Payment confirmed! Your books are ready to download.');
+          success('Payment confirmed! Your books are ready to download.', 5000);
         } else if (payment.status === 'failed' && count >= 5) {
           clearInterval(pollIntervalRef.current);
           setIsPolling(false);
@@ -245,7 +245,7 @@ export default function Checkout() {
         setPurchasedBooks(books);
         setOrderComplete(true);
         clearCart();
-        success('Order created! Books are available in your dashboard.');
+        success('Order created! Books are available in your dashboard.', 5000);
       }
     } catch (err) {
       const msg = err.message || 'Unable to send M-PESA prompt. Please verify your phone number and try again.';

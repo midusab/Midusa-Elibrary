@@ -246,19 +246,32 @@ export default function AdminDashboard() {
       setIsBookModalOpen(false);
       loadDashboardData(true);
     } catch (err) {
-      const errMsg = err.message || 'Failed to save book.';
+      const rawMsg = err.message || '';
+      const lower = rawMsg.toLowerCase();
+      let errMsg = rawMsg || 'Failed to save book.';
+
       const isDuplicate =
         err.status === 409 ||
         err.code === 'DUPLICATE_BOOK' ||
-        errMsg.toLowerCase().includes('already exists') ||
-        errMsg.toLowerCase().includes('duplicate');
+        lower.includes('already exists') ||
+        lower.includes('duplicate');
 
       if (isDuplicate) {
+        errMsg = `A book titled "${bookForm.title.trim()}" already exists in the library. Duplicate titles are not allowed.`;
         setBookModalError({
           type: 'duplicate',
           field: 'title',
           message: errMsg
         });
+      } else if (lower.includes('jwt') || lower.includes('token') || lower.includes('401') || lower.includes('session')) {
+        errMsg = 'Your administrator sign-in session has expired. Please sign in again.';
+        setBookModalError({ type: 'error', message: errMsg });
+      } else if (lower.includes('forbidden') || lower.includes('403') || lower.includes('administrator')) {
+        errMsg = 'Administrator access required to publish books.';
+        setBookModalError({ type: 'error', message: errMsg });
+      } else if (lower.includes('size') || lower.includes('150 mb') || lower.includes('limit_file_size')) {
+        errMsg = 'The selected file is too large. PDFs must be under 150 MB and images under 25 MB.';
+        setBookModalError({ type: 'error', message: errMsg });
       } else {
         setBookModalError({
           type: 'error',

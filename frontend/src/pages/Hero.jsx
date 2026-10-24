@@ -208,25 +208,6 @@ export default function Hero() {
           />
         )}
 
-        {/* ── Empty State when no books exist ── */}
-        {!loading && allBooks.length === 0 && (
-          <div className="py-20 text-center border border-dashed border-slate-200 rounded-2xl bg-white p-8">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#1E90FF] flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-8 h-8" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900 mb-1">No Books in Catalog</h3>
-            <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto mb-6">
-              The library is currently empty. All dummy data has been removed. Books added by publishers or admins will appear here.
-            </p>
-            <Link
-              to="/library"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-black text-white text-xs sm:text-sm font-semibold hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <span>Explore Library</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        )}
 
         {/* ── Genre Shelves ── */}
         {!loading &&
