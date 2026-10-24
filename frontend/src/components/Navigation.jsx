@@ -5,21 +5,20 @@ import {
   ShoppingCart,
   Menu,
   X,
-  ChevronDown,
   LogOut,
   User,
   ShieldCheck,
   ArrowRight,
   FileText,
   Heart,
-  BookOpen,
-  Flame
+  BookOpen
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { useFlashSale } from '../context/FlashSaleContext';
+
+
 import { getBooks } from '../services/api';
 import { formatPrice } from '../utils/currency';
 import Logo from '../assets/logo.jpg';
@@ -43,7 +42,6 @@ export default function Navigation() {
   const { wishlistCount } = useWishlist();
   const { user, logout, isAdmin, openAuthModal } = useAuth();
   const { success } = useToast();
-  const { isLive: isFlashSaleLive, flashSale, countdown: flashCountdown } = useFlashSale();
 
   // Trigger subtle visual pulse on cart badge whenever cart count changes
   const prevCountRef = useRef(cartCount);
@@ -176,16 +174,7 @@ export default function Navigation() {
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 pointer-events-none px-3 sm:px-6 lg:px-8 pt-2.5 sm:pt-4 transition-all duration-300">
-      {/* ── Optional Flash Sale Top Ticker (Floating Pill) ── */}
-      {isFlashSaleLive && flashSale && (
-        <div className="max-w-4xl mx-auto mb-2 pointer-events-auto">
-          <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white text-[11px] sm:text-xs font-bold py-1.5 px-4 rounded-full text-center flex items-center justify-center gap-2 tracking-wide shadow-lg shadow-red-500/25 border border-red-400/40 backdrop-blur-md">
-            <Flame className="w-3.5 h-3.5 fill-white animate-pulse" />
-            <span>FLASH SALE: {flashSale.discountPercent}% OFF • Ends in {flashCountdown.hours}h {flashCountdown.minutes}m {flashCountdown.seconds}s</span>
-            <Link to="/" className="underline hover:text-white/80 ml-1 font-semibold">View Deals →</Link>
-          </div>
-        </div>
-      )}
+
 
       {/* ── Floating Capsule Navbar Island ── */}
       <div className="max-w-7xl mx-auto pointer-events-auto">

@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { lazy, Suspense, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Flame, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider } from './context/CartContext';
@@ -9,6 +11,7 @@ import { CookieProvider } from './context/CookieContext';
 import { CategoryProvider } from './context/CategoryContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { FlashSaleProvider } from './context/FlashSaleContext';
+import { useFlashSale } from './context/FlashSaleContext';
 import Navigation from './components/Navigation';
 import Footer from './components/layout/Footer';
 import ScrollProgressBar from './components/common/ScrollProgressBar';
@@ -134,6 +137,10 @@ export default function App() {
                       </div>
 
                       <Navigation />
+
+                      {/* ── Fixed Flash Sale Bottom Bar ── */}
+                      <FlashSaleBottomBar />
+
                       <main className="flex-1 pt-24 sm:pt-28 bg-transparent">
                         <Suspense fallback={<PageSkeleton />}>
                           <Routes>
