@@ -29,13 +29,37 @@ function formatBook(book) {
     featured:    book.featured || false,
     bestseller:  book.bestseller || false,
     clicks:      book.clicks_count || 0,
+    reviews:     Array.isArray(book.reviews)
+      ? book.reviews.map((r) => ({
+          id: r.id,
+          user: r.reviewer_name,
+          reviewerName: r.reviewer_name,
+          rating: Number(r.rating) || 5,
+          comment: r.comment,
+          verifiedPurchase: Boolean(r.verified_purchase),
+          date: r.created_at
+            ? new Date(r.created_at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })
+            : 'Recent',
+          createdAt: r.created_at,
+        }))
+      : [],
     createdAt:   book.created_at,
     updatedAt:   book.updated_at,
   };
 }
 
-/** Include category relation in every query so formatBook can access the name. */
-const bookInclude = { categories: true };
+/** Include category and review relations in queries */
+const bookInclude = {
+  categories: true,
+  reviews: {
+    orderBy: { created_at: 'desc' },
+    take: 50,
+  },
+};
 
 // ─── Get all books with filtering and pagination ───────────────────────────────
 const getBooks = async (req, res) => {

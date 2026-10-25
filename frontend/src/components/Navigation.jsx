@@ -187,8 +187,18 @@ export default function Navigation() {
         >
         <div className="flex items-center justify-between h-full gap-2 sm:gap-4 md:gap-6">
           
-          {/* 1. Left: Brand Logo (Only Icon on mobile; text shown sm and above) */}
-          <div className="flex items-center justify-start flex-shrink-0 sm:min-w-[180px] md:min-w-[210px]">
+          {/* 1. Left: Mobile Hamburger + Brand Logo */}
+          <div className="flex items-center justify-start gap-1.5 sm:gap-2.5 flex-shrink-0 sm:min-w-[180px] md:min-w-[210px]">
+            {/* Mobile Menu Hamburger (on the left) */}
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 sm:hidden rounded-xl text-slate-700 hover:bg-white/90 border border-white/80 liquid-glass-pill transition-all cursor-pointer flex items-center justify-center flex-shrink-0"
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5 text-black" /> : <Menu className="w-5 h-5 text-slate-700" />}
+            </button>
+
             <Link to="/" className="flex items-center gap-2.5 group py-1" title="Midusa Elibrary Home">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-[#1E90FF] to-[#2563EB] flex items-center justify-center text-white shadow-md shadow-[#1E90FF]/25 border border-white/60 ring-2 ring-[#1E90FF]/15 group-hover:scale-105 transition-transform duration-200 overflow-hidden flex-shrink-0">
                 <img className="w-full h-full object-cover" src={Logo} alt="Midusa Elibrary" />
@@ -463,16 +473,6 @@ export default function Navigation() {
                 <span>Sign In</span>
               </button>
             )}
-
-            {/* Mobile Menu Hamburger */}
-            <button
-              type="button"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 sm:hidden rounded-xl text-slate-700 hover:bg-white/90 border border-white/80 liquid-glass-pill transition-all cursor-pointer flex items-center justify-center"
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? <X className="w-5 h-5 text-black" /> : <Menu className="w-5 h-5 text-slate-700" />}
-            </button>
           </div>
         </div>
       </nav>

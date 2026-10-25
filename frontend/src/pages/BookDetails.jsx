@@ -12,13 +12,15 @@ import {
   FiList, 
   FiMessageSquare,
   FiBookOpen,
-  FiSend
+  FiSend,
+  FiTrash2
 } from 'react-icons/fi';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Breadcrumb from '../components/common/Breadcrumb';
-import { getBookById, getBooks, getAuthorByName, recordBookClick } from '../services/api';
+import { getBookById, getBooks, getAuthorByName, recordBookClick, getBookReviews, createReview, deleteReview } from '../services/api';
 import { formatPrice } from '../utils/currency';
+import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '../context/ToastContext';
@@ -40,7 +42,9 @@ export default function BookDetails() {
   const [reviewName, setReviewName] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
+  const { user } = useAuth();
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { success, error } = useToast();
@@ -65,7 +69,15 @@ export default function BookDetails() {
           recordBookClick(item.id);
 
           // Set reviews
-          setReviewsList(Array.isArray(item.reviews) ? item.reviews : []);
+          if (Array.isArray(item.reviews) && item.reviews.length > 0) {
+            setReviewsList(item.reviews);
+          } else {
+            getBookReviews(item.id).then((r) => {
+              if (r && r.success && Array.isArray(r.reviews)) {
+                setReviewsList(r.reviews);
+              }
+            }).catch(() => {});
+          }
 
           // Fetch related books in same category & other books by this author
           const promises = [];
@@ -167,26 +179,61 @@ export default function BookDetails() {
     }
   };
 
-  const handleSubmitReview = (e) => {
+  useEffect(() => {
+    if (user && !reviewName) {
+      const defaultName = user.fullname || user.name || (user.email ? user.email.split('@')[0] : '');
+      if (defaultName) setReviewName(defaultName);
+    }
+  }, [user]);
+
+  const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!reviewName.trim() || !reviewComment.trim()) {
       error('Please provide your name and review comment.');
       return;
     }
+    if (!book || !book.id) return;
 
-    const newReview = {
-      id: Date.now(),
-      user: reviewName.trim(),
-      rating: Number(reviewRating),
-      date: new Date().toISOString().split('T')[0],
-      comment: reviewComment.trim()
-    };
+    setIsSubmittingReview(true);
+    try {
+      const res = await createReview(
+        {
+          bookId: book.id,
+          reviewerName: reviewName.trim(),
+          rating: Number(reviewRating),
+          comment: reviewComment.trim(),
+        },
+        user?.token
+      );
 
-    setReviewsList([newReview, ...reviewsList]);
-    setReviewName('');
-    setReviewComment('');
-    setShowReviewForm(false);
-    success('Thank you for reviewing this title!');
+      if (res.review) {
+        setReviewsList((prev) => [res.review, ...prev.filter((r) => r.id !== res.review.id)]);
+      }
+      if (res.bookRating !== undefined) {
+        setBook((prev) => (prev ? { ...prev, rating: res.bookRating } : prev));
+      }
+      setReviewComment('');
+      setShowReviewForm(false);
+      success('Thank you! Your review has been published.');
+    } catch (err) {
+      error(err.message || 'Failed to submit review');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) return;
+    try {
+      const res = await deleteReview(reviewId, user?.token);
+      setReviewsList((prev) => prev.filter((r) => r.id !== reviewId));
+      if (res.bookRating !== undefined) {
+        setBook((prev) => (prev ? { ...prev, rating: res.bookRating } : prev));
+      }
+      success('Review deleted.');
+    } catch (err) {
+      error(err.message || 'Failed to delete review');
+    }
   };
 
   // Safe table of contents from real data
@@ -564,8 +611,14 @@ export default function BookDetails() {
                       className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] resize-none"
                     />
                   </div>
-                  <Button type="submit" size="sm" className="text-xs rounded-xl bg-[#1E90FF] hover:bg-blue-600 text-white">
-                    <FiSend className="mr-1.5" /> Submit Review
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={isSubmittingReview}
+                    className="text-xs rounded-xl bg-[#1E90FF] hover:bg-blue-600 text-white disabled:opacity-50"
+                  >
+                    <FiSend className="mr-1.5" />
+                    {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
                   </Button>
                 </form>
               </Card>
@@ -578,31 +631,60 @@ export default function BookDetails() {
               </Card>
             ) : (
               <div className="space-y-3">
-              {reviewsList.map((rev) => (
-                <Card hover={false} key={rev.id} className="p-5 bg-white border border-slate-200/80 rounded-xl">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center">
-                        {rev.user?.[0] || 'U'}
+              {reviewsList.map((rev) => {
+                const canDelete = Boolean(
+                  user && (
+                    (rev.userId && String(rev.userId) === String(user.id)) ||
+                    user.role === 'admin'
+                  )
+                );
+
+                return (
+                  <Card hover={false} key={rev.id} className="p-5 bg-white border border-slate-200/80 rounded-xl">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center">
+                          {(rev.user || rev.reviewerName)?.[0] || 'U'}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-xs sm:text-sm text-black">
+                            {rev.user || rev.reviewerName}
+                          </h4>
+                          {rev.verifiedPurchase ? (
+                            <span className="text-[10px] text-[#00A651] font-semibold flex items-center">
+                              <FiCheck className="mr-0.5" /> Verified Purchase
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-medium">
+                              Reader
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-xs sm:text-sm text-black">{rev.user}</h4>
-                        <span className="text-[10px] text-[#00A651] font-semibold flex items-center">
-                          <FiCheck className="mr-0.5" /> Verified Purchase
-                        </span>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center text-amber-500 text-xs font-bold">
+                          <FiStar className="fill-amber-400 text-amber-400 w-3.5 h-3.5 mr-1" />
+                          <span>{rev.rating}.0</span>
+                        </div>
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteReview(rev.id)}
+                            className="p-1 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+                            title="Delete review"
+                          >
+                            <FiTrash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center text-amber-500 text-xs font-bold">
-                      <FiStar className="fill-amber-400 text-amber-400 w-3.5 h-3.5 mr-1" />
-                      <span>{rev.rating}.0</span>
-                    </div>
-                  </div>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-2">
-                    &ldquo;{rev.comment}&rdquo;
-                  </p>
-                  <p className="text-[10px] text-slate-400 mt-2">{rev.date}</p>
-                </Card>
-              ))}
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-2">
+                      &ldquo;{rev.comment}&rdquo;
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-2">{rev.date}</p>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </section>

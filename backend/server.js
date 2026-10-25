@@ -62,6 +62,7 @@ const routes = [
   { path: '/api/admin',      module: './routes/adminRoutes' },
   { path: '/api/upload',     module: './routes/uploadRoutes' },
   { path: '/api/flashsale',  module: './routes/flashSaleRoutes' },
+  { path: '/api/reviews',    module: './routes/reviewRoutes' },
 ];
 
 routes.forEach(({ path, module }) => {
