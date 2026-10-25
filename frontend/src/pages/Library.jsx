@@ -11,7 +11,7 @@ import CategoryIcon from '../components/ui/CategoryIcon';
 import Breadcrumb from '../components/common/Breadcrumb';
 import { getBooks, recordBookClick } from '../services/api';
 import { formatPrice } from '../utils/currency';
-import { PRICE_RANGES, SORT_OPTIONS } from '../constants/categories';
+import { generateDynamicPriceRanges, PRICE_RANGES, SORT_OPTIONS } from '../constants/categories';
 import { useCategories } from '../context/CategoryContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -45,6 +45,18 @@ export default function Library() {
   const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [prevUrlSearch, setPrevUrlSearch] = useState(urlSearch);
   const [selectedPriceRange, setSelectedPriceRange] = useState('all');
+
+  // Compute dynamic price ranges based on actual books in the catalog
+  const dynamicPriceRanges = useMemo(() => {
+    return generateDynamicPriceRanges(allBooks);
+  }, [allBooks]);
+
+  // Reset selected price range if it is no longer valid in dynamicPriceRanges
+  useEffect(() => {
+    if (selectedPriceRange !== 'all' && !dynamicPriceRanges.some((r) => r.id === selectedPriceRange)) {
+      setSelectedPriceRange('all');
+    }
+  }, [dynamicPriceRanges, selectedPriceRange]);
 
   // Sync searchQuery when URL search param changes
   if (urlSearch !== prevUrlSearch) {
@@ -115,7 +127,7 @@ export default function Library() {
 
     // Price range filter
     if (selectedPriceRange !== 'all') {
-      const range = PRICE_RANGES.find((r) => r.id === selectedPriceRange);
+      const range = dynamicPriceRanges.find((r) => r.id === selectedPriceRange);
       if (range) {
         list = list.filter((b) => b.price >= range.min && b.price <= range.max);
       }
@@ -163,7 +175,7 @@ export default function Library() {
     }
 
     return list;
-  }, [allBooks, searchQuery, selectedCategory, selectedAuthor, selectedPriceRange, sortBy, searchParams]);
+  }, [allBooks, searchQuery, selectedCategory, selectedAuthor, selectedPriceRange, dynamicPriceRanges, sortBy, searchParams]);
 
   // Pagination calculation
   const totalItems = filteredBooks.length;
@@ -291,9 +303,6 @@ export default function Library() {
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 Library Catalog
               </h1>
-              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                {totalItems} titles available in Kenyan Shillings (KES) • Instant PDF download
-              </p>
             </div>
           </div>
         </div>
@@ -347,7 +356,7 @@ export default function Library() {
                 onChange={(e) => handlePriceRangeChange(e.target.value)}
                 className="w-full sm:w-auto px-2.5 py-2 bg-white/70 hover:bg-white/90 border border-white/70 rounded-xl text-xs sm:text-sm text-black focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF] cursor-pointer font-medium backdrop-blur-md"
               >
-                {PRICE_RANGES.map((range) => (
+                {dynamicPriceRanges.map((range) => (
                   <option key={range.id} value={range.id}>
                     {range.label}
                   </option>

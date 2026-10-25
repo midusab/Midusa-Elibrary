@@ -1,6 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { lazy, Suspense, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Flame, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThemeProvider } from './context/ThemeContext';
@@ -10,8 +9,7 @@ import { ToastProvider } from './context/ToastContext';
 import { CookieProvider } from './context/CookieContext';
 import { CategoryProvider } from './context/CategoryContext';
 import { WishlistProvider } from './context/WishlistContext';
-import { FlashSaleProvider } from './context/FlashSaleContext';
-import { useFlashSale } from './context/FlashSaleContext';
+import { FlashSaleProvider, useFlashSale } from './context/FlashSaleContext';
 import Navigation from './components/Navigation';
 import Footer from './components/layout/Footer';
 import ScrollProgressBar from './components/common/ScrollProgressBar';
@@ -37,6 +35,64 @@ import { recordSiteVisit } from './services/api';
 import { popOAuthRedirect } from './utils/redirectProtection';
 
 import { ProtectedRoute, AdminRoute, AuthModal } from './components/auth';
+
+/**
+ * Fixed full-width flash sale banner pinned to the bottom of the viewport.
+ * Only visible when a flash sale is live. Dismissible for the session.
+ */
+function FlashSaleBottomBar() {
+  const { isLive, flashSale, countdown } = useFlashSale();
+  const [dismissed, setDismissed] = useState(false);
+
+  if (!isLive || !flashSale || dismissed) return null;
+
+  return (
+    <div
+      className="fixed bottom-0 inset-x-0 z-[9990] w-full"
+      role="banner"
+      aria-label="Flash sale promotion"
+    >
+      <div className="bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3">
+          {/* Left spacer for centering on desktop */}
+          <div className="hidden sm:block w-24 flex-shrink-0" />
+
+          {/* Centre content */}
+          <div className="flex-1 flex items-center justify-center gap-2 text-center flex-wrap">
+            <Flame className="w-4 h-4 fill-white animate-pulse flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-extrabold tracking-wide">
+              FLASH SALE &mdash; {flashSale.discountPercent}% OFF ALL BOOKS
+            </span>
+            <span className="hidden sm:inline text-xs font-medium text-red-100">
+              &bull; Ends in {countdown.hours}h {countdown.minutes}m {countdown.seconds}s
+            </span>
+            <span className="sm:hidden text-xs font-medium text-red-100">
+              {countdown.hours}h {countdown.minutes}m {countdown.seconds}s left
+            </span>
+            <Link
+              to="/library"
+              className="inline-flex items-center gap-1 ml-2 px-3 py-0.5 rounded-full bg-white/20 hover:bg-white/30 border border-white/40 text-xs font-bold transition-colors flex-shrink-0"
+            >
+              Shop Now &rarr;
+            </Link>
+          </div>
+
+          {/* Dismiss button */}
+          <button
+            type="button"
+            onClick={() => setDismissed(true)}
+            aria-label="Dismiss flash sale banner"
+            className="w-24 flex-shrink-0 flex items-center justify-end"
+          >
+            <span className="p-1.5 rounded-full hover:bg-white/20 transition-colors cursor-pointer">
+              <X className="w-4 h-4" />
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function AppLifecycleHandlers() {
   const location = useLocation();
