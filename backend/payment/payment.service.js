@@ -48,9 +48,8 @@ async function initiateMpesaPayment({ userId, orderId, phoneNumber, amount }) {
       throw new Error('Unauthorized: Order does not belong to the user');
     }
 
-    if (!payableAmount) {
-      payableAmount = Number(order.amount);
-    }
+    // Always enforce the validated order amount from the database — never trust client-provided amount
+    payableAmount = Number(order.amount);
   }
 
   const numericAmount = Math.round(Number(payableAmount));

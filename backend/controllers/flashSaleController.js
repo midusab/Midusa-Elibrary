@@ -287,10 +287,12 @@ const toggleFlashSale = async (req, res) => {
 
 // ─────────────────────────────────────────────
 // BACKEND PRICE VERIFIER (used by orderController)
-// Returns { inSale: bool, discountedPrice: number, originalPrice: number }
+// Returns { inSale: bool, discountPercent: number, saleId: string }
 // ─────────────────────────────────────────────
 const getDiscountedPriceForBook = async (bookId) => {
   try {
+    if (!bookId) return { inSale: false };
+
     const now = new Date();
 
     const activeSale = await prisma.flash_sales.findFirst({
@@ -301,26 +303,34 @@ const getDiscountedPriceForBook = async (bookId) => {
       },
       include: {
         sale_books: {
-          where: { book_id: bookId },
           select: { book_id: true },
         },
       },
+      orderBy: { created_at: 'desc' },
     });
 
     if (!activeSale) return { inSale: false };
 
-    // If bookIds is empty → ALL books are eligible; otherwise check the junction
-    const bookIds = activeSale.sale_books.map((sb) => sb.book_id);
-    const eligible = bookIds.length === 0 || bookIds.includes(bookId);
+    const discountPercent = Number(activeSale.discount_percent) || 0;
+    if (discountPercent <= 0) return { inSale: false };
 
-    if (!eligible) return { inSale: false };
+    const saleBooks = activeSale.sale_books || [];
+    // If sale_books is empty -> ALL books in the catalog qualify for the flash sale.
+    // If sale_books has entries -> ONLY the specifically assigned books qualify.
+    if (saleBooks.length > 0) {
+      const isEligible = saleBooks.some((sb) => String(sb.book_id) === String(bookId));
+      if (!isEligible) {
+        return { inSale: false };
+      }
+    }
 
     return {
       inSale: true,
-      discountPercent: activeSale.discount_percent,
+      discountPercent,
       saleId: activeSale.id,
     };
-  } catch {
+  } catch (err) {
+    console.error('getDiscountedPriceForBook error:', err?.message || err);
     return { inSale: false };
   }
 };

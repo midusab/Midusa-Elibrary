@@ -69,8 +69,8 @@ const createOrder = async (req, res) => {
         return res.status(404).json({ error: `Book with id ${bookId} not found` });
       }
 
-      const qty = parseInt(item.quantity, 10) || 1;
-      const originalPrice = Number(book.price) || 0;
+      const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+      const originalPrice = Math.max(0, Number(book.price) || 0);
 
       // ── Flash Sale: server-side discount check ──────────────────────────────
       // We NEVER mutate books.price. Discount is applied only to the order_item.

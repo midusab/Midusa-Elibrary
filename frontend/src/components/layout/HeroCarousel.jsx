@@ -114,10 +114,6 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
                 <Flame className="w-3.5 h-3.5 fill-white" />
                 <span>NEW ARRIVAL</span>
               </span>
-
-              <span className="inline-flex items-center px-3 py-1 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-[#1E90FF] text-[11px] font-extrabold uppercase tracking-wide">
-                {currentBook.category || 'eBook Release'}
-              </span>
             </div>
 
             {/* Title */}
