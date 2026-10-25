@@ -117,6 +117,13 @@ export default function BookDetails() {
     };
   }, [id]);
 
+  useEffect(() => {
+    if (user && !reviewName) {
+      const defaultName = user.fullname || user.name || (user.email ? user.email.split('@')[0] : '');
+      if (defaultName) setReviewName(defaultName);
+    }
+  }, [user]);
+
   if (isLoading) {
     return (
       <div className="min-h-[70vh] bg-white flex flex-col items-center justify-center p-4">
@@ -178,13 +185,6 @@ export default function BookDetails() {
       success('Link copied to clipboard!');
     }
   };
-
-  useEffect(() => {
-    if (user && !reviewName) {
-      const defaultName = user.fullname || user.name || (user.email ? user.email.split('@')[0] : '');
-      if (defaultName) setReviewName(defaultName);
-    }
-  }, [user]);
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
