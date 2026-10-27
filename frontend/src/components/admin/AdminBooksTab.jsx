@@ -12,6 +12,7 @@ import {
 } from 'react-icons/fi';
 import Card from '../ui/Card';
 import { formatPrice } from '../../utils/currency';
+import { resolveCoverUrl, DEFAULT_BOOK_COVER } from '../../utils/imageUrl';
 
 export default function AdminBooksTab({
   books,
@@ -95,9 +96,13 @@ export default function AdminBooksTab({
                         <div className="w-10 h-14 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-200">
                           {b.coverImage ? (
                             <img
-                              src={b.coverImage}
+                              src={resolveCoverUrl(b.coverImage)}
                               alt={b.title}
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = DEFAULT_BOOK_COVER;
+                              }}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-400">

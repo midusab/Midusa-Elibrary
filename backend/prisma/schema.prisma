@@ -69,12 +69,26 @@ model sale_books {
 }
 
 model authors {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String           @unique
+  bio            String?          @default("")
+  avatar         String?          @default("")
+  created_at     DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime?        @default(now()) @db.Timestamptz(6)
+  author_follows author_follows[]
+}
+
+model author_follows {
   id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name       String    @unique
-  bio        String?   @default("")
-  avatar     String?   @default("")
+  user_id    String    @db.Uuid
+  author_id  String    @db.Uuid
   created_at DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  authors    authors   @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, author_id], map: "uq_user_author_follow")
+  @@index([user_id], map: "idx_author_follows_user_id")
+  @@index([author_id], map: "idx_author_follows_author_id")
 }
 
 model categories {
@@ -94,10 +108,11 @@ model users {
   avatar     String?     @default("")
   created_at DateTime?   @default(now()) @db.Timestamptz(6)
   updated_at DateTime?   @default(now()) @db.Timestamptz(6)
-  orders     orders[]
-  payments   payments[]
-  purchases  purchases[]
-  reviews    reviews[]
+  orders         orders[]
+  payments       payments[]
+  purchases      purchases[]
+  reviews        reviews[]
+  author_follows author_follows[]
 
   @@index([email], map: "idx_users_email")
   @@index([created_at], map: "idx_users_created_at")

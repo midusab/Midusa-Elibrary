@@ -38,6 +38,8 @@ export default function Dashboard({ initialTab }) {
   const [editName, setEditName] = useState(user?.fullname || '');
   const [editAvatar, setEditAvatar] = useState(user?.avatar || '');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileStatusMsg, setProfileStatusMsg] = useState('');
+  const [profileErrorMsg, setProfileErrorMsg] = useState('');
 
   // New book state for real-time backend manipulation
   const [newBook, setNewBook] = useState({
@@ -123,8 +125,11 @@ export default function Dashboard({ initialTab }) {
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
+    setProfileStatusMsg('');
+    setProfileErrorMsg('');
+
     if (!editName.trim()) {
-      error('Full name cannot be blank.');
+      setProfileErrorMsg('Full name cannot be blank.');
       return;
     }
 
@@ -134,10 +139,13 @@ export default function Dashboard({ initialTab }) {
         fullname: editName.trim(),
         avatar: editAvatar.trim()
       });
-      success('Profile details updated successfully!');
-      setIsEditingProfile(false);
+      setProfileStatusMsg('Profile details updated successfully!');
+      setTimeout(() => {
+        setIsEditingProfile(false);
+        setProfileStatusMsg('');
+      }, 2000);
     } catch (err) {
-      error(err.message || 'Failed to update profile.');
+      setProfileErrorMsg(err.message || 'Failed to update profile.');
     } finally {
       setIsSavingProfile(false);
     }
@@ -280,10 +288,10 @@ export default function Dashboard({ initialTab }) {
                 <img
                   src={user.avatar}
                   alt={user.fullname}
-                  className="w-16 h-16 rounded-xl object-cover border-2 border-white shadow-md ring-2 ring-[#1E90FF]/30"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md ring-2 ring-[#1E90FF]/30"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-xl bg-gradient-to-tr from-[#1E90FF] to-blue-400 text-white font-black text-2xl flex items-center justify-center shadow-md shadow-[#1E90FF]/25 ring-2 ring-[#1E90FF]/30">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#1E90FF] to-blue-400 text-white font-black text-2xl flex items-center justify-center shadow-md shadow-[#1E90FF]/25 ring-2 ring-[#1E90FF]/30">
                   {user.fullname?.[0]?.toUpperCase() || 'U'}
                 </div>
               )}
@@ -432,6 +440,8 @@ export default function Dashboard({ initialTab }) {
             isSavingProfile={isSavingProfile}
             handleSaveProfile={handleSaveProfile}
             handleStartEdit={handleStartEdit}
+            profileStatusMsg={profileStatusMsg}
+            profileErrorMsg={profileErrorMsg}
             purchasedBooks={purchasedBooks}
             favoriteBooks={favoriteBooks}
           />

@@ -6,6 +6,7 @@ import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useFlashSale } from '../../context/FlashSaleContext';
 import { recordBookClick } from '../../services/api';
+import { resolveCoverUrl, DEFAULT_BOOK_COVER } from '../../utils/imageUrl';
 
 /**
  * Reusable StarRating component
@@ -68,15 +69,16 @@ export default function BookCard({ book, onAddToCart }) {
     e.preventDefault();
     e.stopPropagation();
 
-    const itemToAdd = isFlash && flashPricing
-      ? {
-          ...book,
-          price: flashPricing.salePrice,
-          originalPrice: flashPricing.originalPrice,
-          discountPercent: flashPricing.discountPercent,
-          isFlashSale: true,
-        }
-      : book;
+    // Always store the canonical DB price so the backend M-Pesa charge
+    // always matches the displayed amount.  Flash-sale display is handled
+    // by FlashSaleContext at render time everywhere, not in stored cart data.
+    const itemToAdd = {
+      ...book,
+      price: book.price,         // real DB price
+      originalPrice: book.price,
+      discountPercent: 0,
+      isFlashSale: false,
+    };
 
     if (onAddToCart) {
       onAddToCart(itemToAdd);
@@ -99,14 +101,15 @@ export default function BookCard({ book, onAddToCart }) {
       {/* Cover Image Container */}
       <div className="relative bg-slate-100 flex items-center justify-center overflow-hidden aspect-[3/4]">
         <img
-          src={
-            book.coverImage ||
-            'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&auto=format&fit=crop&q=80'
-          }
+          src={resolveCoverUrl(book.coverImage)}
           alt={book.title}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
           decoding="async"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = DEFAULT_BOOK_COVER;
+          }}
         />
 
         {/* Wishlist Heart Toggle */}

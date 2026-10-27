@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import { useCart } from '../context/CartContext';
+import { useFlashSale } from '../context/FlashSaleContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { formatPrice } from '../utils/currency';
@@ -138,10 +139,18 @@ function CheckoutProgress({ stage }) {
 
 // ── Main Checkout Component ────────────────────────────────────────────────────
 export default function Checkout() {
-  const { cart, cartTotal, clearCart } = useCart();
+  const { cart, clearCart } = useCart();
+  const { getDiscountedPrice } = useFlashSale();
   const { user, openAuthModal } = useAuth();
   const { success, error } = useToast();
   const navigate = useNavigate();
+
+  // Live price per item — always uses the real DB price with current flash-sale overlay
+  function getEffectivePrice(item) {
+    const flash = getDiscountedPrice(item);
+    return flash ? flash.salePrice : (item.price || 0);
+  }
+  const liveTotal = cart.reduce((sum, item) => sum + getEffectivePrice(item) * (item.quantity || 1), 0);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
@@ -422,7 +431,7 @@ export default function Checkout() {
               <p className="text-sm text-slate-500 max-w-xs leading-relaxed">
                 An M-Pesa prompt has been sent to{' '}
                 <strong className="text-slate-800 font-mono">{phoneNumber}</strong>. Enter your
-                PIN to pay <strong className="text-slate-800">{formatPrice(cartTotal)}</strong>.
+                PIN to pay <strong className="text-slate-800">{formatPrice(liveTotal)}</strong>.
               </p>
             </div>
 
@@ -446,7 +455,7 @@ export default function Checkout() {
             {/* Amount */}
             <div className="flex items-center justify-between px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-xl mb-5">
               <span className="text-xs text-emerald-800 font-medium">Amount to approve</span>
-              <span className="text-base font-extrabold text-[#00A651]">{formatPrice(cartTotal)}</span>
+              <span className="text-base font-extrabold text-[#00A651]">{formatPrice(liveTotal)}</span>
             </div>
 
             <button
@@ -580,7 +589,7 @@ export default function Checkout() {
                     ) : (
                       <>
                         <Smartphone className="w-4 h-4" />
-                        <span>Pay {formatPrice(cartTotal)} with M-Pesa</span>
+                        <span>Pay {formatPrice(liveTotal)} with M-Pesa</span>
                       </>
                     )}
                   </button>
@@ -623,7 +632,7 @@ export default function Checkout() {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-slate-800 truncate">{item.title}</p>
                       <p className="text-[11px] text-slate-400">by {item.author}</p>
-                      <p className="text-xs font-extrabold text-slate-900 mt-0.5">{formatPrice(item.price)}</p>
+                  <p className="text-xs font-extrabold text-slate-900 mt-0.5">{formatPrice(getEffectivePrice(item))}</p>
                     </div>
                   </div>
                 ))}
@@ -632,7 +641,7 @@ export default function Checkout() {
               <div className="pt-4 border-t border-slate-100/80 space-y-2">
                 <div className="flex justify-between text-xs text-slate-500">
                   <span>Subtotal</span>
-                  <span>{formatPrice(cartTotal)}</span>
+                  <span>{formatPrice(liveTotal)}</span>
                 </div>
                 <div className="flex justify-between text-xs text-slate-500">
                   <span>Delivery</span>
@@ -640,7 +649,7 @@ export default function Checkout() {
                 </div>
                 <div className="flex justify-between text-base font-extrabold text-slate-900 pt-2 border-t border-slate-100/80">
                   <span>Total</span>
-                  <span className="text-[#00A651]">{formatPrice(cartTotal)}</span>
+                  <span className="text-[#00A651]">{formatPrice(liveTotal)}</span>
                 </div>
               </div>
             </div>

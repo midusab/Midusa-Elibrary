@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
-import { useToast } from './ToastContext';
 
 const WishlistContext = createContext();
 
@@ -24,7 +23,6 @@ function getAccountWishlistKey(user) {
 
 export const WishlistProvider = ({ children }) => {
   const { user } = useAuth();
-  const { success, info } = useToast();
   const currentKey = getAccountWishlistKey(user);
 
   const [prevKey, setPrevKey] = useState(currentKey);
@@ -111,19 +109,14 @@ export const WishlistProvider = ({ children }) => {
         ...prev
       ];
     });
-    success(`"${book.title}" added to your wishlist`);
-  }, [success]);
+  }, []);
 
   const removeFromWishlist = useCallback((bookId) => {
     if (!bookId) return;
     setWishlist(prev => {
-      const book = prev.find(b => b.id === bookId);
-      if (book) {
-        info(`Removed "${book.title}" from wishlist`);
-      }
       return prev.filter(b => b.id !== bookId);
     });
-  }, [info]);
+  }, []);
 
   const toggleWishlist = useCallback((book) => {
     if (!book || !book.id) return;

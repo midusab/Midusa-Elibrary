@@ -16,7 +16,6 @@ import {
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
 
 
 import { getBooks } from '../services/api';
@@ -41,7 +40,6 @@ export default function Navigation() {
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
   const { user, logout, isAdmin, openAuthModal } = useAuth();
-  const { success } = useToast();
 
   // Trigger subtle visual pulse on cart badge whenever cart count changes
   const prevCountRef = useRef(cartCount);
@@ -166,7 +164,6 @@ export default function Navigation() {
   const handleLogout = async () => {
     setIsUserMenuOpen(false);
     await logout();
-    success('You have been signed out successfully.');
     navigate('/');
   };
 
@@ -200,8 +197,8 @@ export default function Navigation() {
             </button>
 
             <Link to="/" className="flex items-center gap-2.5 group py-1" title="Midusa Elibrary Home">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-[#1E90FF] to-[#2563EB] flex items-center justify-center text-white shadow-md shadow-[#1E90FF]/25 border border-white/60 ring-2 ring-[#1E90FF]/15 group-hover:scale-105 transition-transform duration-200 overflow-hidden flex-shrink-0">
-                <img className="w-full h-full object-cover" src={Logo} alt="Midusa Elibrary" />
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-md bg-white flex items-center justify-center border border-slate-200/90 group-hover:scale-105 transition-transform duration-200 overflow-hidden flex-shrink-0">
+                <img className="w-full h-full object-cover rounded-md" src={Logo} alt="Midusa Elibrary" />
               </div>
               <span className="hidden sm:inline text-lg sm:text-xl font-black tracking-tight select-none">
                 <span className="text-black">Midusa</span>

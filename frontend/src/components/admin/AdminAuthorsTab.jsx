@@ -150,17 +150,9 @@ export default function AdminAuthorsTab({ token, _books = [], onRefresh }) {
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3">
-                      {author.avatar ? (
-                        <img
-                          src={author.avatar}
-                          alt={author.name}
-                          className="w-11 h-11 rounded-full object-cover border border-slate-200"
-                        />
-                      ) : (
-                        <div className="w-11 h-11 rounded-full bg-blue-50 text-[#1E90FF] font-bold text-sm flex items-center justify-center border border-blue-100 flex-shrink-0">
-                          {initials}
-                        </div>
-                      )}
+                      <div className="w-11 h-11 rounded-full bg-blue-50 text-[#1E90FF] font-bold text-sm flex items-center justify-center border border-blue-100 flex-shrink-0">
+                        {initials}
+                      </div>
                       <div>
                         <h4 className="font-bold text-slate-900 text-sm group-hover:text-[#1E90FF] transition-colors">
                           {author.name}
@@ -250,18 +242,6 @@ export default function AdminAuthorsTab({ token, _books = [], onRefresh }) {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Author Photo URL (Optional)
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  value={formData.avatar}
-                  onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF]/20 focus:border-[#1E90FF]"
-                />
-              </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">

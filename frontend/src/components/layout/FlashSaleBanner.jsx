@@ -31,20 +31,19 @@ export default function FlashSaleBanner({ books = [] }) {
     rowRef.current.scrollBy({ left: dir * 280, behavior: 'smooth' });
   };
 
-  const handleAddToCart = (e, book, pricing) => {
+  const handleAddToCart = (e, book) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Attach flash sale discounted price to cart item
-    const cartItem = {
+    // Store the canonical DB price — flash-sale discount is applied at
+    // render time everywhere and re-computed server-side at checkout.
+    addToCart({
       ...book,
-      price: pricing.salePrice,
-      originalPrice: pricing.originalPrice,
-      discountPercent: pricing.discountPercent,
-      isFlashSale: true
-    };
-
-    addToCart(cartItem);
+      price: book.price,         // real DB price
+      originalPrice: book.price,
+      discountPercent: 0,
+      isFlashSale: false,
+    });
     setAddedIds((prev) => ({ ...prev, [book.id]: true }));
     setTimeout(() => {
       setAddedIds((prev) => ({ ...prev, [book.id]: false }));
@@ -193,7 +192,7 @@ export default function FlashSaleBanner({ books = [] }) {
                   <div className="p-2.5 pt-0">
                     <button
                       type="button"
-                      onClick={(e) => handleAddToCart(e, book, pricing)}
+                      onClick={(e) => handleAddToCart(e, book)}
                       className={`w-full py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-95 ${
                         isAdded
                           ? 'bg-[#00A651] text-white'

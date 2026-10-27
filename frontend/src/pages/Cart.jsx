@@ -3,10 +3,21 @@ import { FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiArrowLeft, FiShield } from
 import Button from '../components/ui/Button';
 import Breadcrumb from '../components/common/Breadcrumb';
 import { useCart } from '../context/CartContext';
+import { useFlashSale } from '../context/FlashSaleContext';
 import { formatPrice } from '../utils/currency';
 
 export default function Cart() {
-  const { cart, removeFromCart, updateQuantity, clearCart, cartTotal, cartCount } = useCart();
+  const { cart, removeFromCart, updateQuantity, clearCart, cartCount } = useCart();
+  const { getDiscountedPrice } = useFlashSale();
+
+  // Compute effective price per item using live flash-sale data (not stale stored price)
+  function getEffectivePrice(item) {
+    const flash = getDiscountedPrice(item);
+    return flash ? flash.salePrice : (item.price || 0);
+  }
+
+  // Recompute total using current live prices
+  const liveTotal = cart.reduce((sum, item) => sum + getEffectivePrice(item) * (item.quantity || 1), 0);
 
   const handleRemoveFromCart = (bookId) => {
     removeFromCart(bookId);
@@ -97,7 +108,7 @@ export default function Cart() {
                     </Link>
                     <p className="text-[11px] text-slate-500 mb-1.5 truncate">By {item.author}</p>
                     <span className="text-sm font-bold text-slate-900">
-                      {formatPrice(item.price)}
+                      {formatPrice(getEffectivePrice(item))}
                     </span>
                   </div>
                 </div>
@@ -123,7 +134,7 @@ export default function Cart() {
                   </div>
 
                   <span className="text-sm font-extrabold text-slate-900 min-w-[80px] text-right">
-                    {formatPrice(item.price * item.quantity)}
+                    {formatPrice(getEffectivePrice(item) * item.quantity)}
                   </span>
 
                   <button
@@ -148,7 +159,7 @@ export default function Cart() {
               <div className="space-y-2.5 text-xs mb-6">
                 <div className="flex justify-between text-slate-600">
                   <span>Subtotal ({cartCount} items)</span>
-                  <span className="font-semibold text-slate-800">{formatPrice(cartTotal)}</span>
+                  <span className="font-semibold text-slate-800">{formatPrice(liveTotal)}</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
                   <span>Delivery Method</span>
@@ -157,14 +168,14 @@ export default function Cart() {
                 <div className="border-t border-slate-100 pt-3 flex justify-between items-baseline">
                   <span className="text-sm font-bold text-slate-900">Total</span>
                   <span className="text-xl font-extrabold text-slate-900">
-                    {formatPrice(cartTotal)}
+                    {formatPrice(liveTotal)}
                   </span>
                 </div>
               </div>
 
               <Link to="/checkout" className="block w-full">
                 <Button size="md" className="w-full py-3 text-sm font-semibold shadow-sm">
-                  Proceed to Checkout ({formatPrice(cartTotal)})
+                  Proceed to Checkout ({formatPrice(liveTotal)})
                 </Button>
               </Link>
 

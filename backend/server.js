@@ -35,6 +35,22 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve local uploaded images and files statically
+const path = require('path');
+const fs = require('fs');
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+if (!fs.existsSync(path.join(uploadsDir, 'covers'))) {
+  fs.mkdirSync(path.join(uploadsDir, 'covers'), { recursive: true });
+}
+if (!fs.existsSync(path.join(uploadsDir, 'pdfs'))) {
+  fs.mkdirSync(path.join(uploadsDir, 'pdfs'), { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
+
+
 
 // Root info
 app.get('/', (req, res) => {
@@ -63,6 +79,7 @@ const routes = [
   { path: '/api/upload',     module: './routes/uploadRoutes' },
   { path: '/api/flashsale',  module: './routes/flashSaleRoutes' },
   { path: '/api/reviews',    module: './routes/reviewRoutes' },
+  { path: '/api/authors',    module: './routes/authorRoutes' },
 ];
 
 routes.forEach(({ path, module }) => {

@@ -28,6 +28,7 @@ const Checkout = lazy(() => import('./pages/Checkout'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Legal = lazy(() => import('./pages/Legal'));
+const AuthorPage = lazy(() => import('./pages/AuthorPage'));
 
 import { useAuth } from './context/AuthContext';
 import { useToast } from './context/ToastContext';
@@ -240,6 +241,7 @@ export default function App() {
                                 </AdminRoute>
                               }
                             />
+                            <Route path="/author/:name" element={<AuthorPage />} />
                             <Route path="/legal" element={<Legal />} />
                             <Route path="/refund-policy" element={<Legal />} />
                             <Route path="/privacy" element={<Legal />} />

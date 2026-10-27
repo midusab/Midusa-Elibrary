@@ -1,14 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  FiUser,
-  FiBookOpen,
-  FiCheck,
-  FiArrowLeft,
-  FiShare2,
-  FiSearch
-} from 'react-icons/fi';
+import { FiBookOpen, FiCheck, FiArrowLeft, FiShare2, FiSearch } from 'react-icons/fi';
 import Breadcrumb from '../components/common/Breadcrumb';
 import BookCard from '../components/books/BookCard';
 import { BookCardSkeleton } from '../components/ui/LoadingSkeleton';
@@ -21,6 +14,7 @@ export default function AuthorPage() {
   const [author, setAuthor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [shareFeedback, setShareFeedback] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -29,19 +23,17 @@ export default function AuthorPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await getAuthorByName(authorName);
+        const booksRes = await getAuthorByName(authorName);
         if (isMounted) {
-          if (res?.author) {
-            setAuthor(res.author);
+          if (booksRes?.author) {
+            setAuthor(booksRes.author);
           } else {
             setError('Author profile not found');
           }
         }
       } catch (err) {
         console.error('Error fetching author profile:', err);
-        if (isMounted) {
-          setError(err.message || 'Failed to load author profile');
-        }
+        if (isMounted) setError(err.message || 'Failed to load author profile');
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -50,19 +42,8 @@ export default function AuthorPage() {
     loadAuthorData();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [authorName]);
-
-  const authorInitials = authorName
-    ? authorName
-        .split(/\s+/)
-        .map((n) => n[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
-    : 'A';
 
   const books = Array.isArray(author?.books) ? author.books : [];
 
@@ -77,7 +58,8 @@ export default function AuthorPage() {
         .catch(() => {});
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Author profile link copied to clipboard!');
+      setShareFeedback(true);
+      setTimeout(() => setShareFeedback(false), 2500);
     }
   };
 
@@ -111,7 +93,7 @@ export default function AuthorPage() {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 transition-colors shadow-xs cursor-pointer"
           >
             <FiShare2 className="w-3.5 h-3.5" />
-            <span>Share Author</span>
+            <span>{shareFeedback ? 'Copied Link!' : 'Share Author'}</span>
           </button>
         </div>
 
@@ -125,23 +107,10 @@ export default function AuthorPage() {
           {/* Subtle Ambient Brand Tint */}
           <div className="absolute top-0 right-0 w-80 h-80 bg-[#1E90FF]/5 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6 relative z-10">
-            {/* Avatar / Initials Circle */}
-            {author?.avatar ? (
-              <img
-                src={author.avatar}
-                alt={authorName}
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-[#1E90FF]/20 shadow-md flex-shrink-0"
-              />
-            ) : (
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-blue-50 text-[#1E90FF] flex items-center justify-center font-black text-2xl sm:text-3xl border border-[#1E90FF]/25 shadow-xs flex-shrink-0">
-                {authorInitials}
-              </div>
-            )}
-
+          <div className="relative z-10">
             {/* Author Details */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-1.5">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-2">
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-xl bg-blue-50 text-[#1E90FF] text-[11px] font-bold border border-[#1E90FF]/20">
                   <FiCheck className="w-3 h-3 stroke-[3]" />
                   Verified Author
@@ -155,7 +124,7 @@ export default function AuthorPage() {
                 {authorName}
               </h1>
 
-              <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-3xl">
+              <p className="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-3xl">
                 {author?.bio ||
                   `${authorName} is an accomplished author featured in MidusaElibrary. Explore their collection of published works below.`}
               </p>

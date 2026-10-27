@@ -14,6 +14,8 @@ export default function UserProfileTab({
   isSavingProfile,
   handleSaveProfile,
   handleStartEdit,
+  profileStatusMsg,
+  profileErrorMsg,
   purchasedBooks = [],
   favoriteBooks = []
 }) {
@@ -38,6 +40,16 @@ export default function UserProfileTab({
 
           {isEditingProfile ? (
             <form onSubmit={handleSaveProfile} className="space-y-4">
+              {profileErrorMsg && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-[#F40009] text-xs font-semibold">
+                  {profileErrorMsg}
+                </div>
+              )}
+              {profileStatusMsg && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-[#00A651] text-xs font-semibold">
+                  {profileStatusMsg}
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Full Name

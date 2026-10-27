@@ -159,8 +159,8 @@ export default function AuthModal({
 
             {/* Logo & Brand Header */}
             <div className="flex flex-col items-center mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#1E90FF] to-[#2563EB] flex items-center justify-center text-white shadow-lg shadow-[#1E90FF]/25 border border-white/60 mb-3 overflow-hidden">
-                <img src={Logo} alt="Midusa Elibrary" className="w-full h-full object-cover" />
+              <div className="w-14 h-14 rounded-md bg-white flex items-center justify-center border border-slate-200 mb-3 overflow-hidden">
+                <img src={Logo} alt="Midusa Elibrary" className="w-full h-full object-cover rounded-md" />
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-black tracking-tight">
                 Sign In to Midusa <span className="text-[#1E90FF]">eLibrary</span>

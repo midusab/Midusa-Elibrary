@@ -20,10 +20,10 @@ import Button from '../components/ui/Button';
 import Breadcrumb from '../components/common/Breadcrumb';
 import { getBookById, getBooks, getAuthorByName, recordBookClick, getBookReviews, createReview, deleteReview } from '../services/api';
 import { formatPrice } from '../utils/currency';
+import { resolveCoverUrl, DEFAULT_BOOK_COVER } from '../utils/imageUrl';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
-import { useToast } from '../context/ToastContext';
 import { useFlashSale } from '../context/FlashSaleContext';
 import { Flame, Clock } from 'lucide-react';
 import BookCard from '../components/books/BookCard';
@@ -43,11 +43,13 @@ export default function BookDetails() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviewFormError, setReviewFormError] = useState('');
+  const [reviewFormSuccess, setReviewFormSuccess] = useState('');
+  const [shareFeedback, setShareFeedback] = useState(false);
 
   const { user } = useAuth();
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
-  const { success, error } = useToast();
   const { isBookInFlashSale, getDiscountedPrice, countdown: flashCountdown } = useFlashSale();
 
   const isFavorite = book ? isInWishlist(book.id) : false;
@@ -152,17 +154,16 @@ export default function BookDetails() {
 
 
   const handleAddToCart = () => {
-    if (flashPricing) {
-      addToCart({
-        ...book,
-        price: flashPricing.salePrice,
-        originalPrice: flashPricing.originalPrice,
-        discountPercent: flashPricing.discountPercent,
-        isFlashSale: true
-      });
-    } else {
-      addToCart(book);
-    }
+    // Always store the canonical DB price in cart.
+    // Flash-sale discounts are computed at display/checkout time so they
+    // always stay in sync with the backend.
+    addToCart({
+      ...book,
+      price: book.price,          // real DB price — never the flash-sale price
+      originalPrice: book.price,  // keep consistent
+      discountPercent: 0,
+      isFlashSale: false
+    });
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2000);
   };
@@ -182,14 +183,18 @@ export default function BookDetails() {
       }).catch(() => {});
     } else {
       navigator.clipboard.writeText(window.location.href);
-      success('Link copied to clipboard!');
+      setShareFeedback(true);
+      setTimeout(() => setShareFeedback(false), 2500);
     }
   };
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
+    setReviewFormError('');
+    setReviewFormSuccess('');
+
     if (!reviewName.trim() || !reviewComment.trim()) {
-      error('Please provide your name and review comment.');
+      setReviewFormError('Please provide your name and review comment.');
       return;
     }
     if (!book || !book.id) return;
@@ -213,10 +218,13 @@ export default function BookDetails() {
         setBook((prev) => (prev ? { ...prev, rating: res.bookRating } : prev));
       }
       setReviewComment('');
-      setShowReviewForm(false);
-      success('Thank you! Your review has been published.');
+      setReviewFormSuccess('Thank you! Your review has been published.');
+      setTimeout(() => {
+        setShowReviewForm(false);
+        setReviewFormSuccess('');
+      }, 2000);
     } catch (err) {
-      error(err.message || 'Failed to submit review');
+      setReviewFormError(err.message || 'Failed to submit review. Please try again.');
     } finally {
       setIsSubmittingReview(false);
     }
@@ -230,9 +238,8 @@ export default function BookDetails() {
       if (res.bookRating !== undefined) {
         setBook((prev) => (prev ? { ...prev, rating: res.bookRating } : prev));
       }
-      success('Review deleted.');
     } catch (err) {
-      error(err.message || 'Failed to delete review');
+      alert(err.message || 'Failed to delete review');
     }
   };
 
@@ -273,10 +280,14 @@ export default function BookDetails() {
           <div className="md:col-span-5 lg:col-span-5">
             <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-slate-100/70 border border-white/80 shadow-md">
               <img
-                src={book.coverImage}
+                src={resolveCoverUrl(book.coverImage)}
                 alt={book.title}
                 className="w-full h-full object-cover"
                 loading="eager"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = DEFAULT_BOOK_COVER;
+                }}
               />
               <span className="absolute top-3.5 left-3.5 liquid-glass-pill text-black text-xs font-bold px-3 py-1 rounded-xl border border-white/80">
                 {book.category}
@@ -306,7 +317,7 @@ export default function BookDetails() {
                 onClick={handleShare}
               >
                 <FiShare2 className="mr-1.5" />
-                Share Title
+                {shareFeedback ? 'Copied Link!' : 'Share Title'}
               </Button>
             </div>
           </div>
@@ -499,20 +510,39 @@ export default function BookDetails() {
                 About the Author
               </h2>
             </div>
-            <Card hover={false} className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl flex flex-col sm:flex-row gap-5 items-start">
-              <div className="w-16 h-16 rounded-xl bg-blue-50 text-[#1E90FF] flex items-center justify-center text-xl font-bold flex-shrink-0 border border-[#1E90FF]/20">
-                {(book.author || 'Author').trim().split(/\s+/).map(n => n[0]).slice(0, 2).join('').toUpperCase()}
-              </div>
-              <div className="flex-1">
-                <h3 className="text-base sm:text-lg font-bold text-black mb-1">
-                  {book.author}
-                </h3>
-                <p className="text-xs font-semibold text-[#1E90FF] mb-3">
-                  Author • {book.category} Specialist
-                </p>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            <Card hover={false} className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-xl">
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <Link
+                      to={`/author/${encodeURIComponent(book.author)}`}
+                      className="text-base sm:text-lg font-bold text-black hover:text-[#1E90FF] transition-colors"
+                    >
+                      {book.author}
+                    </Link>
+                    <p className="text-xs font-semibold text-[#1E90FF] mt-0.5">
+                      Author • {book.category} Specialist
+                    </p>
+                  </div>
+
+                  <Link
+                    to={`/author/${encodeURIComponent(book.author)}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 transition-colors shadow-xs"
+                  >
+                    <span>View Author Profile &rarr;</span>
+                  </Link>
+                </div>
+
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-1">
                   {authorBio}
                 </p>
+
+                <Link
+                  to={`/author/${encodeURIComponent(book.author)}`}
+                  className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-[#1E90FF] hover:underline"
+                >
+                  View all books by {book.author} &rarr;
+                </Link>
               </div>
             </Card>
           </section>
@@ -572,6 +602,16 @@ export default function BookDetails() {
             {showReviewForm && (
               <Card hover={false} className="p-6 bg-white border border-slate-200/80 rounded-xl mb-6 animate-fadeIn">
                 <h3 className="text-sm font-bold text-black mb-4">Write Your Review</h3>
+                {reviewFormError && (
+                  <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-[#F40009] text-xs font-semibold">
+                    {reviewFormError}
+                  </div>
+                )}
+                {reviewFormSuccess && (
+                  <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-[#00A651] text-xs font-semibold">
+                    {reviewFormSuccess}
+                  </div>
+                )}
                 <form onSubmit={handleSubmitReview} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>

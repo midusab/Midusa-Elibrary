@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { prisma, supabase } = require('../config/database');
 const { adminAuth } = require('../middleware/auth');
 const { scanBufferForMalware } = require('../utils/malwareScanner');
@@ -81,7 +82,7 @@ router.get('/file/:id', async (req, res) => {
 
     await ensureBookFilesTable();
     const rows = await prisma.$queryRawUnsafe(
-      `SELECT filename, mimetype, size, data FROM public.book_files WHERE id = $1 LIMIT 1;`,
+      `SELECT filename, mimetype, size, data FROM public.book_files WHERE id = $1::uuid LIMIT 1;`,
       id
     );
 
@@ -172,7 +173,24 @@ router.post('/pdf', adminAuth, (req, res, next) => {
     let finalUrl = null;
     let storageType = 'none';
 
-    // 1. Try storing in PostgreSQL database table `book_files`
+    // 1. Save directly to local filesystem uploads/pdfs
+    try {
+      const pdfsDir = path.join(__dirname, '../uploads/pdfs');
+      if (!fs.existsSync(pdfsDir)) {
+        fs.mkdirSync(pdfsDir, { recursive: true });
+      }
+      const localFilePath = path.join(pdfsDir, uniqueFileName);
+      fs.writeFileSync(localFilePath, buffer);
+
+      const host = req.get('host') || 'localhost:5000';
+      const protocol = req.protocol || 'http';
+      finalUrl = `${protocol}://${host}/uploads/pdfs/${uniqueFileName}`;
+      storageType = 'local_disk';
+    } catch (diskErr) {
+      console.warn('[PDF Upload] Local disk storage notice:', diskErr.message);
+    }
+
+    // 2. Try storing in PostgreSQL database table `book_files`
     try {
       const insertResult = await prisma.$queryRawUnsafe(
         `INSERT INTO public.book_files (filename, mimetype, size, data)
@@ -184,17 +202,19 @@ router.post('/pdf', adminAuth, (req, res, next) => {
         buffer
       );
       fileId = insertResult[0]?.id;
-      if (fileId) {
-        const host = req.get('host');
-        const protocol = req.protocol;
+      if (fileId && !finalUrl) {
+        const host = req.get('host') || 'localhost:5000';
+        const protocol = req.protocol || 'http';
         finalUrl = `${protocol}://${host}/api/upload/file/${fileId}`;
         storageType = 'database';
+      } else if (fileId) {
+        storageType = 'local_disk_and_database';
       }
     } catch (dbErr) {
       console.warn('[PDF Upload] DB storage notice:', dbErr.message);
     }
 
-    // 2. Synchronize to Supabase storage bucket `books` if available
+    // 3. Synchronize to Supabase storage bucket `books` if available
     if (supabase) {
       try {
         const { error: uploadError } = await supabase.storage
@@ -208,7 +228,7 @@ router.post('/pdf', adminAuth, (req, res, next) => {
           const { data } = supabase.storage.from('books').getPublicUrl(storagePath);
           if (data?.publicUrl) {
             finalUrl = data.publicUrl;
-            storageType = storageType === 'database' ? 'supabase_and_database' : 'supabase';
+            storageType = `${storageType}_and_supabase`;
           }
         }
       } catch (sbErr) {
@@ -282,7 +302,24 @@ router.post('/image', adminAuth, (req, res, next) => {
     let finalUrl = null;
     let storageType = 'none';
 
-    // 1. Try storing in PostgreSQL database table `book_files`
+    // 1. Save directly to local filesystem uploads/covers
+    try {
+      const coversDir = path.join(__dirname, '../uploads/covers');
+      if (!fs.existsSync(coversDir)) {
+        fs.mkdirSync(coversDir, { recursive: true });
+      }
+      const localFilePath = path.join(coversDir, uniqueFileName);
+      fs.writeFileSync(localFilePath, buffer);
+      
+      const host = req.get('host') || 'localhost:5000';
+      const protocol = req.protocol || 'http';
+      finalUrl = `${protocol}://${host}/uploads/covers/${uniqueFileName}`;
+      storageType = 'local_disk';
+    } catch (diskErr) {
+      console.warn('[Image Upload] Local disk storage notice:', diskErr.message);
+    }
+
+    // 2. Try storing in PostgreSQL database table `book_files`
     try {
       const insertResult = await prisma.$queryRawUnsafe(
         `INSERT INTO public.book_files (filename, mimetype, size, data)
@@ -294,17 +331,19 @@ router.post('/image', adminAuth, (req, res, next) => {
         buffer
       );
       fileId = insertResult[0]?.id;
-      if (fileId) {
-        const host = req.get('host');
-        const protocol = req.protocol;
+      if (fileId && !finalUrl) {
+        const host = req.get('host') || 'localhost:5000';
+        const protocol = req.protocol || 'http';
         finalUrl = `${protocol}://${host}/api/upload/file/${fileId}`;
         storageType = 'database';
+      } else if (fileId) {
+        storageType = 'local_disk_and_database';
       }
     } catch (dbErr) {
       console.warn('[Image Upload] DB storage notice:', dbErr.message);
     }
 
-    // 2. Synchronize to Supabase storage bucket `books`
+    // 3. Synchronize to Supabase storage bucket `books` if configured
     if (supabase) {
       try {
         const { error: uploadError } = await supabase.storage
@@ -318,7 +357,7 @@ router.post('/image', adminAuth, (req, res, next) => {
           const { data } = supabase.storage.from('books').getPublicUrl(storagePath);
           if (data?.publicUrl) {
             finalUrl = data.publicUrl;
-            storageType = storageType === 'database' ? 'supabase_and_database' : 'supabase';
+            storageType = `${storageType}_and_supabase`;
           }
         }
       } catch (sbErr) {
