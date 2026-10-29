@@ -69,7 +69,11 @@ function getLastActivity() {
 
 const AuthContext = createContext();
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD
+    ? 'https://midusa-elibrary-api.onrender.com/api'
+    : 'http://localhost:5000/api');
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {

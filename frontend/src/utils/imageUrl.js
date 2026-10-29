@@ -20,14 +20,22 @@ export function resolveCoverUrl(url) {
   // Handle local uploaded files
   if (trimmed.startsWith('/uploads') || trimmed.startsWith('uploads') || trimmed.startsWith('/api/upload') || trimmed.startsWith('api/upload')) {
     const clean = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const apiUrl =
+      import.meta.env.VITE_API_URL ||
+      (import.meta.env.PROD
+        ? 'https://midusa-elibrary-api.onrender.com/api'
+        : 'http://localhost:5000/api');
     const backendBase = apiUrl.replace(/\/api\/?$/, '');
     return `${backendBase}${clean}`;
   }
 
   // If it's a localhost:5000 URL but accessed via a different host (e.g. LAN IP / production)
   if (trimmed.includes('localhost:5000')) {
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl =
+      import.meta.env.VITE_API_URL ||
+      (import.meta.env.PROD
+        ? 'https://midusa-elibrary-api.onrender.com/api'
+        : 'http://localhost:5000/api');
     if (apiUrl && !apiUrl.includes('localhost:5000')) {
       const backendBase = apiUrl.replace(/\/api\/?$/, '');
       return trimmed.replace(/http:\/\/localhost:5000/g, backendBase);
