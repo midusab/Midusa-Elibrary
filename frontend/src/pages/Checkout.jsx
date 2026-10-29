@@ -22,6 +22,7 @@ import { useToast } from '../context/ToastContext';
 import { formatPrice } from '../utils/currency';
 import { createOrder } from '../services/api';
 import { API_BASE_URL, authHeader } from '../services/api/client';
+import { resolveCoverUrl, DEFAULT_BOOK_COVER } from '../utils/imageUrl';
 
 // Poll payment status from backend
 async function pollPaymentStatus(paymentId, token) {
@@ -623,16 +624,20 @@ export default function Checkout() {
 
               <div className="divide-y divide-slate-100/80 max-h-72 overflow-y-auto">
                 {cart.map((item) => (
-                  <div key={item.id} className="py-3 flex items-center gap-3">
+                  <div key={item.id} className="py-3 flex items-start sm:items-center gap-3 min-w-0">
                     <img
-                      src={item.coverImage || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=100'}
+                      src={resolveCoverUrl(item.coverImage)}
                       alt={item.title}
-                      className="w-10 h-14 object-cover rounded-lg shadow-sm flex-shrink-0"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = DEFAULT_BOOK_COVER;
+                      }}
+                      className="w-10 h-14 object-cover rounded-lg shadow-sm flex-shrink-0 bg-slate-100"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-slate-800 truncate">{item.title}</p>
-                      <p className="text-[11px] text-slate-400">by {item.author}</p>
-                  <p className="text-xs font-extrabold text-slate-900 mt-0.5">{formatPrice(getEffectivePrice(item))}</p>
+                      <p className="text-xs font-bold text-slate-800 line-clamp-2 break-words leading-tight">{item.title}</p>
+                      <p className="text-[11px] text-slate-400 truncate mt-0.5">by {item.author}</p>
+                      <p className="text-xs font-extrabold text-slate-900 mt-1">{formatPrice(getEffectivePrice(item))}</p>
                     </div>
                   </div>
                 ))}

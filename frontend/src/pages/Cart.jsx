@@ -5,6 +5,7 @@ import Breadcrumb from '../components/common/Breadcrumb';
 import { useCart } from '../context/CartContext';
 import { useFlashSale } from '../context/FlashSaleContext';
 import { formatPrice } from '../utils/currency';
+import { resolveCoverUrl, DEFAULT_BOOK_COVER } from '../utils/imageUrl';
 
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, clearCart, cartCount } = useCart();
@@ -86,39 +87,44 @@ export default function Cart() {
             {cart.map((item) => (
               <div
                 key={item.id}
-                className="p-4 sm:p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between"
+                className="p-3.5 sm:p-5 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col sm:flex-row gap-3.5 sm:gap-4 items-start sm:items-center justify-between w-full overflow-hidden"
               >
-                <div className="flex gap-3.5 items-center min-w-0">
+                <div className="flex gap-3 sm:gap-3.5 items-start sm:items-center min-w-0 w-full flex-1">
                   <Link to={`/book/${item.id}`} className="flex-shrink-0">
                     <img
-                      src={item.coverImage}
+                      src={resolveCoverUrl(item.coverImage)}
                       alt={item.title}
-                      className="w-16 h-22 object-cover rounded-xl bg-slate-100 border border-slate-100"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = DEFAULT_BOOK_COVER;
+                      }}
+                      className="w-16 h-22 sm:w-20 sm:h-28 object-cover rounded-xl bg-slate-100 border border-slate-100 flex-shrink-0"
                     />
                   </Link>
 
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <span className="text-[10px] font-semibold text-primary block truncate mb-0.5">
                       {item.category}
                     </span>
-                    <Link to={`/book/${item.id}`} className="hover:text-primary transition-colors">
-                      <h3 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                    <Link to={`/book/${item.id}`} className="block min-w-0 group">
+                      <h3 className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2 break-words leading-snug group-hover:text-primary transition-colors mb-1">
                         {item.title}
                       </h3>
                     </Link>
                     <p className="text-[11px] text-slate-500 mb-1.5 truncate">By {item.author}</p>
-                    <span className="text-sm font-bold text-slate-900">
+                    <span className="text-xs sm:text-sm font-bold text-slate-900">
                       {formatPrice(getEffectivePrice(item))}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100">
+                <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 sm:gap-4 pt-3 sm:pt-0 border-t sm:border-0 border-slate-100 flex-shrink-0">
                   {/* Quantity controls */}
-                  <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-2 py-1 bg-slate-50/50">
+                  <div className="flex items-center gap-2 border border-slate-200 rounded-xl px-2 py-1 bg-slate-50/50 flex-shrink-0">
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="text-slate-500 hover:text-slate-800 p-1"
+                      className="text-slate-500 hover:text-slate-800 p-1 cursor-pointer"
+                      aria-label="Decrease quantity"
                     >
                       <FiMinus className="w-3 h-3" />
                     </button>
@@ -127,20 +133,22 @@ export default function Cart() {
                     </span>
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="text-slate-500 hover:text-slate-800 p-1"
+                      className="text-slate-500 hover:text-slate-800 p-1 cursor-pointer"
+                      aria-label="Increase quantity"
                     >
                       <FiPlus className="w-3 h-3" />
                     </button>
                   </div>
 
-                  <span className="text-sm font-extrabold text-slate-900 min-w-[80px] text-right">
+                  <span className="text-xs sm:text-sm font-extrabold text-slate-900 min-w-[70px] sm:min-w-[80px] text-right flex-shrink-0">
                     {formatPrice(getEffectivePrice(item) * item.quantity)}
                   </span>
 
                   <button
-                    onClick={() => handleRemoveFromCart(item.id, item.title)}
-                    className="p-1.5 text-slate-400 hover:text-[#F40009] transition-colors rounded-lg hover:bg-red-50"
+                    onClick={() => handleRemoveFromCart(item.id)}
+                    className="p-1.5 text-slate-400 hover:text-[#F40009] transition-colors rounded-lg hover:bg-red-50 cursor-pointer flex-shrink-0"
                     title="Remove item"
+                    aria-label="Remove item"
                   >
                     <FiTrash2 className="w-4 h-4" />
                   </button>
