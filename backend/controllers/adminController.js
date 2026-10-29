@@ -278,6 +278,78 @@ const getAnalytics = async (req, res) => {
       trendSummary = `Performance is balanced with ${totalSales} lifetime purchases and ${totalVisits} platform visits. Traffic and customer acquisition have remained stable.`;
     }
 
+    // ─── 4b. Weekly Traffic Measurement & Monthly Website Traffic Report ────────
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const startOfCurrentMonth = new Date(currentYear, currentMonth, 1);
+    const startOfPreviousMonth = new Date(currentYear, currentMonth - 1, 1);
+    const endOfPreviousMonth = new Date(currentYear, currentMonth, 0, 23, 59, 59, 999);
+    const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    const monthName = startOfCurrentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const previousMonthName = startOfPreviousMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    // Monthly visits: Total traffic for current month to date and previous full month
+    const currentMonthVisits = allVisits.filter(v => v.created_at && new Date(v.created_at) >= startOfCurrentMonth).length;
+    const previousMonthVisits = allVisits.filter(v => v.created_at && new Date(v.created_at) >= startOfPreviousMonth && new Date(v.created_at) <= endOfPreviousMonth).length;
+    const monthlyVisitsGrowthRate = calcGrowth(currentMonthVisits, previousMonthVisits);
+
+    // Weekly Cycles within the Month (Each week expires after 7 days, data recorded, resets for next week)
+    const currentDayOfMonth = now.getDate();
+    const monthlyWeeks = [
+      {
+        weekNumber: 1,
+        label: 'Week 1',
+        dateRange: `1st–7th ${startOfCurrentMonth.toLocaleDateString('en-US', { month: 'short' })}`,
+        startDay: 1,
+        endDay: 7,
+      },
+      {
+        weekNumber: 2,
+        label: 'Week 2',
+        dateRange: `8th–14th ${startOfCurrentMonth.toLocaleDateString('en-US', { month: 'short' })}`,
+        startDay: 8,
+        endDay: 14,
+      },
+      {
+        weekNumber: 3,
+        label: 'Week 3',
+        dateRange: `15th–21st ${startOfCurrentMonth.toLocaleDateString('en-US', { month: 'short' })}`,
+        startDay: 15,
+        endDay: 21,
+      },
+      {
+        weekNumber: 4,
+        label: 'Week 4+',
+        dateRange: `22nd–${daysInCurrentMonth}th ${startOfCurrentMonth.toLocaleDateString('en-US', { month: 'short' })}`,
+        startDay: 22,
+        endDay: daysInCurrentMonth,
+      }
+    ].map(w => {
+      const wStart = new Date(currentYear, currentMonth, w.startDay, 0, 0, 0, 0);
+      const wEnd = new Date(currentYear, currentMonth, w.endDay, 23, 59, 59, 999);
+      const visits = allVisits.filter(v => v.created_at && new Date(v.created_at) >= wStart && new Date(v.created_at) <= wEnd).length;
+
+      let status = 'upcoming';
+      if (currentDayOfMonth > w.endDay) {
+        status = 'recorded'; // Expired after 7 days, archived & recorded
+      } else if (currentDayOfMonth >= w.startDay && currentDayOfMonth <= w.endDay) {
+        status = 'active'; // Currently accumulating visits for this weekly cycle
+      }
+
+      return {
+        ...w,
+        visits,
+        status,
+        statusLabel: status === 'recorded' ? 'Recorded & Archived' : status === 'active' ? 'Active Weekly Cycle' : 'Upcoming'
+      };
+    });
+
+    // Determine current active cycle day count (1 to 7) and days until next weekly reset
+    const activeWeekIndex = monthlyWeeks.findIndex(w => w.status === 'active');
+    const activeWeekObj = activeWeekIndex !== -1 ? monthlyWeeks[activeWeekIndex] : monthlyWeeks[monthlyWeeks.length - 1];
+    const daysRemainingInWeeklyCycle = activeWeekObj ? Math.max(0, activeWeekObj.endDay - currentDayOfMonth) : 0;
+
     // ─── 5. Daily Trend Timeline (Last 7 Days) for charts ─────────────────────
     const dailyTrends = [];
     for (let i = 6; i >= 0; i--) {
@@ -379,7 +451,24 @@ const getAnalytics = async (req, res) => {
       // Engagement & clicks
       mostClickedBook,
       topClickedBooks,
-      mostPurchasedBook,
+      // Weekly site visit tracking cycle (measured weekly, expires after a week, data recorded, resets for next week)
+      weeklyTraffic: {
+        currentWeekVisits: currentVisits,
+        previousWeekVisits: prevVisits,
+        growthRate: visitsGrowthRate,
+        daysRemainingInCycle: daysRemainingInWeeklyCycle,
+        cycleStatus: 'Active'
+      },
+
+      // Monthly website traffic report with weekly breakdown
+      monthlyTrafficReport: {
+        monthName,
+        previousMonthName,
+        currentMonthVisits,
+        previousMonthVisits,
+        growthRate: monthlyVisitsGrowthRate,
+        weeks: monthlyWeeks
+      },
 
       // Charts data
       dailyTrends,

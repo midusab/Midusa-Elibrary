@@ -9,7 +9,9 @@ import {
   FiMousePointer,
   FiLayers,
   FiFilter,
-  FiCalendar
+  FiCalendar,
+  FiClock,
+  FiCheckCircle
 } from 'react-icons/fi';
 import Card from '../ui/Card';
 import { formatPrice } from '../../utils/currency';
@@ -21,6 +23,8 @@ export default function AdminOverviewTab({
 }) {
   const dailyTrends = derivedStats.dailyTrends || [];
   const categoryStats = derivedStats.categoryStats || [];
+  const weeklyTraffic = derivedStats.weeklyTraffic || null;
+  const monthlyReport = derivedStats.monthlyTrafficReport || null;
 
   // Normalize categories breakdown
   const categoryBreakdown = categories.map((cat) => {
@@ -91,23 +95,25 @@ export default function AdminOverviewTab({
         <Card className="p-4 sm:p-5 bg-white border border-slate-200/90 rounded-lg shadow-none">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-              Platform Visits
+              Weekly Visits
             </span>
             <div className="w-8 h-8 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <FiActivity className="w-4 h-4" />
             </div>
           </div>
           <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-            {derivedStats.totalVisits.toLocaleString()}
+            {(weeklyTraffic?.currentWeekVisits ?? derivedStats.totalVisits).toLocaleString()}
           </h3>
-          <div className="flex items-center gap-1.5 mt-1.5 text-xs">
+          <div className="flex items-center justify-between mt-1.5 text-xs">
             <span className="text-indigo-600 font-semibold flex items-center">
               <FiTrendingUp className="w-3.5 h-3.5 mr-0.5" />
-              {derivedStats.trends?.visitsGrowthRate
-                ? `${derivedStats.trends.visitsGrowthRate >= 0 ? '+' : ''}${derivedStats.trends.visitsGrowthRate}%`
-                : 'Active'}
+              {weeklyTraffic?.growthRate !== undefined
+                ? `${weeklyTraffic.growthRate >= 0 ? '+' : ''}${weeklyTraffic.growthRate}%`
+                : 'Weekly'}
             </span>
-            <span className="text-slate-400">traffic</span>
+            <span className="text-slate-400">
+              Resets in {weeklyTraffic?.daysRemainingInCycle ?? 7}d
+            </span>
           </div>
         </Card>
 
@@ -241,6 +247,147 @@ export default function AdminOverviewTab({
           </div>
         </Card>
       </div>
+
+      {/* ========================================================= */}
+      {/* 2b. MONTHLY TRAFFIC REPORT & WEEKLY MEASUREMENT CYCLES    */}
+      {/* ========================================================= */}
+      <Card className="p-5 sm:p-6 bg-white border border-slate-200/90 rounded-lg shadow-none">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2 mb-4">
+          <div>
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <FiCalendar className="w-3.5 h-3.5 text-[#1E90FF]" />
+              Website Traffic Analytics
+            </span>
+            <h3 className="text-base font-bold text-slate-900 mt-0.5">
+              Monthly Website Traffic Report ({monthlyReport?.monthName || 'Current Month'})
+            </h3>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center gap-1.5">
+              <FiClock className="w-3.5 h-3.5" />
+              Weekly Cycle: Resets in {weeklyTraffic?.daysRemainingInCycle ?? 7} days
+            </span>
+          </div>
+        </div>
+
+        {/* Traffic KPI Highlights */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mb-5">
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+              {monthlyReport?.monthName || 'This Month'} Total
+            </span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-2xl font-bold text-slate-900 font-mono">
+                {(monthlyReport?.currentMonthVisits ?? derivedStats.totalVisits).toLocaleString()}
+              </span>
+              <span className="text-xs text-slate-400">visits</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Aggregated across all weekly cycles
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+              {monthlyReport?.previousMonthName || 'Previous Month'}
+            </span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-2xl font-bold text-slate-900 font-mono">
+                {(monthlyReport?.previousMonthVisits ?? 0).toLocaleString()}
+              </span>
+              <span className="text-xs text-slate-400">visits</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Full prior calendar month
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+              Month-over-Month Growth
+            </span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className={`text-2xl font-bold font-mono ${
+                (monthlyReport?.growthRate || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'
+              }`}>
+                {(monthlyReport?.growthRate || 0) >= 0 ? '+' : ''}{monthlyReport?.growthRate ?? 0}%
+              </span>
+              <span className="text-xs text-slate-400">vs last month</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              Platform visitor retention velocity
+            </p>
+          </div>
+        </div>
+
+        {/* Weekly Measurement Breakdown Table */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1">
+            <span>Weekly Measurement Cycles</span>
+            <span>Recorded &amp; Reset Status</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {(monthlyReport?.weeks || [
+              { weekNumber: 1, label: 'Week 1', dateRange: '1st–7th', visits: 0, status: 'recorded', statusLabel: 'Recorded & Archived' },
+              { weekNumber: 2, label: 'Week 2', dateRange: '8th–14th', visits: 0, status: 'recorded', statusLabel: 'Recorded & Archived' },
+              { weekNumber: 3, label: 'Week 3', dateRange: '15th–21st', visits: 0, status: 'recorded', statusLabel: 'Recorded & Archived' },
+              { weekNumber: 4, label: 'Week 4+', dateRange: '22nd–End', visits: derivedStats.totalVisits, status: 'active', statusLabel: 'Active Weekly Cycle' },
+            ]).map((w) => {
+              const isActive = w.status === 'active';
+              const isRecorded = w.status === 'recorded';
+
+              return (
+                <div
+                  key={w.weekNumber}
+                  className={`p-3.5 rounded-xl border transition-all ${
+                    isActive
+                      ? 'border-[#1E90FF]/40 bg-blue-50/40 shadow-xs'
+                      : isRecorded
+                      ? 'border-slate-200/80 bg-white'
+                      : 'border-slate-100 bg-slate-50/50 opacity-60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-bold text-slate-900">
+                      {w.label}
+                    </span>
+                    {isActive ? (
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-[#1E90FF] animate-pulse">
+                        Active Cycle
+                      </span>
+                    ) : isRecorded ? (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 flex items-center gap-1 border border-emerald-100">
+                        <FiCheckCircle className="w-2.5 h-2.5" /> Recorded
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">
+                        Upcoming
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-[11px] text-slate-400 mb-2">{w.dateRange}</p>
+
+                  <div className="flex items-baseline justify-between pt-1 border-t border-slate-100">
+                    <span className="text-lg font-bold text-slate-900 font-mono">
+                      {w.visits.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {isActive ? 'resets after 7d' : isRecorded ? 'data recorded' : 'scheduled'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-slate-400">
+          <span>Weekly visits are measured on 7-day expiration cycles. Once expired, data is recorded into the monthly report and resets for the following week.</span>
+          <span className="font-semibold text-slate-600 flex-shrink-0">Automated Weekly Rollover</span>
+        </div>
+      </Card>
 
       {/* ========================================================= */}
       {/* 3. DAILY ACTIVITY LOG (Replacing dynamic SVG chart)       */}

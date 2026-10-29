@@ -115,6 +115,8 @@ export function useAdminData(token) {
       topClickedBooks,
       dailyTrends: analytics?.dailyTrends || [],
       categoryStats: analytics?.categoryStats || [],
+      weeklyTraffic: analytics?.weeklyTraffic || null,
+      monthlyTrafficReport: analytics?.monthlyTrafficReport || null,
       sevenDaysAgo
     };
   }, [orders, books, usersList, analytics, sevenDaysAgo]);

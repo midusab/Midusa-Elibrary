@@ -102,10 +102,17 @@ function AppLifecycleHandlers() {
   const { success } = useToast();
 
   useEffect(() => {
+    // Weekly site visit cycle: visitor session expires after 7 days, recorded data rolls over, and resets for next week
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
     let visitorId = localStorage.getItem('elibrary_visitor_id');
-    if (!visitorId) {
+    const weekStartStr = localStorage.getItem('elibrary_visitor_week_start');
+    const weekStart = weekStartStr ? parseInt(weekStartStr, 10) : 0;
+
+    if (!visitorId || !weekStart || (now - weekStart > SEVEN_DAYS_MS)) {
       visitorId = 'v_' + Math.random().toString(36).substring(2, 10);
       localStorage.setItem('elibrary_visitor_id', visitorId);
+      localStorage.setItem('elibrary_visitor_week_start', String(now));
     }
 
     recordSiteVisit({

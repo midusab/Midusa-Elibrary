@@ -397,9 +397,6 @@ export default function BookDetails() {
                       )}
                     </div>
                   </div>
-                  <span className="text-xs font-semibold text-[#00A651] bg-green-50 px-3 py-1 rounded-xl">
-                    Digital Edition Unlocked
-                  </span>
                 </div>
 
                 {/* Purchase Button - Primary Add to Cart CTA */}
