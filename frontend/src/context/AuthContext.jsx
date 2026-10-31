@@ -313,23 +313,33 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // Check for pending Google OAuth redirect result
-      try {
-        const result = await getRedirectResult(auth);
-        if (result && !cancelled) {
-          const loggedInUser = await exchangeFirebaseToken(result);
-          sessionStorage.setItem('pending_login_toast', JSON.stringify({
-            name: loggedInUser.fullname || loggedInUser.email,
-            isAdmin: loggedInUser.role === 'admin'
-          }));
+      // Check for pending Google OAuth redirect result ONLY when an OAuth redirect was actually initiated
+      const hasPendingRedirect =
+        Boolean(sessionStorage.getItem('midusa_pending_oauth_redirect')) ||
+        Boolean(sessionStorage.getItem('midusa_secure_oauth_redirect')) ||
+        window.location.search.includes('apiKey=') ||
+        window.location.hash.includes('apiKey=') ||
+        Boolean(sessionStorage.getItem('firebase:pendingRedirect'));
+
+      if (hasPendingRedirect) {
+        try {
+          const result = await getRedirectResult(auth);
+          sessionStorage.removeItem('midusa_pending_oauth_redirect');
+          if (result && !cancelled) {
+            const loggedInUser = await exchangeFirebaseToken(result);
+            sessionStorage.setItem('pending_login_toast', JSON.stringify({
+              name: loggedInUser.fullname || loggedInUser.email,
+              isAdmin: loggedInUser.role === 'admin'
+            }));
+          }
+        } catch (err) {
+          if (err?.code !== 'auth/no-auth-event') {
+            console.error('Redirect result error:', err);
+          }
         }
-      } catch (err) {
-        if (err?.code !== 'auth/no-auth-event') {
-          console.error('Redirect result error:', err);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
       }
+
+      if (!cancelled) setLoading(false);
     }
 
     init();
@@ -405,8 +415,11 @@ export const AuthProvider = ({ children }) => {
 
   // ─── 5. Firebase Auth State Listener (Silent refresh token) ──────────────
   useEffect(() => {
+    // Only listen for silent token refreshes if a user is actively authenticated
+    if (!user) return;
+
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser && user) {
+      if (fbUser) {
         try {
           const freshToken = await getIdToken(fbUser, false);
           if (freshToken && freshToken !== user.token) {
@@ -439,6 +452,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (popupErr) {
       if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request') {
+        sessionStorage.setItem('midusa_pending_oauth_redirect', '1');
         await signInWithRedirect(auth, googleProvider);
         return { redirecting: true };
       }
