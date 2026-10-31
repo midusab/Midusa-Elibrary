@@ -10,6 +10,7 @@ import {
   Flame
 } from 'lucide-react';
 import { formatPrice } from '../../utils/currency';
+import { resolveCoverUrl, DEFAULT_BOOK_COVER } from '../../utils/imageUrl';
 import { HeroCarouselSkeleton } from '../ui/LoadingSkeleton';
 
 export default function HeroCarousel({ books = [], loading = false, onAddToCart }) {
@@ -76,10 +77,7 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
             >
               {/* Full-bleed book cover image — first slide is LCP, load eagerly */}
               <img
-                src={
-                  b.coverImage ||
-                  'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=1600&auto=format&fit=crop&q=85'
-                }
+                src={resolveCoverUrl(b.coverImage)}
                 alt=""
                 loading={idx === 0 ? 'eager' : 'lazy'}
                 decoding="async"
@@ -211,10 +209,7 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
               <div className="relative flex items-center justify-center">
                 <img
                   key={currentBook.id}
-                  src={
-                    currentBook.coverImage ||
-                    'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80'
-                  }
+                  src={resolveCoverUrl(currentBook.coverImage)}
                   alt={currentBook.title}
                   loading="lazy"
                   decoding="async"

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { FiDownload } from 'react-icons/fi';
 import Card from '../ui/Card';
+import { resolveCoverUrl } from '../../utils/imageUrl';
 
 export default function UserLibraryTab({
   isLoadingOrders,
@@ -27,7 +28,7 @@ export default function UserLibraryTab({
           {purchasedBooks.map((book) => (
             <Card key={book.id} className="p-4 border border-slate-200/80 rounded-xl bg-white shadow-sm flex gap-3.5 items-center">
               <img
-                src={book.coverImage}
+                src={resolveCoverUrl(book.coverImage)}
                 alt={book.title}
                 className="w-16 h-22 object-cover rounded-lg bg-slate-100 flex-shrink-0"
               />

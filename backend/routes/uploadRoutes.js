@@ -204,7 +204,7 @@ router.post('/pdf', adminAuth, (req, res, next) => {
       fileId = insertResult[0]?.id;
       if (fileId && !finalUrl) {
         const host = req.get('host') || 'localhost:5000';
-        const protocol = req.protocol || 'http';
+        const protocol = req.get('x-forwarded-proto') || (process.env.NODE_ENV === 'production' ? 'https' : req.protocol) || 'https';
         finalUrl = `${protocol}://${host}/api/upload/file/${fileId}`;
         storageType = 'database';
       } else if (fileId) {
@@ -333,7 +333,7 @@ router.post('/image', adminAuth, (req, res, next) => {
       fileId = insertResult[0]?.id;
       if (fileId && !finalUrl) {
         const host = req.get('host') || 'localhost:5000';
-        const protocol = req.protocol || 'http';
+        const protocol = req.get('x-forwarded-proto') || (process.env.NODE_ENV === 'production' ? 'https' : req.protocol) || 'https';
         finalUrl = `${protocol}://${host}/api/upload/file/${fileId}`;
         storageType = 'database';
       } else if (fileId) {

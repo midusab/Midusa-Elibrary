@@ -16,6 +16,7 @@ import {
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
+import { resolveCoverUrl } from '../utils/imageUrl';
 
 
 import { getBooks } from '../services/api';
@@ -286,7 +287,7 @@ export default function Navigation() {
                         className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-blue-50/70 text-left transition-colors group cursor-pointer"
                       >
                         <img
-                          src={book.coverImage}
+                          src={resolveCoverUrl(book.coverImage)}
                           alt={book.title}
                           className="w-9 h-12 object-cover rounded-xl shadow-xs bg-slate-100 flex-shrink-0"
                         />

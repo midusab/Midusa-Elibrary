@@ -18,6 +18,7 @@ import Card from '../ui/Card';
 import { getAdminFlashSale, saveFlashSale, toggleFlashSale, deleteFlashSale } from '../../services/api';
 import { useFlashSale } from '../../context/FlashSaleContext';
 import { useToast } from '../../context/ToastContext';
+import { resolveCoverUrl } from '../../utils/imageUrl';
 import { formatPrice } from '../../utils/currency';
 
 export default function AdminFlashSaleTab({ token, books = [] }) {
@@ -537,7 +538,7 @@ export default function AdminFlashSaleTab({ token, books = [] }) {
                             <div className="w-8 h-10 rounded bg-slate-200 overflow-hidden flex-shrink-0">
                               {b.coverImage && (
                                 <img
-                                  src={b.coverImage}
+                                  src={resolveCoverUrl(b.coverImage)}
                                   alt={b.title}
                                   className="w-full h-full object-cover"
                                 />

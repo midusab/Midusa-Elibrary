@@ -5,6 +5,7 @@ import Card from '../ui/Card';
 import { formatPrice } from '../../utils/currency';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
+import { resolveCoverUrl } from '../../utils/imageUrl';
 
 export default function UserFavoritesTab({
   isLoadingBooks,
@@ -51,7 +52,7 @@ export default function UserFavoritesTab({
             <Card key={book.id} className="p-4 border border-slate-200/80 rounded-xl bg-white shadow-sm flex flex-col justify-between">
               <div className="flex gap-3.5 items-start">
                 <img
-                  src={book.coverImage}
+                  src={resolveCoverUrl(book.coverImage)}
                   alt={book.title}
                   className="w-16 h-22 object-cover rounded-lg bg-slate-100 flex-shrink-0"
                 />

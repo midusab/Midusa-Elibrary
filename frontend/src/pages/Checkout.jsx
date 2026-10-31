@@ -343,7 +343,7 @@ export default function Checkout() {
                     className={`w-full py-3.5 rounded-xl text-xs sm:text-sm flex items-center gap-3 px-4 bg-[#00A651] hover:bg-[#008f44] text-white font-bold transition-colors cursor-pointer ${!book.pdfUrl ? 'pointer-events-none opacity-60' : ''}`}
                   >
                     {book.coverImage && (
-                      <img src={book.coverImage} alt="" className="w-8 h-10 object-cover rounded shadow flex-shrink-0" />
+                      <img src={resolveCoverUrl(book.coverImage)} alt="" className="w-8 h-10 object-cover rounded shadow flex-shrink-0" />
                     )}
                     <span className="flex-1 text-left truncate">{book.title}</span>
                     <Download className="w-4 h-4 flex-shrink-0" />

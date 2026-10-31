@@ -13,6 +13,7 @@ import {
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { formatPrice } from '../../utils/currency';
+import { resolveCoverUrl } from '../../utils/imageUrl';
 
 export default function UserOrdersTab({ orders = [], isLoading = false }) {
   const [filter, setFilter] = useState('all');
@@ -267,7 +268,7 @@ export default function UserOrdersTab({ orders = [], isLoading = false }) {
                         >
                           {book?.coverImage ? (
                             <img
-                              src={book.coverImage}
+                              src={resolveCoverUrl(book.coverImage)}
                               alt={book.title || 'Book'}
                               className="w-12 h-16 object-cover rounded bg-slate-200 flex-shrink-0 border border-slate-200/80"
                             />

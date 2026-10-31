@@ -14,6 +14,7 @@ import {
 import { useFlashSale } from '../../context/FlashSaleContext';
 import { useCart } from '../../context/CartContext';
 import { formatPrice } from '../../utils/currency';
+import { resolveCoverUrl } from '../../utils/imageUrl';
 
 export default function FlashSaleBanner({ books = [] }) {
   const { isLive, flashSale, countdown, isBookInFlashSale, getDiscountedPrice } = useFlashSale();
@@ -158,10 +159,7 @@ export default function FlashSaleBanner({ books = [] }) {
                   <Link to={`/book/${book.id}`} className="group block">
                     <div className="relative aspect-[3/4] bg-slate-100 overflow-hidden">
                       <img
-                        src={
-                          book.coverImage ||
-                          'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'
-                        }
+                        src={resolveCoverUrl(book.coverImage)}
                         alt={book.title}
                         className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         loading="lazy"

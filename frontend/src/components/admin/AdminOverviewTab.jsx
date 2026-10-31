@@ -15,6 +15,7 @@ import {
 } from 'react-icons/fi';
 import Card from '../ui/Card';
 import { formatPrice } from '../../utils/currency';
+import { resolveCoverUrl } from '../../utils/imageUrl';
 
 export default function AdminOverviewTab({
   derivedStats,
@@ -473,7 +474,7 @@ export default function AdminOverviewTab({
                 <div className="w-18 h-24 rounded-md overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-200 relative group">
                   {derivedStats.mostClicked.coverImage ? (
                     <img
-                      src={derivedStats.mostClicked.coverImage}
+                      src={resolveCoverUrl(derivedStats.mostClicked.coverImage)}
                       alt={derivedStats.mostClicked.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
@@ -533,7 +534,7 @@ export default function AdminOverviewTab({
                 <div className="w-18 h-24 rounded-md overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-200 relative group">
                   {derivedStats.mostPurchased.coverImage ? (
                     <img
-                      src={derivedStats.mostPurchased.coverImage}
+                      src={resolveCoverUrl(derivedStats.mostPurchased.coverImage)}
                       alt={derivedStats.mostPurchased.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
@@ -637,7 +638,7 @@ export default function AdminOverviewTab({
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-11 rounded-md overflow-hidden bg-slate-100 flex-shrink-0 border border-slate-200">
                             {b.coverImage ? (
-                              <img src={b.coverImage} alt={b.title} className="w-full h-full object-cover" />
+                              <img src={resolveCoverUrl(b.coverImage)} alt={b.title} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-slate-400">
                                 <FiBook className="w-4 h-4" />
