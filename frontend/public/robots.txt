@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Block admin and private API routes from indexing
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /checkout
+Disallow: /cart
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://midusaelibrary.co.ke/sitemap.xml
