@@ -1,6 +1,13 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 const STORAGE_KEY = 'midusa_cookie_consent_v1';
+
+const getUserConsentKey = (user) => {
+  if (!user) return STORAGE_KEY;
+  const id = user.id || user.uid || user.email;
+  return id ? `midusa_cookie_consent_${id}` : STORAGE_KEY;
+};
 
 const defaultPreferences = {
   essential: true, // Always true
@@ -11,13 +18,15 @@ const defaultPreferences = {
 const CookieContext = createContext(null);
 
 export function CookieProvider({ children }) {
-  const [consentDecided, setConsentDecided] = useState(true); // Default true until checked to prevent layout flash
+  const { user } = useAuth();
+  const [consentDecided, setConsentDecided] = useState(true); // Default true until checked
   const [preferences, setPreferences] = useState(defaultPreferences);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const key = getUserConsentKey(user);
+      const stored = localStorage.getItem(key);
       if (stored) {
         const parsed = JSON.parse(stored);
         setPreferences({
@@ -27,12 +36,13 @@ export function CookieProvider({ children }) {
         });
         setConsentDecided(true);
       } else {
+        // Show cookie consent for new sign-in or unconsented visitor
         setConsentDecided(false);
       }
     } catch {
       setConsentDecided(false);
     }
-  }, []);
+  }, [user]);
 
   const acceptAll = () => {
     const allAccepted = { essential: true, analytics: true, marketing: true };
@@ -40,10 +50,12 @@ export function CookieProvider({ children }) {
     setConsentDecided(true);
     setIsSettingsOpen(false);
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ ...allAccepted, status: 'accepted', timestamp: Date.now() })
-      );
+      const payload = JSON.stringify({ ...allAccepted, status: 'accepted', timestamp: Date.now() });
+      localStorage.setItem(STORAGE_KEY, payload);
+      const userKey = getUserConsentKey(user);
+      if (userKey !== STORAGE_KEY) {
+        localStorage.setItem(userKey, payload);
+      }
     } catch (e) {
       console.warn('Could not persist cookie consent:', e);
     }
@@ -55,10 +67,12 @@ export function CookieProvider({ children }) {
     setConsentDecided(true);
     setIsSettingsOpen(false);
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ ...onlyEssential, status: 'rejected', timestamp: Date.now() })
-      );
+      const payload = JSON.stringify({ ...onlyEssential, status: 'rejected', timestamp: Date.now() });
+      localStorage.setItem(STORAGE_KEY, payload);
+      const userKey = getUserConsentKey(user);
+      if (userKey !== STORAGE_KEY) {
+        localStorage.setItem(userKey, payload);
+      }
     } catch (e) {
       console.warn('Could not persist cookie consent:', e);
     }

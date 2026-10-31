@@ -1,10 +1,10 @@
 import { Helmet } from 'react-helmet-async';
 
 const SEO = ({ 
-  title = 'MidusaElibrary - Get Your Best eBooks Today',
-  description = 'Access powerful eBooks in business, technology, psychology, finance, and personal development. Elevate your knowledge with MidusaElibrary.',
-  keywords = 'eBooks, digital library, business books, technology books, psychology books, finance books, self development, learning, education',
-  ogImage = '/og-image.jpg',
+  title = "MidusaElibrary — Kenya's Best eBook Selling Platform",
+  description = "Kenya's best ebook selling platform. Access bestselling digital eBooks in Finance, Psychology, Self-Development, and Christianity with instant M-PESA delivery.",
+  keywords = "Kenya's best ebook selling platform, buy ebooks Kenya, M-PESA ebooks, digital bookstore, best finance books, self development ebooks, psychology books, Christian ebooks, instant download",
+  ogImage = '/logo.jpg',
   ogType = 'website',
   twitterCard = 'summary_large_image'
 }) => {

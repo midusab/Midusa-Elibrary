@@ -14,6 +14,7 @@ import Navigation from './components/Navigation';
 import Footer from './components/layout/Footer';
 import ScrollProgressBar from './components/common/ScrollProgressBar';
 import WhatsAppButton from './components/common/WhatsAppButton';
+import CookieConsentModal from './components/common/CookieConsentModal';
 import { PageSkeleton } from './components/ui/LoadingSkeleton';
 
 // Primary landing is eager for instant First Contentful Paint
@@ -204,6 +205,9 @@ export default function App() {
 
                       {/* ── Fixed Flash Sale Bottom Bar ── */}
                       <FlashSaleBottomBar />
+
+                      {/* ── Full Width User Data Privacy Cookie Consent Banner ── */}
+                      <CookieConsentModal />
 
                       <main className="flex-1 pt-24 sm:pt-28 bg-transparent">
                         <Suspense fallback={<PageSkeleton />}>
