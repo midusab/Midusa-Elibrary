@@ -183,7 +183,7 @@ router.post('/pdf', adminAuth, (req, res, next) => {
       fs.writeFileSync(localFilePath, buffer);
 
       const host = req.get('host') || 'localhost:5000';
-      const protocol = req.protocol || 'http';
+      const protocol = req.get('x-forwarded-proto') || (process.env.NODE_ENV === 'production' ? 'https' : req.protocol) || 'https';
       finalUrl = `${protocol}://${host}/uploads/pdfs/${uniqueFileName}`;
       storageType = 'local_disk';
     } catch (diskErr) {
@@ -312,7 +312,7 @@ router.post('/image', adminAuth, (req, res, next) => {
       fs.writeFileSync(localFilePath, buffer);
       
       const host = req.get('host') || 'localhost:5000';
-      const protocol = req.protocol || 'http';
+      const protocol = req.get('x-forwarded-proto') || (process.env.NODE_ENV === 'production' ? 'https' : req.protocol) || 'https';
       finalUrl = `${protocol}://${host}/uploads/covers/${uniqueFileName}`;
       storageType = 'local_disk';
     } catch (diskErr) {

@@ -107,6 +107,7 @@ export default function AdminDashboard() {
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadStage, setUploadStage] = useState('idle'); // 'idle' | 'cover' | 'pdf' | 'saving'
   const [deletingId, setDeletingId] = useState(null);
   const [bookModalError, setBookModalError] = useState(null);
 
@@ -161,12 +162,37 @@ export default function AdminDashboard() {
     e.preventDefault();
     setBookModalError(null);
 
-    if (!bookForm.title || !bookForm.author || !bookForm.category || !bookForm.price) {
-      toastError('Please fill in all required book details.');
+    // 1. Client-side field validations
+    if (!bookForm.title || !bookForm.title.trim()) {
+      const msg = 'Please enter a book title.';
+      setBookModalError({ type: 'validation', field: 'title', message: msg });
+      toastError(msg, 'Validation Error');
       return;
     }
 
-    // Client-side instant duplicate check (prevents wasting time/bandwidth on PDF upload)
+    if (!bookForm.author || !bookForm.author.trim()) {
+      const msg = 'Please enter the book author name.';
+      setBookModalError({ type: 'validation', field: 'author', message: msg });
+      toastError(msg, 'Validation Error');
+      return;
+    }
+
+    if (!bookForm.category) {
+      const msg = 'Please select a book category.';
+      setBookModalError({ type: 'validation', field: 'category', message: msg });
+      toastError(msg, 'Validation Error');
+      return;
+    }
+
+    const parsedPrice = parseFloat(bookForm.price);
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
+      const msg = 'Please enter a valid price (greater than or equal to 0 KSH).';
+      setBookModalError({ type: 'validation', field: 'price', message: msg });
+      toastError(msg, 'Invalid Price');
+      return;
+    }
+
+    // 2. Client-side instant duplicate check
     const cleanTitle = (bookForm.title || '').trim().toLowerCase();
     const existingDuplicate = books.find(
       (b) =>
@@ -181,74 +207,141 @@ export default function AdminDashboard() {
         message: duplicateMsg,
         existingBookTitle: existingDuplicate.title
       });
-      toastError(duplicateMsg);
+      toastError(duplicateMsg, 'Duplicate Book');
+      return;
+    }
+
+    // 3. Client-side pre-upload file checks
+    if (coverFile) {
+      const maxCoverBytes = 25 * 1024 * 1024; // 25 MB
+      if (coverFile.size > maxCoverBytes) {
+        const msg = `Selected cover image is too large (${(coverFile.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 25 MB.`;
+        setBookModalError({ type: 'upload_cover', field: 'cover', message: msg });
+        toastError(msg, 'File Too Large');
+        return;
+      }
+      if (coverFile.type && !coverFile.type.startsWith('image/')) {
+        const msg = 'Please choose a valid image file (JPG, PNG, or WebP) for the book cover.';
+        setBookModalError({ type: 'upload_cover', field: 'cover', message: msg });
+        toastError(msg, 'Invalid Image Format');
+        return;
+      }
+    }
+
+    let pdfUrl = bookForm.pdfUrl;
+    if (pdfFile) {
+      const maxPdfBytes = 150 * 1024 * 1024; // 150 MB
+      if (pdfFile.size > maxPdfBytes) {
+        const msg = `Selected eBook PDF is too large (${(pdfFile.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed file size is 150 MB.`;
+        setBookModalError({ type: 'upload_pdf', field: 'pdf', message: msg });
+        toastError(msg, 'File Too Large');
+        return;
+      }
+      if (pdfFile.type && pdfFile.type !== 'application/pdf' && !pdfFile.name.toLowerCase().endsWith('.pdf')) {
+        const msg = 'Please choose a valid PDF file (.pdf) for the eBook.';
+        setBookModalError({ type: 'upload_pdf', field: 'pdf', message: msg });
+        toastError(msg, 'Invalid File Format');
+        return;
+      }
+    }
+
+    if (!editingBook && !pdfUrl && !pdfFile) {
+      const pdfErrorMsg = 'An eBook PDF is required. Please upload a PDF file or enter a valid PDF URL.';
+      setBookModalError({
+        type: 'validation',
+        field: 'pdf',
+        message: pdfErrorMsg
+      });
+      toastError(pdfErrorMsg, 'Missing PDF');
       return;
     }
 
     setIsSaving(true);
+    setUploadStage('idle');
+
     try {
+      // 4. Stage 1: Upload Cover Image
       let coverImage = bookForm.coverImage;
       if (coverFile) {
+        setUploadStage('cover');
         setIsUploadingCover(true);
         setCoverUploadProgress(0);
         try {
           coverImage = await uploadImage(coverFile, token, (pct) => setCoverUploadProgress(pct));
+          setBookForm((prev) => ({ ...prev, coverImage }));
+        } catch (uploadErr) {
+          const errMsg = uploadErr.message || 'Failed to upload cover image. Please check your connection and retry.';
+          setBookModalError({
+            type: 'upload_cover',
+            field: 'cover',
+            message: `Cover Upload Error: ${errMsg}`
+          });
+          toastError(errMsg, 'Cover Upload Failed');
+          setIsSaving(false);
+          setUploadStage('idle');
+          return;
         } finally {
           setIsUploadingCover(false);
           setCoverUploadProgress(0);
         }
       }
 
-      let pdfUrl = bookForm.pdfUrl;
+      // 5. Stage 2: Upload eBook PDF
       if (pdfFile) {
+        setUploadStage('pdf');
         setIsUploadingPdf(true);
         setUploadProgress(0);
         try {
           pdfUrl = await uploadPdf(pdfFile, token, (pct) => setUploadProgress(pct));
+          setBookForm((prev) => ({ ...prev, pdfUrl }));
+        } catch (uploadErr) {
+          const errMsg = uploadErr.message || 'Failed to upload PDF file. Please check your connection and retry.';
+          setBookModalError({
+            type: 'upload_pdf',
+            field: 'pdf',
+            message: `eBook PDF Upload Error: ${errMsg}`
+          });
+          toastError(errMsg, 'PDF Upload Failed');
+          setIsSaving(false);
+          setUploadStage('idle');
+          return;
         } finally {
           setIsUploadingPdf(false);
           setUploadProgress(0);
         }
       }
 
-      if (!editingBook && !pdfUrl && !pdfFile) {
-        const pdfErrorMsg = 'Please select or upload a PDF file for this new eBook.';
-        setBookModalError({
-          type: 'validation',
-          field: 'pdf',
-          message: pdfErrorMsg
-        });
-        toastError(pdfErrorMsg);
-        setIsSaving(false);
-        return;
-      }
-
+      // 6. Stage 3: Publish to Database Catalog
+      setUploadStage('saving');
       const defaultCover = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=800';
       const payload = {
         ...bookForm,
         coverImage: coverImage?.trim() || defaultCover,
-        pdfUrl,
-        price: parseFloat(bookForm.price),
-        discount: parseInt(bookForm.discount) || 0,
-        rating: parseFloat(bookForm.rating || 5)
+        pdfUrl: pdfUrl?.trim() || '',
+        price: parsedPrice,
+        discount: parseInt(bookForm.discount, 10) || 0,
+        rating: Math.min(5, Math.max(0, parseFloat(bookForm.rating || 5)))
       };
 
       if (editingBook) {
         await updateBook(editingBook.id, payload, token);
-        success('Book updated successfully.');
+        success(`"${payload.title}" updated successfully!`, 'Book Updated');
       } else {
         await createBook(payload, token);
-        success('New book published to library.');
+        success(`"${payload.title}" is now published and available in the library!`, 'Book Published');
       }
+
+      // Reset and close
       setPdfFile(null);
       setCoverFile(null);
       setBookModalError(null);
       setIsBookModalOpen(false);
+      setUploadStage('idle');
       loadDashboardData(true);
     } catch (err) {
       const rawMsg = err.message || '';
       const lower = rawMsg.toLowerCase();
-      let errMsg = rawMsg || 'Failed to save book.';
+      let errMsg = rawMsg || 'Failed to publish book. Please try again.';
 
       const isDuplicate =
         err.status === 409 ||
@@ -263,24 +356,29 @@ export default function AdminDashboard() {
           field: 'title',
           message: errMsg
         });
+        toastError(errMsg, 'Duplicate Book');
       } else if (lower.includes('jwt') || lower.includes('token') || lower.includes('401') || lower.includes('session')) {
         errMsg = 'Your administrator sign-in session has expired. Please sign in again.';
-        setBookModalError({ type: 'error', message: errMsg });
+        setBookModalError({ type: 'auth', message: errMsg });
+        toastError(errMsg, 'Session Expired');
       } else if (lower.includes('forbidden') || lower.includes('403') || lower.includes('administrator')) {
         errMsg = 'Administrator access required to publish books.';
-        setBookModalError({ type: 'error', message: errMsg });
+        setBookModalError({ type: 'auth', message: errMsg });
+        toastError(errMsg, 'Access Denied');
       } else if (lower.includes('size') || lower.includes('150 mb') || lower.includes('limit_file_size')) {
-        errMsg = 'The selected file is too large. PDFs must be under 150 MB and images under 25 MB.';
-        setBookModalError({ type: 'error', message: errMsg });
+        errMsg = 'One of the files is too large. PDFs must be under 150 MB and images under 25 MB.';
+        setBookModalError({ type: 'upload_error', message: errMsg });
+        toastError(errMsg, 'File Too Large');
       } else {
         setBookModalError({
           type: 'error',
           message: errMsg
         });
+        toastError(errMsg, 'Publish Failed');
       }
-      toastError(errMsg);
     } finally {
       setIsSaving(false);
+      setUploadStage('idle');
     }
   };
 
@@ -656,6 +754,7 @@ export default function AdminDashboard() {
           isUploadingCover={isUploadingCover}
           coverUploadProgress={coverUploadProgress}
           isSaving={isSaving}
+          uploadStage={uploadStage}
           handleSaveBook={handleSaveBook}
           modalError={bookModalError}
           setModalError={setBookModalError}

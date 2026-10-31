@@ -28,9 +28,13 @@ export function uploadWithProgress(endpoint, fieldName, file, token, onProgress)
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const data = JSON.parse(xhr.responseText);
-          resolve(data.url);
+          if (data && data.url) {
+            resolve(data.url);
+          } else {
+            reject(new Error('Server processed the file but did not return a storage URL.'));
+          }
         } catch {
-          reject(new Error('Invalid server response'));
+          reject(new Error('Invalid response received from upload server.'));
         }
       } else {
         try {
