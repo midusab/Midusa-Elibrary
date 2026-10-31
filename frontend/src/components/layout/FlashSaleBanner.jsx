@@ -171,9 +171,9 @@ export default function FlashSaleBanner({ books = [] }) {
                     </div>
 
                     <div className="p-2.5 sm:p-3">
-                      <h4 className="text-xs sm:text-sm font-bold text-black line-clamp-2 min-h-[2.2rem] sm:min-h-[2.5rem] leading-snug group-hover:text-red-600 transition-colors">
+                      <h3 className="text-xs sm:text-sm font-bold text-black line-clamp-2 min-h-[2.2rem] sm:min-h-[2.5rem] leading-snug group-hover:text-red-600 transition-colors">
                         {book.title}
-                      </h4>
+                      </h3>
                       <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">by {book.author}</p>
 
                       <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
