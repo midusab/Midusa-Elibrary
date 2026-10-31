@@ -195,7 +195,7 @@ export default function FlashSaleBanner({ books = [] }) {
                       onClick={(e) => handleAddToCart(e, book)}
                       className={`w-full py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-95 ${
                         isAdded
-                          ? 'bg-[#00A651] text-white'
+                          ? 'bg-[#E05252] hover:bg-[#D44242] text-white'
                           : 'bg-black hover:bg-zinc-800 text-white'
                       }`}
                     >

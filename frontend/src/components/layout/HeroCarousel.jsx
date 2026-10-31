@@ -166,7 +166,7 @@ export default function HeroCarousel({ books = [], loading = false, onAddToCart 
                 onClick={(e) => handleQuickAdd(e, currentBook)}
                 className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer shadow-lg active:scale-95 ${
                   addedIds[currentBook.id]
-                    ? 'bg-[#00A651] text-white border border-[#00A651]'
+                    ? 'bg-[#E05252] hover:bg-[#D44242] text-white border border-[#E05252]'
                     : 'bg-[#F40009] hover:bg-[#CC0007] text-white border border-[#F40009]'
                 }`}
               >

@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiTrash2, FiShoppingCart, FiArrowRight } from 'react-icons/fi';
+import { FiTrash2, FiShoppingCart, FiArrowRight, FiCheck } from 'react-icons/fi';
 import Card from '../ui/Card';
 import { formatPrice } from '../../utils/currency';
 import { useWishlist } from '../../context/WishlistContext';
@@ -11,6 +12,13 @@ export default function UserFavoritesTab({
 }) {
   const { removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
+  const [addedId, setAddedId] = useState(null);
+
+  const handleAddToCart = (book) => {
+    addToCart(book);
+    setAddedId(book.id);
+    setTimeout(() => setAddedId(null), 1500);
+  };
 
   return (
     <div className="animate-fadeIn">
@@ -64,11 +72,24 @@ export default function UserFavoritesTab({
 
                   {/* ONLY Add to Cart is Coca-Cola Red */}
                   <button
-                    onClick={() => addToCart(book)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-[#F40009] hover:bg-[#CC0007] text-white text-[11px] font-semibold transition-all active:scale-95 cursor-pointer shadow-xs"
+                    onClick={() => handleAddToCart(book)}
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-white text-[11px] font-semibold transition-all active:scale-95 cursor-pointer shadow-xs ${
+                      addedId === book.id
+                        ? 'bg-[#E05252] hover:bg-[#D44242]'
+                        : 'bg-[#F40009] hover:bg-[#CC0007]'
+                    }`}
                   >
-                    <FiShoppingCart className="w-3.5 h-3.5" />
-                    <span>Add to Cart</span>
+                    {addedId === book.id ? (
+                      <>
+                        <FiCheck className="w-3.5 h-3.5" />
+                        <span>Added</span>
+                      </>
+                    ) : (
+                      <>
+                        <FiShoppingCart className="w-3.5 h-3.5" />
+                        <span>Add to Cart</span>
+                      </>
+                    )}
                   </button>
                 </div>
 

@@ -208,7 +208,7 @@ export default function BookCard({ book, onAddToCart }) {
           onClick={handleAdd}
           className={`mt-2 w-full py-2 px-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 shadow-xs ${
             added
-              ? 'bg-[#00A651] text-white border border-[#00A651]'
+              ? 'bg-[#E05252] hover:bg-[#D44242] text-white border border-[#E05252]'
               : 'bg-[#F40009] hover:bg-[#CC0007] text-white border border-[#F40009]'
           }`}
         >

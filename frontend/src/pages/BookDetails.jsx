@@ -405,7 +405,7 @@ export default function BookDetails() {
                     type="button"
                     className={`flex-1 py-3.5 px-6 rounded-xl text-sm sm:text-base font-bold cursor-pointer transition-all flex items-center justify-center text-white ${
                       isAdded
-                        ? 'bg-[#00A651] hover:bg-[#008f45]'
+                        ? 'bg-[#E05252] hover:bg-[#D44242]'
                         : 'bg-[#F40009] hover:bg-[#d00008]'
                     }`}
                     onClick={handleAddToCart}
