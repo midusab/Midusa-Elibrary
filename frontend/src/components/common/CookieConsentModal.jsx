@@ -53,7 +53,7 @@ export default function CookieConsentModal() {
                   onClick={rejectAll}
                   className="flex-1 sm:flex-initial px-4 sm:px-5 py-2 rounded-xl border border-slate-300 hover:border-slate-400 text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 text-xs sm:text-sm font-semibold transition-all cursor-pointer text-center"
                 >
-                  Reject
+                  No Thanks
                 </button>
 
                 <button
@@ -61,7 +61,7 @@ export default function CookieConsentModal() {
                   onClick={acceptAll}
                   className="flex-1 sm:flex-initial px-5 sm:px-6 py-2 rounded-xl bg-[#1E90FF] hover:bg-[#167CD9] text-white text-xs sm:text-sm font-bold transition-all shadow-sm active:scale-95 cursor-pointer text-center"
                 >
-                  Accept
+                  Thanks
                 </button>
 
                 {isSettingsOpen && (

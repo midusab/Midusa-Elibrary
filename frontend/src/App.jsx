@@ -14,6 +14,7 @@ import Navigation from './components/Navigation';
 import Footer from './components/layout/Footer';
 import ScrollProgressBar from './components/common/ScrollProgressBar';
 import WhatsAppButton from './components/common/WhatsAppButton';
+import FloatingCartButton from './components/common/FloatingCartButton';
 import CookieConsentModal from './components/common/CookieConsentModal';
 import { PageSkeleton } from './components/ui/LoadingSkeleton';
 
@@ -191,6 +192,7 @@ export default function App() {
                       {/* Global UI overlays */}
                       <ScrollProgressBar />
                       <WhatsAppButton />
+                      <FloatingCartButton />
                       <AuthModal />
                     <div className="min-h-screen flex flex-col text-slate-900 overflow-x-hidden w-full relative">
                       {/* ── Apple Liquid Glass Ambient Mesh Gradient Canvas (Cobalt Blue, Deep Violet, Soft Amber) ── */}

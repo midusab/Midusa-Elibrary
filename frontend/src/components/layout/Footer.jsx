@@ -52,6 +52,14 @@ export default function Footer() {
                 <ArrowRight className="w-3 h-3 text-blue-300/60" />
                 <span>All Books</span>
               </Link>
+              <Link to="/cart" className="text-blue-100/80 hover:text-white transition-colors flex items-center gap-1">
+                <ArrowRight className="w-3 h-3 text-blue-300/60" />
+                <span>Shopping Cart</span>
+              </Link>
+              <Link to="/dashboard" className="text-blue-100/80 hover:text-white transition-colors flex items-center gap-1">
+                <ArrowRight className="w-3 h-3 text-blue-300/60" />
+                <span>My Library</span>
+              </Link>
               <Link to="/categories" className="text-blue-100/80 hover:text-white transition-colors flex items-center gap-1">
                 <ArrowRight className="w-3 h-3 text-blue-300/60" />
                 <span>Categories</span>

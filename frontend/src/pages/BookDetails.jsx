@@ -48,7 +48,7 @@ export default function BookDetails() {
   const [shareFeedback, setShareFeedback] = useState(false);
 
   const { user } = useAuth();
-  const { addToCart } = useCart();
+  const { cart, addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { isBookInFlashSale, getDiscountedPrice, countdown: flashCountdown } = useFlashSale();
 
@@ -399,13 +399,13 @@ export default function BookDetails() {
                   </div>
                 </div>
 
-                {/* Purchase Button - Primary Add to Cart CTA */}
+                {/* Purchase Buttons - Add to Cart and View Cart */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     type="button"
                     className={`flex-1 py-3.5 px-6 rounded-xl text-sm sm:text-base font-bold cursor-pointer transition-all flex items-center justify-center text-white ${
                       isAdded
-                        ? 'bg-[#E05252] hover:bg-[#D44242]'
+                        ? 'bg-[#00A651] hover:bg-[#008f44]'
                         : 'bg-[#F40009] hover:bg-[#d00008]'
                     }`}
                     onClick={handleAddToCart}
@@ -422,6 +422,16 @@ export default function BookDetails() {
                       </>
                     )}
                   </button>
+
+                  {(isAdded || (cart && cart.some(item => item.id === book?.id))) && (
+                    <Link
+                      to="/cart"
+                      className="py-3.5 px-6 rounded-xl text-sm sm:text-base font-bold transition-all flex items-center justify-center bg-slate-900 hover:bg-black text-white cursor-pointer shadow-md flex-shrink-0"
+                    >
+                      <FiShoppingCart className="mr-2 w-4 h-4 text-[#1E90FF]" />
+                      <span>View Cart</span>
+                    </Link>
+                  )}
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">

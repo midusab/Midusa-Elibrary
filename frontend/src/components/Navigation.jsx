@@ -223,6 +223,24 @@ export default function Navigation() {
               <span>Shop</span>
             </Link>
 
+            {/* Direct Cart Navigation Link */}
+            <Link
+              to="/cart"
+              className={`hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 flex-shrink-0 ${
+                isActive('/cart')
+                  ? 'text-white bg-[#1E90FF] shadow-md shadow-[#1E90FF]/25 border border-[#1E90FF]'
+                  : 'text-slate-700 hover:text-[#1E90FF] hover:bg-white/90 border border-white/80 liquid-glass-pill'
+              }`}
+            >
+              <ShoppingCart className="w-3.5 h-3.5" />
+              <span>Cart</span>
+              {cartCount > 0 && (
+                <span className="bg-[#1E90FF] text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ml-0.5">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+
             {/* Extended Width Search Bar with Liquid Glass High Refraction */}
             <div
               className="flex-1 w-full relative hidden sm:flex"
@@ -530,6 +548,25 @@ export default function Navigation() {
                 <span>Wishlist ({wishlistCount})</span>
               </span>
               <ArrowRight className="w-4 h-4 text-slate-400" />
+            </Link>
+
+            <Link
+              to="/cart"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-blue-50/60 transition-colors"
+            >
+              <span className="flex items-center gap-2.5">
+                <ShoppingCart className={`w-4 h-4 ${cartCount > 0 ? 'text-[#1E90FF]' : 'text-slate-400'}`} />
+                <span className="font-bold text-slate-900">Shopping Cart</span>
+              </span>
+              <div className="flex items-center gap-2">
+                {cartCount > 0 && (
+                  <span className="bg-[#1E90FF] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                    {cartCount}
+                  </span>
+                )}
+                <ArrowRight className="w-4 h-4 text-slate-400" />
+              </div>
             </Link>
 
             {user ? (
