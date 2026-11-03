@@ -308,7 +308,9 @@ async function checkPaymentStatus(identifier, user = null) {
         checkoutRequestId: payment.checkout_request_id,
       });
 
-      if (queryResult.resultCode === 0) {
+      const numericResultCode = Number(queryResult.resultCode);
+
+      if (numericResultCode === 0) {
         // ✅ Confirmed success via STK query — mark completed and grant access
         await prisma.payments.update({
           where: { id: payment.id },
@@ -356,19 +358,70 @@ async function checkPaymentStatus(identifier, user = null) {
           }
         }
         payment.status = 'completed';
+      } else if (
+        numericResultCode === 1032 || // Cancelled by user on mobile phone
+        numericResultCode === 1 ||    // Insufficient funds
+        numericResultCode === 2001 || // Invalid initiator
+        numericResultCode === 1037 || // Timeout / DS unreachable
+        String(queryResult.resultDesc || '').toLowerCase().includes('cancel')
+      ) {
+        // ❌ Explicit user cancellation or terminal error from Safaricom STK Push
+        await prisma.payments.update({
+          where: { id: payment.id },
+          data: {
+            status: 'failed',
+            result_code: numericResultCode,
+            result_desc: queryResult.resultDesc || 'Payment cancelled by user',
+          },
+        });
+
+        if (payment.order_id) {
+          await prisma.orders.update({
+            where: { id: payment.order_id },
+            data: { status: 'failed' },
+          });
+        }
+        payment.status = 'failed';
+        payment.result_desc = queryResult.resultDesc || 'Payment cancelled by user';
       }
-      // ⚠️  DO NOT mark as 'failed' here based on query result codes.
-      // Non-zero query codes (e.g. 1032, 2001, 1) can fire while the
-      // transaction is still being processed on Safaricom's side —
-      // particularly in the window between PIN entry and callback delivery.
-      // The Safaricom webhook callback (handleMpesaCallback) is the ONLY
-      // authoritative source for a 'failed' status. Marking here causes a
-      // race condition where a valid paid transaction gets shown as
-      // "Payment Cancelled" on the frontend while the book is already granted.
     } catch (queryErr) {
-      // In sandbox or during pending phase, queries may return error while user hasn't entered PIN yet
+      // If error message explicitly confirms user cancellation, mark as failed
+      const msg = String(queryErr.message || '').toLowerCase();
+      if (msg.includes('cancel') || msg.includes('1032')) {
+        await prisma.payments.update({
+          where: { id: payment.id },
+          data: {
+            status: 'failed',
+            result_desc: 'Payment cancelled by user',
+          },
+        }).catch(() => {});
+        if (payment.order_id) {
+          await prisma.orders.update({
+            where: { id: payment.order_id },
+            data: { status: 'failed' },
+          });
+        }
+        payment.status = 'failed';
+        payment.result_desc = 'Payment cancelled by user';
+      }
       console.log('STK Query status check info:', queryErr.message);
     }
+  }
+
+  // 🔒 CRITICAL: Sanitize returned order items so pdf_url is NEVER leaked unless payment is confirmed completed
+  if (payment?.orders?.items && Array.isArray(payment.orders.items)) {
+    const isCompleted = payment.status === 'completed';
+    payment.orders.items = payment.orders.items.map(item => ({
+      ...item,
+      books: item.books ? {
+        id: item.books.id,
+        title: item.books.title,
+        author: item.books.author,
+        cover_url: item.books.cover_url,
+        price: item.books.price,
+        pdf_url: isCompleted ? item.books.pdf_url : null,
+      } : null,
+    }));
   }
 
   return payment;

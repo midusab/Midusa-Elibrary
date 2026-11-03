@@ -190,19 +190,21 @@ export default function Checkout() {
           setIsPolling(false);
           setConfirmedReceipt(payment.mpesa_receipt_number || payment.mpesaReceipt || null);
           
-          // Verified books from completed payment
-          const confirmedBooks = (payment.orders?.items || []).map((it) => ({
-            id: it.book_id || it.books?.id,
-            title: it.books?.title || 'Book',
-            pdfUrl: it.books?.pdf_url || null,
-            coverImage: it.books?.cover_url || null,
-          }));
+          // Verified books from completed payment with confirmed PDF links
+          const confirmedBooks = (payment.orders?.items || [])
+            .map((it) => ({
+              id: it.book_id || it.books?.id,
+              title: it.books?.title || 'Book',
+              pdfUrl: it.books?.pdf_url || null,
+              coverImage: it.books?.cover_url || null,
+            }))
+            .filter((b) => Boolean(b.pdfUrl));
 
-          setPurchasedBooks(confirmedBooks.length > 0 ? confirmedBooks : books);
+          setPurchasedBooks(confirmedBooks);
           setOrderComplete(true);
           clearCart();
           success('Payment confirmed! Your books are ready to download.');
-        } else if (payment.status === 'failed' && count >= 5) {
+        } else if (payment.status === 'failed') {
           clearInterval(pollIntervalRef.current);
           setIsPolling(false);
           setPaymentFailed(true);
@@ -280,6 +282,8 @@ export default function Checkout() {
     setPendingPaymentId(null);
     setIsPolling(false);
     setPollCount(0);
+    setPurchasedBooks([]);
+    setOrderComplete(false);
   };
 
   // ── Empty cart ─────────────────────────────────────────────────────────────

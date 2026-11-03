@@ -115,19 +115,20 @@ export default function Dashboard({ initialTab }) {
           // 1. Direct verified purchases from /orders/my-purchases (checked against prisma.purchases table)
           if (Array.isArray(purchasesRes)) {
             purchasesRes.forEach((p) => {
-              if (p && p.id && !verifiedMap.has(p.id)) {
+              if (p && p.id && !verifiedMap.has(p.id) && p.pdfUrl) {
                 verifiedMap.set(p.id, p);
               }
             });
           }
 
-          // 2. Only completed orders (status === 'completed' or status === 'success')
+          // 2. Only completed orders with a confirmed M-Pesa receipt and valid pdfUrl
           ordersList.forEach((order) => {
             const status = String(order.status || '').toLowerCase();
-            if (status === 'completed' || status === 'success') {
+            const hasReceipt = Boolean(order.mpesaReceipt || order.payment?.mpesaReceipt);
+            if ((status === 'completed' || status === 'success') && hasReceipt) {
               (order.items || []).forEach((item) => {
                 const b = item.book;
-                if (b && b.id && !verifiedMap.has(b.id)) {
+                if (b && b.id && b.pdfUrl && !verifiedMap.has(b.id)) {
                   verifiedMap.set(b.id, b);
                 }
               });

@@ -146,16 +146,22 @@ const createOrder = async (req, res) => {
       userId: order.user_id,
       createdAt: order.created_at,
       updatedAt: order.updated_at,
-      items: (order.items || []).map(it => ({
-        ...it,
-        bookId: it.book_id,
-        book: it.books ? {
-          ...it.books,
-          coverImage: it.books.cover_url,
-          // CRITICAL: NEVER leak pdfUrl before payment confirmation
-          pdfUrl: null
-        } : null
-      })),
+      items: (order.items || []).map(it => {
+        const { books, ...rest } = it;
+        return {
+          ...rest,
+          bookId: it.book_id,
+          book: books ? {
+            id: books.id,
+            title: books.title,
+            author: books.author,
+            price: books.price,
+            coverImage: books.cover_url,
+            // CRITICAL: NEVER leak pdfUrl before payment confirmation
+            pdfUrl: null
+          } : null
+        };
+      }),
       // Payment tracking info for frontend polling
       payment: paymentInfo,
     };
@@ -219,13 +225,17 @@ const getUserOrders = async (req, res) => {
         } : null,
         items: (order.items || []).map(it => {
           const isPaid = order.status === 'completed' || order.status === 'success';
+          const { books, ...rest } = it;
           return {
-            ...it,
+            ...rest,
             bookId: it.book_id,
-            book: it.books ? {
-              ...it.books,
-              coverImage: it.books.cover_url,
-              pdfUrl: isPaid ? it.books.pdf_url : null
+            book: books ? {
+              id: books.id,
+              title: books.title,
+              author: books.author,
+              price: books.price,
+              coverImage: books.cover_url,
+              pdfUrl: isPaid ? books.pdf_url : null
             } : null
           };
         })
@@ -277,15 +287,21 @@ const getOrderById = async (req, res) => {
       userId: order.user_id,
       createdAt: order.created_at,
       updatedAt: order.updated_at,
-      items: (order.items || []).map(it => ({
-        ...it,
-        bookId: it.book_id,
-        book: it.books ? {
-          ...it.books,
-          coverImage: it.books.cover_url,
-          pdfUrl: isPaid ? it.books.pdf_url : null
-        } : null
-      }))
+      items: (order.items || []).map(it => {
+        const { books, ...rest } = it;
+        return {
+          ...rest,
+          bookId: it.book_id,
+          book: books ? {
+            id: books.id,
+            title: books.title,
+            author: books.author,
+            price: books.price,
+            coverImage: books.cover_url,
+            pdfUrl: isPaid ? books.pdf_url : null
+          } : null
+        };
+      })
     };
 
     res.json(formattedOrder);
@@ -352,14 +368,21 @@ const getAllOrders = async (req, res) => {
       user: order.users,
       createdAt: order.created_at,
       updatedAt: order.updated_at,
-      items: (order.items || []).map(it => ({
-        ...it,
-        book: it.books ? {
-          ...it.books,
-          coverImage: it.books.cover_url,
-          pdfUrl: it.books.pdf_url
-        } : null
-      }))
+      items: (order.items || []).map(it => {
+        const { books, ...rest } = it;
+        return {
+          ...rest,
+          bookId: it.book_id,
+          book: books ? {
+            id: books.id,
+            title: books.title,
+            author: books.author,
+            price: books.price,
+            coverImage: books.cover_url,
+            pdfUrl: books.pdf_url
+          } : null
+        };
+      })
     }));
 
     res.json({
