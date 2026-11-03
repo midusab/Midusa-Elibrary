@@ -247,6 +247,16 @@ async function handleMpesaCallback(callbackBody) {
       });
     }
 
+    // 🔒 PURGE any purchases linked to this failed order or payment
+    await prisma.purchases.deleteMany({
+      where: {
+        OR: [
+          ...(payment.order_id ? [{ order_id: payment.order_id }] : []),
+          { payment_id: payment.id }
+        ]
+      }
+    }).catch(() => {});
+
     return { success: true, status: 'failed', reason: ResultDesc };
   }
 }
@@ -381,6 +391,17 @@ async function checkPaymentStatus(identifier, user = null) {
             data: { status: 'failed' },
           });
         }
+
+        // 🔒 PURGE any purchases linked to this cancelled/failed order or payment
+        await prisma.purchases.deleteMany({
+          where: {
+            OR: [
+              ...(payment.order_id ? [{ order_id: payment.order_id }] : []),
+              { payment_id: payment.id }
+            ]
+          }
+        }).catch(() => {});
+
         payment.status = 'failed';
         payment.result_desc = queryResult.resultDesc || 'Payment cancelled by user';
       }
@@ -401,6 +422,14 @@ async function checkPaymentStatus(identifier, user = null) {
             data: { status: 'failed' },
           });
         }
+        await prisma.purchases.deleteMany({
+          where: {
+            OR: [
+              ...(payment.order_id ? [{ order_id: payment.order_id }] : []),
+              { payment_id: payment.id }
+            ]
+          }
+        }).catch(() => {});
         payment.status = 'failed';
         payment.result_desc = 'Payment cancelled by user';
       }

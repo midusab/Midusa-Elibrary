@@ -53,7 +53,7 @@ export default function UserOrdersTab({ orders = [], isLoading = false }) {
   };
 
   const completedOrders = orders.filter(
-    (o) => o.status === 'completed' || o.status === 'success'
+    (o) => (o.status === 'completed' || o.status === 'success') && Boolean(o.mpesaReceipt || o.payment?.mpesaReceipt)
   );
   const totalSpent = completedOrders.reduce((sum, o) => sum + parseFloat(o.amount || 0), 0);
   const totalBooksAcquired = completedOrders.reduce(
@@ -176,8 +176,8 @@ export default function UserOrdersTab({ orders = [], isLoading = false }) {
       ) : (
         <div className="space-y-4">
           {filteredOrders.map((order) => {
-            const isPaid = order.status === 'completed' || order.status === 'success';
             const mpesaReceipt = order.mpesaReceipt || order.payment?.mpesaReceipt;
+            const isPaid = (order.status === 'completed' || order.status === 'success') && Boolean(mpesaReceipt);
             const phoneNumber = order.phoneNumber || order.payment?.phoneNumber;
             const dateStr = order.createdAt
               ? new Date(order.createdAt).toLocaleString(undefined, {

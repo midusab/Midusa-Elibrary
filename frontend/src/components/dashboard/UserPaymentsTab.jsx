@@ -180,8 +180,8 @@ export default function UserPaymentsTab({ orders = [], isLoading = false }) {
       ) : (
         <div className="space-y-4">
           {filteredOrders.map((order) => {
-            const isPaid = order.status === 'completed' || order.status === 'success';
             const mpesaReceipt = order.mpesaReceipt || order.payment?.mpesaReceipt;
+            const isPaid = (order.status === 'completed' || order.status === 'success') && Boolean(mpesaReceipt);
             const phoneNumber = order.phoneNumber || order.payment?.phoneNumber;
             const dateStr = order.createdAt
               ? new Date(order.createdAt).toLocaleString(undefined, {

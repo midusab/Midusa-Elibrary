@@ -109,34 +109,11 @@ export default function Dashboard({ initialTab }) {
           const ordersList = Array.isArray(ordersRes) ? ordersRes : [];
           setUserOrders(ordersList);
 
-          // Strictly build purchased books from verified sources
-          const verifiedMap = new Map();
-
-          // 1. Direct verified purchases from /orders/my-purchases (checked against prisma.purchases table)
-          if (Array.isArray(purchasesRes)) {
-            purchasesRes.forEach((p) => {
-              if (p && p.id && !verifiedMap.has(p.id) && p.pdfUrl) {
-                verifiedMap.set(p.id, p);
-              }
-            });
-          }
-
-          // 2. Only completed orders with a confirmed M-Pesa receipt and valid pdfUrl
-          ordersList.forEach((order) => {
-            const status = String(order.status || '').toLowerCase();
-            const hasReceipt = Boolean(order.mpesaReceipt || order.payment?.mpesaReceipt);
-            if ((status === 'completed' || status === 'success') && hasReceipt) {
-              (order.items || []).forEach((item) => {
-                const b = item.book;
-                if (b && b.id && b.pdfUrl && !verifiedMap.has(b.id)) {
-                  verifiedMap.set(b.id, b);
-                }
-              });
-            }
-          });
-
-          // Unpaid, pending, cancelled, or failed orders will NEVER grant books
-          setPurchasedBooks(Array.from(verifiedMap.values()));
+          // Strictly build purchased books ONLY from verified purchases in prisma.purchases
+          const verifiedBooks = (Array.isArray(purchasesRes) ? purchasesRes : []).filter(
+            (p) => Boolean(p && p.id && p.pdfUrl)
+          );
+          setPurchasedBooks(verifiedBooks);
         }
       } catch (err) {
         console.error('Error fetching user orders and purchases:', err);

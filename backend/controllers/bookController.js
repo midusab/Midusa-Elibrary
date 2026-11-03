@@ -644,10 +644,28 @@ const verifyBookAccess = async (req, res) => {
       where: {
         user_id: dbUserId,
         book_id: id
+      },
+      include: {
+        orders: { select: { status: true } },
+        payments: { select: { status: true, result_code: true } }
       }
     });
 
     if (purchase) {
+      // 🔒 Reject access if linked payment or order is not completed
+      if (purchase.payments && (purchase.payments.status !== 'completed' || purchase.payments.result_code !== 0)) {
+        return res.status(403).json({
+          hasAccess: false,
+          error: 'Access denied. Purchase payment is not completed.'
+        });
+      }
+      if (purchase.orders && (purchase.orders.status === 'failed' || purchase.orders.status === 'cancelled' || purchase.orders.status === 'pending')) {
+        return res.status(403).json({
+          hasAccess: false,
+          error: 'Access denied. Purchase order was not completed.'
+        });
+      }
+
       return res.json({
         hasAccess: true,
         reason: 'purchased',

@@ -416,26 +416,45 @@ const getUserPurchases = async (req, res) => {
           include: {
             categories: true
           }
+        },
+        orders: {
+          select: {
+            status: true
+          }
+        },
+        payments: {
+          select: {
+            status: true,
+            result_code: true
+          }
         }
       },
       orderBy: { created_at: 'desc' }
     });
 
-    const books = purchases
-      .filter(p => Boolean(p.books))
-      .map(p => ({
-        id: p.books.id,
-        title: p.books.title,
-        author: p.books.author,
-        description: p.books.description || '',
-        category: p.books.categories?.name || '',
-        coverImage: p.books.cover_url || '',
-        pdfUrl: p.books.pdf_url || '',
-        price: p.books.price,
-        rating: p.books.rating ? parseFloat(p.books.rating) : 0,
-        purchasedAt: p.created_at,
-        purchaseId: p.id
-      }));
+    // 🔒 STRICT VERIFICATION: Exclude any purchase linked to an unconfirmed, failed, or cancelled order/payment
+    const validPurchases = purchases.filter(p => {
+      if (!p.books || !p.books.pdf_url) return false;
+      // If linked to payment, payment MUST be completed with result_code 0
+      if (p.payments && (p.payments.status !== 'completed' || p.payments.result_code !== 0)) return false;
+      // If linked to order, order MUST NOT be failed or cancelled or pending
+      if (p.orders && (p.orders.status === 'failed' || p.orders.status === 'cancelled' || p.orders.status === 'pending')) return false;
+      return true;
+    });
+
+    const books = validPurchases.map(p => ({
+      id: p.books.id,
+      title: p.books.title,
+      author: p.books.author,
+      description: p.books.description || '',
+      category: p.books.categories?.name || '',
+      coverImage: p.books.cover_url || '',
+      pdfUrl: p.books.pdf_url || '',
+      price: p.books.price,
+      rating: p.books.rating ? parseFloat(p.books.rating) : 0,
+      purchasedAt: p.created_at,
+      purchaseId: p.id
+    }));
 
     res.json(books);
   } catch (error) {
