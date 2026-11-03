@@ -126,3 +126,20 @@ export async function updateOrderStatus(orderId, status, token) {
   }
   return res.json();
 }
+
+/**
+ * Delete an order from history (only non-completed orders)
+ */
+export async function deleteOrder(orderId, token) {
+  const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+    method: 'DELETE',
+    headers: {
+      ...authHeader(token)
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to delete order');
+  }
+  return res.json();
+}

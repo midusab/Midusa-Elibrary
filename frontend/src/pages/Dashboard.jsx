@@ -460,6 +460,9 @@ export default function Dashboard({ initialTab }) {
             orders={userOrders}
             isLoading={isLoadingOrders}
             user={user}
+            onOrderDeleted={(deletedId) =>
+              setUserOrders((prev) => prev.filter((o) => o.id !== deletedId))
+            }
           />
         )}
 

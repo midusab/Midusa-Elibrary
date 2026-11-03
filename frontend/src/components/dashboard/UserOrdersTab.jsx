@@ -8,22 +8,43 @@ import {
   FiDownload,
   FiBookOpen,
   FiCheck,
-  FiCopy
+  FiCopy,
+  FiTrash2,
+  FiLock
 } from 'react-icons/fi';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { formatPrice } from '../../utils/currency';
 import { resolveCoverUrl } from '../../utils/imageUrl';
+import { deleteOrder } from '../../services/api/ordersApi';
+import { useAuth } from '../../context/AuthContext';
 
-export default function UserOrdersTab({ orders = [], isLoading = false }) {
+export default function UserOrdersTab({ orders = [], isLoading = false, onOrderDeleted }) {
+  const { session } = useAuth();
+  const token = session?.access_token;
   const [filter, setFilter] = useState('all');
   const [copiedReceipt, setCopiedReceipt] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const handleCopyReceipt = (code) => {
     if (!code) return;
     navigator.clipboard.writeText(code);
     setCopiedReceipt(code);
     setTimeout(() => setCopiedReceipt(null), 2000);
+  };
+
+  const handleDelete = async (orderId) => {
+    try {
+      setDeletingId(orderId);
+      await deleteOrder(orderId, token);
+      setConfirmDeleteId(null);
+      if (onOrderDeleted) onOrderDeleted(orderId);
+    } catch (err) {
+      alert(err.message || 'Failed to delete order');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -220,6 +241,41 @@ export default function UserOrdersTab({ orders = [], isLoading = false }) {
                     <span className="text-base font-extrabold text-slate-900">
                       {formatPrice(order.amount)}
                     </span>
+
+                    {/* Delete / Lock button */}
+                    {isPaid ? (
+                      <span
+                        title="Completed orders cannot be deleted"
+                        className="p-1.5 rounded-md text-slate-300 cursor-not-allowed"
+                      >
+                        <FiLock className="w-3.5 h-3.5" />
+                      </span>
+                    ) : confirmDeleteId === order.id ? (
+                      <span className="flex items-center gap-1.5 text-xs">
+                        <span className="text-slate-500 font-medium">Remove?</span>
+                        <button
+                          onClick={() => handleDelete(order.id)}
+                          disabled={deletingId === order.id}
+                          className="px-2 py-0.5 rounded bg-rose-600 text-white text-[11px] font-bold hover:bg-rose-700 disabled:opacity-50 cursor-pointer"
+                        >
+                          {deletingId === order.id ? '...' : 'Yes'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-bold hover:bg-slate-200 cursor-pointer"
+                        >
+                          No
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(order.id)}
+                        title="Remove from history"
+                        className="p-1.5 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
+                      >
+                        <FiTrash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
 

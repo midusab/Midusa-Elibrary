@@ -463,11 +463,55 @@ const getUserPurchases = async (req, res) => {
   }
 };
 
+// Delete an order from history (user-initiated, non-completed orders only)
+const deleteUserOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id || !isUuid(id)) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const dbUserId = await resolveDbUserId(req.user);
+    if (!dbUserId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Fetch the order and confirm ownership
+    const order = await prisma.orders.findFirst({
+      where: { id, user_id: dbUserId }
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Block deletion of completed/paid orders — they are permanent receipts
+    if (order.status === 'completed' || order.status === 'success') {
+      return res.status(403).json({
+        error: 'Completed orders cannot be deleted. They serve as your permanent payment receipt.'
+      });
+    }
+
+    // Delete related records first (order_items, payments) then the order
+    await prisma.$transaction([
+      prisma.order_items.deleteMany({ where: { order_id: id } }),
+      prisma.payments.deleteMany({ where: { order_id: id } }),
+      prisma.orders.delete({ where: { id } }),
+    ]);
+
+    res.json({ success: true, message: 'Order removed from history.' });
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    res.status(500).json({ error: 'Failed to delete order' });
+  }
+};
+
 module.exports = {
   createOrder,
   getUserOrders,
   getUserPurchases,
   getOrderById,
   updateOrderStatus,
-  getAllOrders
+  getAllOrders,
+  deleteUserOrder
 };

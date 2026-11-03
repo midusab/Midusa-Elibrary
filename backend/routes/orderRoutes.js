@@ -8,6 +8,7 @@ router.post('/', optionalAuth, orderController.createOrder);
 router.get('/my-orders', auth, orderController.getUserOrders);
 router.get('/my-purchases', auth, orderController.getUserPurchases);
 router.get('/:id', auth, orderController.getOrderById);
+router.delete('/:id', auth, orderController.deleteUserOrder);
 
 // Admin only routes
 router.get('/admin/all', adminAuth, orderController.getAllOrders);
