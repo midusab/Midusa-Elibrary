@@ -42,6 +42,28 @@ export async function getUserOrders(token) {
 }
 
 /**
+ * Fetch current user verified purchased books from backend
+ */
+export async function getUserPurchases(token) {
+  if (!token) return [];
+  try {
+    const res = await fetch(`${API_BASE_URL}/orders/my-purchases`, {
+      headers: {
+        ...authHeader(token)
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+    return [];
+  } catch (err) {
+    console.error('Error fetching user purchases:', err);
+    return [];
+  }
+}
+
+/**
  * Fetch single order by ID
  */
 export async function getOrderById(id, token) {

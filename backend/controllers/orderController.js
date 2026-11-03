@@ -152,7 +152,8 @@ const createOrder = async (req, res) => {
         book: it.books ? {
           ...it.books,
           coverImage: it.books.cover_url,
-          pdfUrl: it.books.pdf_url
+          // CRITICAL: NEVER leak pdfUrl before payment confirmation
+          pdfUrl: null
         } : null
       })),
       // Payment tracking info for frontend polling
@@ -216,15 +217,18 @@ const getUserOrders = async (req, res) => {
           transactionDate: latestPayment.transaction_date,
           resultDesc: latestPayment.result_desc,
         } : null,
-        items: (order.items || []).map(it => ({
-          ...it,
-          bookId: it.book_id,
-          book: it.books ? {
-            ...it.books,
-            coverImage: it.books.cover_url,
-            pdfUrl: it.books.pdf_url
-          } : null
-        }))
+        items: (order.items || []).map(it => {
+          const isPaid = order.status === 'completed' || order.status === 'success';
+          return {
+            ...it,
+            bookId: it.book_id,
+            book: it.books ? {
+              ...it.books,
+              coverImage: it.books.cover_url,
+              pdfUrl: isPaid ? it.books.pdf_url : null
+            } : null
+          };
+        })
       };
     });
 
@@ -267,6 +271,7 @@ const getOrderById = async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
+    const isPaid = order.status === 'completed' || order.status === 'success' || isAdmin;
     const formattedOrder = {
       ...order,
       userId: order.user_id,
@@ -278,7 +283,7 @@ const getOrderById = async (req, res) => {
         book: it.books ? {
           ...it.books,
           coverImage: it.books.cover_url,
-          pdfUrl: it.books.pdf_url
+          pdfUrl: isPaid ? it.books.pdf_url : null
         } : null
       }))
     };

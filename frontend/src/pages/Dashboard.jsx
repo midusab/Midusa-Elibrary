@@ -8,7 +8,7 @@ import Card from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useWishlist } from '../context/WishlistContext';
-import { getBooks, createBook, getUserOrders, uploadPdf } from '../services/api';
+import { getBooks, createBook, getUserOrders, getUserPurchases, uploadPdf } from '../services/api';
 import { useCategories } from '../context/CategoryContext';
 
 // Modular Dashboard Tab Components
@@ -29,6 +29,7 @@ export default function Dashboard({ initialTab }) {
   const [activeTab, setActiveTab] = useState(initialTab || queryTab || location.state?.tab || 'profile');
   const [books, setBooks] = useState([]);
   const [userOrders, setUserOrders] = useState([]);
+  const [purchasedBooks, setPurchasedBooks] = useState([]);
   const [isLoadingBooks, setIsLoadingBooks] = useState(true);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,25 +92,59 @@ export default function Dashboard({ initialTab }) {
   useEffect(() => {
     let isMounted = true;
 
-    async function fetchOrders() {
+    async function fetchUserData() {
       if (!user?.token) {
         setUserOrders([]);
+        setPurchasedBooks([]);
         return;
       }
       setIsLoadingOrders(true);
       try {
-        const orders = await getUserOrders(user.token);
+        const [ordersRes, purchasesRes] = await Promise.all([
+          getUserOrders(user.token).catch(() => []),
+          getUserPurchases(user.token).catch(() => [])
+        ]);
+
         if (isMounted) {
-          setUserOrders(Array.isArray(orders) ? orders : []);
+          const ordersList = Array.isArray(ordersRes) ? ordersRes : [];
+          setUserOrders(ordersList);
+
+          // Strictly build purchased books from verified sources
+          const verifiedMap = new Map();
+
+          // 1. Direct verified purchases from /orders/my-purchases (checked against prisma.purchases table)
+          if (Array.isArray(purchasesRes)) {
+            purchasesRes.forEach((p) => {
+              if (p && p.id && !verifiedMap.has(p.id)) {
+                verifiedMap.set(p.id, p);
+              }
+            });
+          }
+
+          // 2. Only completed orders (status === 'completed' or status === 'success')
+          ordersList.forEach((order) => {
+            const status = String(order.status || '').toLowerCase();
+            if (status === 'completed' || status === 'success') {
+              (order.items || []).forEach((item) => {
+                const b = item.book;
+                if (b && b.id && !verifiedMap.has(b.id)) {
+                  verifiedMap.set(b.id, b);
+                }
+              });
+            }
+          });
+
+          // Unpaid, pending, cancelled, or failed orders will NEVER grant books
+          setPurchasedBooks(Array.from(verifiedMap.values()));
         }
       } catch (err) {
-        console.error('Error fetching user orders:', err);
+        console.error('Error fetching user orders and purchases:', err);
       } finally {
         if (isMounted) setIsLoadingOrders(false);
       }
     }
 
-    fetchOrders();
+    fetchUserData();
 
     return () => {
       isMounted = false;
@@ -249,31 +284,6 @@ export default function Dashboard({ initialTab }) {
     );
   }
 
-  // Derive purchased books ready for download from user orders
-  const purchasedBooksMap = new Map();
-  userOrders.forEach((order) => {
-    // If order is completed or has items
-    if (order.status === 'completed' || order.status === 'success') {
-      (order.items || []).forEach((item) => {
-        const b = item.book;
-        if (b && b.id && !purchasedBooksMap.has(b.id)) {
-          purchasedBooksMap.set(b.id, b);
-        }
-      });
-    }
-  });
-  // Fallback: if user has orders, also include them if no completed filter matched yet
-  if (purchasedBooksMap.size === 0 && userOrders.length > 0) {
-    userOrders.forEach((order) => {
-      (order.items || []).forEach((item) => {
-        const b = item.book;
-        if (b && b.id && !purchasedBooksMap.has(b.id)) {
-          purchasedBooksMap.set(b.id, b);
-        }
-      });
-    });
-  }
-  const purchasedBooks = Array.from(purchasedBooksMap.values());
   const favoriteBooks = wishlist || [];
 
   return (

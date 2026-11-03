@@ -780,99 +780,94 @@ async function validateReceiptCode({ userId, orderId, receiptCode, phoneNumber }
     };
   }
 
-  // 2. If payment record is not yet in DB, but order exists and is pending:
+  // 2. If payment record is not yet in DB, check if order has a pending STK push to query Safaricom
   if (order) {
     const pendingPayment = await prisma.payments.findFirst({
       where: { order_id: order.id, status: 'pending' },
       orderBy: { created_at: 'desc' },
     });
 
-    let formattedPhone = null;
-    try {
-      if (phoneNumber) formattedPhone = mpesa.formatPhoneNumber(phoneNumber);
-    } catch (e) {}
+    if (pendingPayment?.checkout_request_id) {
+      try {
+        const queryResult = await mpesa.stkPushQuery({
+          checkoutRequestId: pendingPayment.checkout_request_id,
+        });
 
-    let updatedPayment;
-    if (pendingPayment) {
-      updatedPayment = await prisma.payments.update({
-        where: { id: pendingPayment.id },
-        data: {
-          status: 'completed',
-          mpesa_receipt_number: cleanReceipt,
-          phone_number: formattedPhone || pendingPayment.phone_number,
-          result_code: 0,
-          result_desc: 'Validated via M-Pesa receipt code',
-          transaction_date: new Date(),
-        },
-      });
-    } else {
-      updatedPayment = await prisma.payments.create({
-        data: {
-          order_id: order.id,
-          user_id: userId || order.user_id,
-          amount: order.amount || 0,
-          currency: 'KES',
-          payment_method: 'mpesa_buygoods',
-          status: 'completed',
-          phone_number: formattedPhone,
-          mpesa_receipt_number: cleanReceipt,
-          result_code: 0,
-          result_desc: 'Validated via M-Pesa receipt code',
-          transaction_date: new Date(),
-        },
-      });
-    }
+        if (queryResult.resultCode === 0) {
+          // Confirmed success via Daraja STK Push Query
+          let formattedPhone = null;
+          try {
+            if (phoneNumber) formattedPhone = mpesa.formatPhoneNumber(phoneNumber);
+          } catch (e) {}
 
-    await prisma.orders.update({
-      where: { id: order.id },
-      data: { status: 'completed' },
-    });
-
-    const orderItems = await prisma.order_items.findMany({
-      where: { order_id: order.id },
-    });
-
-    const effectiveUserId = userId || order.user_id;
-    if (effectiveUserId && orderItems.length > 0) {
-      for (const item of orderItems) {
-        try {
-          await prisma.purchases.upsert({
-            where: {
-              user_id_book_id: {
-                user_id: effectiveUserId,
-                book_id: item.book_id,
-              },
-            },
-            update: {
-              order_id: order.id,
-              payment_id: updatedPayment.id,
-              price: item.price || 0,
-            },
-            create: {
-              user_id: effectiveUserId,
-              book_id: item.book_id,
-              order_id: order.id,
-              payment_id: updatedPayment.id,
-              price: item.price || 0,
+          const updatedPayment = await prisma.payments.update({
+            where: { id: pendingPayment.id },
+            data: {
+              status: 'completed',
+              mpesa_receipt_number: cleanReceipt,
+              phone_number: formattedPhone || pendingPayment.phone_number,
+              result_code: 0,
+              result_desc: queryResult.resultDesc || 'Confirmed via Daraja STK query',
+              transaction_date: new Date(),
             },
           });
-          await updateBookBestsellerStatus(item.book_id);
-        } catch (e) {}
+
+          await prisma.orders.update({
+            where: { id: order.id },
+            data: { status: 'completed' },
+          });
+
+          const orderItems = await prisma.order_items.findMany({
+            where: { order_id: order.id },
+          });
+
+          const effectiveUserId = userId || order.user_id;
+          if (effectiveUserId && orderItems.length > 0) {
+            for (const item of orderItems) {
+              try {
+                await prisma.purchases.upsert({
+                  where: {
+                    user_id_book_id: {
+                      user_id: effectiveUserId,
+                      book_id: item.book_id,
+                    },
+                  },
+                  update: {
+                    order_id: order.id,
+                    payment_id: updatedPayment.id,
+                    price: item.price || 0,
+                  },
+                  create: {
+                    user_id: effectiveUserId,
+                    book_id: item.book_id,
+                    order_id: order.id,
+                    payment_id: updatedPayment.id,
+                    price: item.price || 0,
+                  },
+                });
+                await updateBookBestsellerStatus(item.book_id);
+              } catch (e) {}
+            }
+          }
+
+          return {
+            success: true,
+            validated: true,
+            status: 'completed',
+            receiptNumber: cleanReceipt,
+            amount: updatedPayment.amount,
+            message: 'Payment validated successfully! Your books are ready to download.',
+            payment: updatedPayment,
+          };
+        }
+      } catch (queryErr) {
+        console.warn('STK Query status check error in receipt validation:', queryErr.message);
       }
     }
-
-    return {
-      success: true,
-      validated: true,
-      status: 'completed',
-      receiptNumber: cleanReceipt,
-      amount: updatedPayment.amount,
-      message: 'Payment validated successfully! Your books are ready to download.',
-      payment: updatedPayment,
-    };
   }
 
-  throw new Error('No matching pending order found. Please checkout your cart first, then validate the payment code.');
+  // If unconfirmed by Safaricom webhook or STK query, reject
+  throw new Error(`We could not verify payment for M-Pesa receipt "${cleanReceipt}". Please ensure you approved the prompt on your phone and completed payment, or wait 1-2 minutes for Safaricom to process.`);
 }
 
 /**

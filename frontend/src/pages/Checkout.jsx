@@ -189,7 +189,16 @@ export default function Checkout() {
           clearInterval(pollIntervalRef.current);
           setIsPolling(false);
           setConfirmedReceipt(payment.mpesa_receipt_number || payment.mpesaReceipt || null);
-          setPurchasedBooks(books || []);
+          
+          // Verified books from completed payment
+          const confirmedBooks = (payment.orders?.items || []).map((it) => ({
+            id: it.book_id || it.books?.id,
+            title: it.books?.title || 'Book',
+            pdfUrl: it.books?.pdf_url || null,
+            coverImage: it.books?.cover_url || null,
+          }));
+
+          setPurchasedBooks(confirmedBooks.length > 0 ? confirmedBooks : books);
           setOrderComplete(true);
           clearCart();
           success('Payment confirmed! Your books are ready to download.');
@@ -244,7 +253,6 @@ export default function Checkout() {
       const books = (orderResult.items || []).map((it) => ({
         id: it.bookId || it.book_id,
         title: it.book?.title || it.title || 'Book',
-        pdfUrl: it.book?.pdfUrl || it.book?.pdf_url || null,
         coverImage: it.book?.coverImage || it.book?.cover_url || null,
       }));
       const paymentId = orderResult.payment?.paymentId;
@@ -252,10 +260,10 @@ export default function Checkout() {
         setPendingPaymentId(paymentId);
         startPolling(paymentId, books);
       } else {
-        setPurchasedBooks(books);
-        setOrderComplete(true);
-        clearCart();
-        success('Order created! Books are available in your dashboard.');
+        throw new Error(
+          orderResult.payment?.customerMessage ||
+          'Unable to initiate M-Pesa payment prompt. Please verify your phone number and try again.'
+        );
       }
     } catch (err) {
       const msg = err.message || 'Unable to send M-PESA prompt. Please verify your phone number and try again.';

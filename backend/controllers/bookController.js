@@ -5,7 +5,7 @@ const { getCache, setCache, delCachePattern, pushAsyncTask } = require('../confi
  * Map a raw DB book row to the shape the frontend expects.
  * DB uses snake_case & category_id FK; frontend expects camelCase & category name string.
  */
-function formatBook(book) {
+function formatBook(book, includePdf = false) {
   const currentPrice = book.price || 0;
   const discountPercent = Number(book.discount) || 0;
   const originalPrice = discountPercent > 0
@@ -20,7 +20,8 @@ function formatBook(book) {
     description: book.description || '',
     category:    book.categories?.name || '',
     coverImage:  book.cover_url || '',
-    pdfUrl:      book.pdf_url || '',
+    pdfUrl:      includePdf ? (book.pdf_url || '') : '',
+    hasPdf:      Boolean(book.pdf_url),
     price:       currentPrice,
     originalPrice,
     discountPercent,
@@ -371,7 +372,7 @@ const createBook = async (req, res) => {
     // Invalidate book caches
     await delCachePattern('books:*');
 
-    res.status(201).json(formatBook(book));
+    res.status(201).json(formatBook(book, true));
   } catch (error) {
     console.error('Error creating book:', error);
     res.status(500).json({ error: error.message || 'Failed to create book' });
@@ -466,7 +467,7 @@ const updateBook = async (req, res) => {
     // Invalidate book caches
     await delCachePattern('books:*');
 
-    res.json(formatBook(book));
+    res.json(formatBook(book, true));
   } catch (error) {
     console.error('Error updating book:', error);
     res.status(500).json({ error: error.message || 'Failed to update book' });
@@ -622,7 +623,7 @@ const verifyBookAccess = async (req, res) => {
       return res.json({
         hasAccess: true,
         reason: 'admin',
-        book: formatBook(book)
+        book: formatBook(book, true)
       });
     }
 
@@ -651,7 +652,7 @@ const verifyBookAccess = async (req, res) => {
         hasAccess: true,
         reason: 'purchased',
         purchasedAt: purchase.created_at,
-        book: formatBook(book)
+        book: formatBook(book, true)
       });
     }
 
