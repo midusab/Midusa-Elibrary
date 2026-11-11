@@ -412,6 +412,86 @@ const getAnalytics = async (req, res) => {
       };
     });
 
+    // ─── 7. Monthly Revenue & Sales Analysis per Book ─────────────────────────
+    const monthlyRevenueByBook = {};
+    const monthsSet = new Set();
+
+    allOrders
+      .filter(o => o.status === 'completed')
+      .forEach(order => {
+        if (!order.created_at) return;
+        const d = new Date(order.created_at);
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const monthLabel = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        monthsSet.add(JSON.stringify({ key: monthKey, label: monthLabel }));
+
+        (order.items || []).forEach(item => {
+          const bId = item.book_id || item.books?.id;
+          if (!bId) return;
+
+          const title = item.books?.title || 'Unknown Title';
+          const author = item.books?.author || 'Unknown Author';
+          const cover = item.books?.cover_url || '';
+          const category = item.books?.categories?.name || 'Uncategorized';
+          const price = Number(item.price) || 0;
+          const qty = item.quantity || 1;
+          const lineRevenue = price * qty;
+
+          if (!monthlyRevenueByBook[bId]) {
+            monthlyRevenueByBook[bId] = {
+              id: bId,
+              title,
+              author,
+              category,
+              coverImage: cover,
+              price,
+              totalRevenue: 0,
+              totalUnits: 0,
+              monthlyData: {}
+            };
+          }
+
+          monthlyRevenueByBook[bId].totalRevenue += lineRevenue;
+          monthlyRevenueByBook[bId].totalUnits += qty;
+
+          if (!monthlyRevenueByBook[bId].monthlyData[monthKey]) {
+            monthlyRevenueByBook[bId].monthlyData[monthKey] = {
+              revenue: 0,
+              units: 0,
+              label: monthLabel
+            };
+          }
+          monthlyRevenueByBook[bId].monthlyData[monthKey].revenue += lineRevenue;
+          monthlyRevenueByBook[bId].monthlyData[monthKey].units += qty;
+        });
+      });
+
+    // Parse unique months sorted chronologically descending (latest first)
+    const availableMonths = Array.from(monthsSet)
+      .map(m => JSON.parse(m))
+      .sort((a, b) => b.key.localeCompare(a.key));
+
+    const monthlyRevenueReport = Object.values(monthlyRevenueByBook)
+      .sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+    // Aggregate monthly business totals for progress over time
+    const monthlyBusinessProgress = availableMonths.map(({ key, label }) => {
+      let monthRev = 0;
+      let monthUnits = 0;
+      monthlyRevenueReport.forEach(book => {
+        if (book.monthlyData[key]) {
+          monthRev += book.monthlyData[key].revenue;
+          monthUnits += book.monthlyData[key].units;
+        }
+      });
+      return {
+        monthKey: key,
+        label,
+        totalRevenue: monthRev,
+        totalUnits: monthUnits
+      };
+    });
+
     const analyticsResponse = {
       totalRevenue,
       totalSales,
@@ -472,7 +552,12 @@ const getAnalytics = async (req, res) => {
 
       // Charts data
       dailyTrends,
-      categoryStats
+      categoryStats,
+
+      // Monthly Revenue & Best Selling Books Analysis
+      monthlyRevenueReport,
+      monthlyBusinessProgress,
+      availableMonths
     };
 
     // Cache analytics for 30s

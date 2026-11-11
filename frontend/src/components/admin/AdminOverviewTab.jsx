@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   FiDollarSign,
   FiShoppingBag,
@@ -11,7 +12,8 @@ import {
   FiFilter,
   FiCalendar,
   FiClock,
-  FiCheckCircle
+  FiCheckCircle,
+  FiAward
 } from 'react-icons/fi';
 import Card from '../ui/Card';
 import { formatPrice } from '../../utils/currency';
@@ -22,10 +24,14 @@ export default function AdminOverviewTab({
   categories = [],
   books = []
 }) {
+  const [selectedMonth, setSelectedMonth] = useState('all');
   const dailyTrends = derivedStats.dailyTrends || [];
   const categoryStats = derivedStats.categoryStats || [];
   const weeklyTraffic = derivedStats.weeklyTraffic || null;
   const monthlyReport = derivedStats.monthlyTrafficReport || null;
+  const monthlyRevenueReport = derivedStats.monthlyRevenueReport || [];
+  const monthlyBusinessProgress = derivedStats.monthlyBusinessProgress || [];
+  const availableMonths = derivedStats.availableMonths || [];
 
   // Normalize categories breakdown
   const categoryBreakdown = categories.map((cat) => {
@@ -577,6 +583,196 @@ export default function AdminOverviewTab({
           </div>
         </Card>
       </div>
+
+      {/* ========================================================= */}
+      {/* 4.5 MONTHLY REVENUE & BEST SELLER ANALYSIS */}
+      {/* ========================================================= */}
+      <Card className="bg-white border border-slate-200/90 rounded-lg shadow-none overflow-hidden">
+        <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <FiDollarSign className="w-4 h-4 text-emerald-600" />
+              Monthly Revenue & Best-Selling Books Analysis
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Track business progress over time and see which books generate the highest sales revenue per month.
+            </p>
+          </div>
+          {availableMonths.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-slate-500">Filter Month:</span>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="text-xs font-bold px-3 py-1.5 rounded-md border border-slate-300 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              >
+                <option value="all">All Time (Cumulative)</option>
+                {availableMonths.map((m) => (
+                  <option key={m.key} value={m.key}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Monthly Business Progress Overview Cards */}
+        {monthlyBusinessProgress.length > 0 && (
+          <div className="p-5 bg-slate-50/60 border-b border-slate-100">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-3 flex items-center gap-1.5">
+              <FiTrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+              Monthly Business Progress
+            </h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {monthlyBusinessProgress.map((p) => (
+                <div
+                  key={p.monthKey}
+                  className={`p-3 rounded-lg border transition-all cursor-pointer ${
+                    selectedMonth === p.monthKey
+                      ? 'bg-emerald-50 border-emerald-300 shadow-sm'
+                      : 'bg-white border-slate-200/80 hover:border-slate-300'
+                  }`}
+                  onClick={() => setSelectedMonth(selectedMonth === p.monthKey ? 'all' : p.monthKey)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <p className="text-[11px] font-bold text-slate-500 uppercase">{p.label}</p>
+                  <p className="text-base font-extrabold text-slate-900 mt-1">
+                    {formatPrice(p.totalRevenue)}
+                  </p>
+                  <p className="text-[10px] font-semibold text-slate-500 mt-0.5">
+                    {p.totalUnits} {p.totalUnits === 1 ? 'sale' : 'sales'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Best Selling Books Table for the Selected Period */}
+        {monthlyRevenueReport && monthlyRevenueReport.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="py-3 px-4 w-12 text-center">Rank</th>
+                  <th className="py-3 px-4">eBook Title & Author</th>
+                  <th className="py-3 px-4">Category</th>
+                  <th className="py-3 px-4 text-center">
+                    {selectedMonth === 'all' ? 'Total Units Sold' : 'Units Sold in Month'}
+                  </th>
+                  <th className="py-3 px-4 text-right">
+                    {selectedMonth === 'all' ? 'Total Revenue' : 'Revenue in Month'}
+                  </th>
+                  <th className="py-3 px-4 text-right">Progress / Contribution</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {monthlyRevenueReport
+                  .map((book) => {
+                    const rev =
+                      selectedMonth === 'all'
+                        ? book.totalRevenue
+                        : book.monthlyData?.[selectedMonth]?.revenue || 0;
+                    const units =
+                      selectedMonth === 'all'
+                        ? book.totalUnits
+                        : book.monthlyData?.[selectedMonth]?.units || 0;
+                    return { ...book, displayRevenue: rev, displayUnits: units };
+                  })
+                  .filter((b) => b.displayRevenue > 0 || b.displayUnits > 0)
+                  .sort((a, b) => b.displayRevenue - a.displayRevenue)
+                  .map((b, idx) => {
+                    const maxRev =
+                      selectedMonth === 'all'
+                        ? monthlyRevenueReport[0]?.totalRevenue || 1
+                        : Math.max(
+                            1,
+                            ...monthlyRevenueReport.map(
+                              (x) => x.monthlyData?.[selectedMonth]?.revenue || 0
+                            )
+                          );
+                    const pct = Math.min(100, Math.round((b.displayRevenue / maxRev) * 100));
+
+                    return (
+                      <tr key={b.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-3 px-4 text-center font-bold">
+                          {idx === 0 ? (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 font-extrabold text-[11px]">
+                              1
+                            </span>
+                          ) : idx === 1 ? (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-700 font-extrabold text-[11px]">
+                              2
+                            </span>
+                          ) : idx === 2 ? (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 text-orange-700 font-extrabold text-[11px]">
+                              3
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 font-semibold">{idx + 1}</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-12 rounded bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-200">
+                              {b.coverImage ? (
+                                <img
+                                  src={resolveCoverUrl(b.coverImage)}
+                                  alt={b.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                  <FiBook className="w-4 h-4" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 max-w-xs">
+                              <p className="font-bold text-slate-900 truncate">{b.title}</p>
+                              <p className="text-[11px] text-slate-500 truncate">by {b.author}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-xs font-medium">
+                            {b.category}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center font-extrabold text-slate-900">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            {b.displayUnits} {b.displayUnits === 1 ? 'copy' : 'copies'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right font-extrabold text-slate-900 text-sm">
+                          {formatPrice(b.displayRevenue)}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="inline-flex items-center gap-2">
+                            <div className="w-20 h-1.5 rounded-sm bg-slate-100 overflow-hidden">
+                              <div
+                                className="h-full bg-emerald-500 rounded-sm"
+                                style={{ width: `${Math.max(5, pct)}%` }}
+                              />
+                            </div>
+                            <span className="font-bold text-xs text-slate-600 w-8 text-right">
+                              {pct}%
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-10 text-center text-slate-400 text-xs">
+            No completed sales orders yet to generate monthly revenue reports.
+          </div>
+        )}
+      </Card>
 
       {/* ========================================================= */}
       {/* 5. DETAILED RANKING TABLE: eBook Click & Interest Rankings */}

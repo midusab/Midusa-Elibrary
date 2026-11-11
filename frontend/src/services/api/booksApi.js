@@ -346,6 +346,24 @@ export async function toggleBookBestseller(id, bestseller, token) {
  */
 export async function recordBookClick(bookId) {
   try {
+    // Exclude admin clicks from tracking
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        const adminEmail = (import.meta.env.VITE_ADMIN_EMAIL || 'midusabrian@gmail.com').toLowerCase();
+        if (
+          parsed?.isAdmin ||
+          parsed?.role === 'admin' ||
+          (parsed?.email && parsed.email.toLowerCase() === adminEmail)
+        ) {
+          return; // Do not record admin clicks
+        }
+      }
+    } catch {
+      // Ignore JSON parse errors and proceed
+    }
+
     let visitorId = localStorage.getItem('elibrary_visitor_id');
     fetch(`${API_BASE_URL}/books/${bookId}/click`, {
       method: 'POST',

@@ -117,6 +117,9 @@ export function useAdminData(token) {
       categoryStats: analytics?.categoryStats || [],
       weeklyTraffic: analytics?.weeklyTraffic || null,
       monthlyTrafficReport: analytics?.monthlyTrafficReport || null,
+      monthlyRevenueReport: analytics?.monthlyRevenueReport || [],
+      monthlyBusinessProgress: analytics?.monthlyBusinessProgress || [],
+      availableMonths: analytics?.availableMonths || [],
       sevenDaysAgo
     };
   }, [orders, books, usersList, analytics, sevenDaysAgo]);

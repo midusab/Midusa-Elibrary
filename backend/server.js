@@ -163,6 +163,38 @@ registerWorker('record_site_visit', async (payload) => {
   }
 }, 1000);
 
+// Scheduled 24-hour reset for book click counts (resets at midnight UTC)
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+function scheduleDailyClickReset() {
+  const now = new Date();
+  const nextMidnight = new Date(now);
+  nextMidnight.setUTCHours(24, 0, 0, 0); // Next UTC midnight
+  const msUntilMidnight = Math.max(1000, nextMidnight.getTime() - now.getTime());
+
+  setTimeout(async function resetClicks() {
+    try {
+      // Reset cumulative clicks_count on all books so daily tracking starts fresh
+      await db.books.updateMany({
+        data: { clicks_count: 0 }
+      });
+
+      // Clear older raw click events older than 24 hours
+      const cutoff = new Date(Date.now() - ONE_DAY_MS);
+      await db.book_clicks.deleteMany({
+        where: { created_at: { lt: cutoff } }
+      });
+
+      console.log('[Daily Reset] Book clicks reset successfully at', new Date().toISOString());
+    } catch (err) {
+      console.error('[Daily Reset] Error resetting book clicks:', err.message);
+    }
+    // Schedule next run in exactly 24 hours
+    setTimeout(resetClicks, ONE_DAY_MS);
+  }, msUntilMidnight);
+}
+
+scheduleDailyClickReset();
+
 // Start server if run directly
 if (require.main === module) {
   app.listen(PORT, '0.0.0.0', () => {

@@ -9,7 +9,6 @@ import {
   User,
   ShieldCheck,
   ArrowRight,
-  FileText,
   Heart,
   BookOpen
 } from 'lucide-react';
@@ -213,10 +212,10 @@ export default function Navigation() {
             {/* Centered Shop Link */}
             <Link
               to="/library"
-              className={`hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 flex-shrink-0 ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-150 flex-shrink-0 ${
                 isActive('/library')
-                  ? 'text-white bg-[#1E90FF] shadow-md shadow-[#1E90FF]/25 border border-[#1E90FF]'
-                  : 'text-slate-700 hover:text-[#1E90FF] hover:bg-white/90 border border-white/80 liquid-glass-pill'
+                  ? 'text-white bg-[#F40009] shadow-md shadow-[#F40009]/25 border border-[#F40009]'
+                  : 'text-slate-700 hover:text-[#F40009] hover:bg-white/90 border border-white/80 liquid-glass-pill'
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
@@ -522,21 +521,10 @@ export default function Navigation() {
               className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/80 transition-colors"
             >
               <span className="flex items-center gap-2.5">
-                <BookOpen className="w-4 h-4 text-[#1E90FF]" />
-                <span>Shop Catalog</span>
+                <BookOpen className="w-4 h-4 text-[#F40009]" />
+                <span className="text-[#F40009] font-bold">Shop Catalog</span>
               </span>
-              <ArrowRight className="w-4 h-4 text-slate-400" />
-            </Link>
-            <Link
-              to="/categories"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/80 transition-colors"
-            >
-              <span className="flex items-center gap-2.5">
-                <FileText className="w-4 h-4 text-[#1E90FF]" />
-                <span>Categories</span>
-              </span>
-              <ArrowRight className="w-4 h-4 text-slate-400" />
+              <ArrowRight className="w-4 h-4 text-[#F40009]" />
             </Link>
             <Link
               to="/wishlist"
