@@ -29,6 +29,26 @@ function isSaleLive(sale) {
  */
 function formatSale(sale) {
   const bookIds = (sale.sale_books || []).map((sb) => sb.book_id);
+  const books = (sale.sale_books || [])
+    .map((sb) => sb.books)
+    .filter(Boolean)
+    .map((b) => ({
+      id: b.id,
+      title: b.title,
+      author: b.author,
+      authorBio: b.author_bio || '',
+      description: b.description || '',
+      category: b.categories?.name || '',
+      coverImage: b.cover_url || '',
+      price: b.price || 0,
+      originalPrice: b.price || 0,
+      discountPercent: sale.discount_percent || 0,
+      rating: b.rating ? parseFloat(b.rating) : 0,
+      featured: b.featured || false,
+      bestseller: b.bestseller || false,
+      clicks: b.clicks_count || 0,
+    }));
+
   return {
     id: sale.id,
     title: sale.title,
@@ -39,6 +59,7 @@ function formatSale(sale) {
     isActive: sale.is_active,
     status: sale.status,
     bookIds,           // array of UUIDs — frontend uses this to check eligibility
+    books,             // fully formatted book records included in this flash sale
     createdAt: sale.created_at,
     updatedAt: sale.updated_at,
   };
@@ -65,7 +86,13 @@ const getActiveFlashSale = async (req, res) => {
       },
       include: {
         sale_books: {
-          select: { book_id: true },
+          include: {
+            books: {
+              include: {
+                categories: true,
+              },
+            },
+          },
         },
       },
       orderBy: { created_at: 'desc' },
@@ -206,7 +233,17 @@ const saveFlashSale = async (req, res) => {
     // Fetch the final sale with its books
     const result = await prisma.flash_sales.findUnique({
       where: { id: sale.id },
-      include: { sale_books: { select: { book_id: true } } },
+      include: {
+        sale_books: {
+          include: {
+            books: {
+              include: {
+                categories: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     return res.status(id ? 200 : 201).json({
@@ -275,7 +312,17 @@ const toggleFlashSale = async (req, res) => {
         status: !sale.is_active ? 'active' : 'ended',
         updated_at: new Date(),
       },
-      include: { sale_books: { select: { book_id: true } } },
+      include: {
+        sale_books: {
+          include: {
+            books: {
+              include: {
+                categories: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     return res.json({ success: true, flashSale: formatSale(updated) });

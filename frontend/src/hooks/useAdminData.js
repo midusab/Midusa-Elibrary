@@ -27,7 +27,7 @@ export function useAdminData(token) {
 
     try {
       const [booksRes, catsRes, ordersRes, usersRes, analyticsRes] = await Promise.all([
-        getBooks({ limit: 100 }),
+        getBooks({ limit: 1000 }),
         getCategories(),
         getAllOrders(token),
         getAdminUsers(token),

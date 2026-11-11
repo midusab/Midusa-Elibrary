@@ -24,8 +24,10 @@ export default function FlashSaleBanner({ books = [] }) {
 
   if (!isLive || !flashSale) return null;
 
-  // Filter books that participate in this flash sale
-  const saleBooks = books.filter((b) => isBookInFlashSale(b.id));
+  // Use books attached directly to flashSale if available; otherwise filter provided books
+  const saleBooks = (Array.isArray(flashSale.books) && flashSale.books.length > 0)
+    ? flashSale.books
+    : books.filter((b) => isBookInFlashSale(b.id));
 
   const scroll = (dir) => {
     if (!rowRef.current) return;
