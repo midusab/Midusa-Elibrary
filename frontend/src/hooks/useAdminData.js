@@ -49,9 +49,7 @@ export function useAdminData(token) {
   }, [token, toastError]);
 
   useEffect(() => {
-    if (token) {
-      loadDashboardData();
-    }
+    loadDashboardData();
   }, [token, loadDashboardData]);
 
   // Derived Analytics (Live calculated from real records)

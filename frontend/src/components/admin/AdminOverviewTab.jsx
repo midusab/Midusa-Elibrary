@@ -20,23 +20,24 @@ import { formatPrice } from '../../utils/currency';
 import { resolveCoverUrl } from '../../utils/imageUrl';
 
 export default function AdminOverviewTab({
-  derivedStats,
+  derivedStats = {},
   categories = [],
   books = []
 }) {
   const [selectedMonth, setSelectedMonth] = useState('all');
-  const dailyTrends = derivedStats.dailyTrends || [];
-  const categoryStats = derivedStats.categoryStats || [];
-  const weeklyTraffic = derivedStats.weeklyTraffic || null;
-  const monthlyReport = derivedStats.monthlyTrafficReport || null;
-  const monthlyRevenueReport = derivedStats.monthlyRevenueReport || [];
-  const monthlyBusinessProgress = derivedStats.monthlyBusinessProgress || [];
-  const availableMonths = derivedStats.availableMonths || [];
+  const stats = derivedStats || {};
+  const dailyTrends = stats.dailyTrends || [];
+  const categoryStats = stats.categoryStats || [];
+  const weeklyTraffic = stats.weeklyTraffic || null;
+  const monthlyReport = stats.monthlyTrafficReport || null;
+  const monthlyRevenueReport = stats.monthlyRevenueReport || [];
+  const monthlyBusinessProgress = stats.monthlyBusinessProgress || [];
+  const availableMonths = stats.availableMonths || [];
 
   // Normalize categories breakdown
-  const categoryBreakdown = categories.map((cat) => {
+  const categoryBreakdown = (categories || []).map((cat) => {
     const matchedStat = categoryStats.find((c) => c.name === cat.name);
-    const catBooks = books.filter((b) => b.category === cat.name);
+    const catBooks = (books || []).filter((b) => b.category === cat.name);
     return {
       name: cat.name,
       bookCount: catBooks.length,
@@ -45,15 +46,15 @@ export default function AdminOverviewTab({
     };
   });
 
-  const totalCatalogBooks = books.length || 1;
+  const totalCatalogBooks = books?.length || 1;
 
   // Funnel calculations
-  const visits = derivedStats.totalVisits || 0;
-  const clicks = derivedStats.totalClicks || books.reduce((sum, b) => sum + (b.clicks || 0), 0);
-  const sales = derivedStats.sales || 0;
+  const visits = stats.totalVisits || 0;
+  const clicks = stats.totalClicks || (books || []).reduce((sum, b) => sum + (b.clicks || 0), 0);
+  const sales = stats.sales || 0;
   const visitToClickRate = visits > 0 ? Math.min(100, Math.round((clicks / visits) * 100)) : (clicks > 0 ? 100 : 0);
   const clickToSaleRate = clicks > 0 ? Math.min(100, Math.round((sales / clicks) * 100)) : (sales > 0 ? 100 : 0);
-  const overallConversion = derivedStats.overallConversionRate || (visits > 0 ? Number(((sales / visits) * 100).toFixed(1)) : 0);
+  const overallConversion = stats.overallConversionRate || (visits > 0 ? Number(((sales / visits) * 100).toFixed(1)) : 0);
 
   return (
     <div className="space-y-6 animate-fadeIn">
