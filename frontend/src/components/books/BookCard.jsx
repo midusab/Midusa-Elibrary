@@ -80,8 +80,17 @@ export default function BookCard({ book, onAddToCart }) {
       isFlashSale: false,
     };
 
-    if (onAddToCart) {
-      onAddToCart(itemToAdd);
+    if (typeof onAddToCart === 'function') {
+      try {
+        if (onAddToCart.length >= 2) {
+          onAddToCart(e, itemToAdd);
+        } else {
+          onAddToCart(itemToAdd);
+        }
+      } catch (err) {
+        console.warn('onAddToCart handler error, falling back to direct addToCart:', err);
+        addToCart(itemToAdd);
+      }
     } else {
       addToCart(itemToAdd);
     }

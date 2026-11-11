@@ -271,16 +271,10 @@ export default function Library() {
     setSearchParams({});
   };
 
-  const [addedIds, setAddedIds] = useState({});
-
-  const handleAddToCart = (e, book) => {
-    e.preventDefault();
-    e.stopPropagation();
-    addToCart(book);
-    setAddedIds((prev) => ({ ...prev, [book.id]: true }));
-    setTimeout(() => {
-      setAddedIds((prev) => ({ ...prev, [book.id]: false }));
-    }, 1800);
+  const handleAddToCart = (book) => {
+    if (book) {
+      addToCart(book);
+    }
   };
 
   return (
@@ -301,7 +295,7 @@ export default function Library() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                Library Catalog
+                Library
               </h1>
             </div>
           </div>
