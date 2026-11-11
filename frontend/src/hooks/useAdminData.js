@@ -49,7 +49,12 @@ export function useAdminData(token) {
   }, [token, toastError]);
 
   useEffect(() => {
-    loadDashboardData();
+    if (token) {
+      loadDashboardData();
+    } else {
+      // No token yet — don't fire unauthenticated API calls; just clear the spinner
+      setIsLoading(false);
+    }
   }, [token, loadDashboardData]);
 
   // Derived Analytics (Live calculated from real records)

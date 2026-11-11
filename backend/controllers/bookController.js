@@ -583,22 +583,6 @@ const recordBookClick = async (req, res) => {
       return res.status(400).json({ error: 'Book ID is required' });
     }
 
-    // Exclude admin clicks: check if userId matches ADMIN_EMAIL or role
-    if (userId) {
-      try {
-        const adminEmail = (process.env.ADMIN_EMAIL || 'midusabrian@gmail.com').toLowerCase();
-        const user = await prisma.users.findUnique({
-          where: { id: userId },
-          select: { email: true, role: true }
-        });
-        if (user && (user.role === 'admin' || user.email?.toLowerCase() === adminEmail)) {
-          return res.json({ success: true, message: 'Admin click ignored' });
-        }
-      } catch (err) {
-        // Continue if user lookup fails
-      }
-    }
-
     // Queue async task for Redis worker
     await pushAsyncTask('record_book_click', {
       bookId: id,
